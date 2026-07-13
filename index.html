@@ -11,10 +11,10 @@
                 extend: {
                     colors: {
                         warm: {
-                            50: '#FAF9F6', // Off-white/paper feel
+                            50: '#FAF9F6',
                             100: '#F5F5F0',
-                            800: '#2C2A29', // Soft black for text
-                            red: '#8B3A3A'  // Muted, mature red
+                            800: '#2C2A29',
+                            red: '#8B3A3A'
                         }
                     }
                 }
@@ -35,57 +35,94 @@
         <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 text-center mb-6">
             <h2 class="text-lg font-medium mb-2">Today</h2>
             <p class="text-gray-500 text-sm mb-6">No streak. No pressure. Just a quiet record.</p>
-            <button onclick="chooseAgain()" id="choose-btn" class="bg-warm-800 text-white w-full py-4 rounded-xl font-medium active:scale-95 transition-transform">
+            
+            <button id="choose-btn" class="bg-warm-800 text-white w-full py-4 rounded-xl font-medium active:scale-95 transition-all">
                 I choose you today
             </button>
-            <p id="choose-confirm" class="text-warm-red text-sm mt-4 hidden italic">Recorded. ❤️</p>
+            
+            <div id="status-area" class="mt-4 hidden flex flex-col items-center">
+                <p class="text-warm-red text-sm italic font-medium mb-1">❤️ Love chosen</p>
+                <p id="last-clicked-time" class="text-xs text-gray-400"></p>
+            </div>
         </section>
 
-        <!-- 2. Voice Capsule -->
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 mb-6">
+        <!-- 2. Voice Capsule (UI Only for now) -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 mb-6 opacity-50">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-medium">Voice Capsule</h2>
-                <span class="text-xs bg-warm-100 px-2 py-1 rounded text-gray-600">Hold to record</span>
+                <span class="text-xs bg-warm-100 px-2 py-1 rounded text-gray-600">Coming soon</span>
             </div>
-            <button class="w-full border-2 border-dashed border-gray-300 py-8 rounded-xl flex flex-col items-center justify-center text-gray-400 active:bg-warm-50 transition-colors">
+            <button class="w-full border-2 border-dashed border-gray-300 py-8 rounded-xl flex flex-col items-center justify-center text-gray-400 cursor-not-allowed">
                 <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                 <span>Record a note for Zusi</span>
             </button>
         </section>
-
-        <!-- 3 & 4. Jars & Prayers (Grid) -->
-        <div class="grid grid-cols-2 gap-4">
-            <!-- Appreciation Jar -->
-            <section class="bg-white p-5 rounded-2xl shadow-sm border border-warm-100">
-                <h2 class="font-medium mb-1">Appreciation</h2>
-                <p class="text-xs text-gray-500 mb-3">Add to the jar</p>
-                <div class="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-warm-200">
-                    <span class="text-xl">+</span>
-                </div>
-            </section>
-
-            <!-- Prayer Wall -->
-            <section class="bg-white p-5 rounded-2xl shadow-sm border border-warm-100">
-                <h2 class="font-medium mb-1">Prayer Wall</h2>
-                <p class="text-xs text-gray-500 mb-3">Shared requests</p>
-                <div class="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-warm-200">
-                    <span class="text-xl">+</span>
-                </div>
-            </section>
-        </div>
     </main>
 
-    <!-- Simple interaction script -->
-    <script>
-        function chooseAgain() {
-            const btn = document.getElementById('choose-btn');
-            const msg = document.getElementById('choose-confirm');
-            btn.classList.replace('bg-warm-800', 'bg-warm-100');
-            btn.classList.replace('text-white', 'text-gray-400');
-            btn.disabled = true;
-            btn.innerText = "Chosen";
-            msg.classList.remove('hidden');
-        }
+    <!-- Firebase SDKs (Modular type) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // --- PASTE YOUR FIREBASE CONFIG HERE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRB-cRm-iX6nXP_5-hF5ACelpqtvx-Bgo",
+            authDomain: "project-us-15aa0.firebaseapp.com",
+            projectId: "project-us-15aa0",
+            storageBucket: "project-us-15aa0.firebasestorage.app",
+            messagingSenderId: "77217285858",
+            appId: "1:77217285858:web:428597d6ace8c2e55640bb",
+            measurementId: "G-YRE7RWQ48Q"
+        };
+        // ----------------------------------------
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // DOM Elements
+        const chooseBtn = document.getElementById('choose-btn');
+        const statusArea = document.getElementById('status-area');
+        const timeDisplay = document.getElementById('last-clicked-time');
+
+        // 1. Write to database when clicked
+        chooseBtn.addEventListener('click', async () => {
+            // Give instant UI feedback
+            chooseBtn.disabled = true;
+            chooseBtn.classList.replace('bg-warm-800', 'bg-warm-100');
+            chooseBtn.classList.replace('text-white', 'text-gray-400');
+            chooseBtn.innerText = "Syncing...";
+
+            try {
+                await addDoc(collection(db, "choose_events"), {
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Error writing to database:", error);
+                chooseBtn.innerText = "Error - Try again";
+            }
+        });
+
+        // 2. Listen for real-time updates from either phone
+        const q = query(collection(db, "choose_events"), orderBy("timestamp", "desc"), limit(1));
+        
+        onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const data = change.doc.data();
+                    if (data.timestamp) {
+                        const date = data.timestamp.toDate();
+                        
+                        // Update UI to show it was clicked
+                        chooseBtn.classList.add('hidden');
+                        statusArea.classList.remove('hidden');
+                        
+                        // Format the time
+                        timeDisplay.innerText = `Last pressed: ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>
