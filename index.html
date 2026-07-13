@@ -22,7 +22,7 @@
         }
     </script>
 </head>
-<body class="bg-warm-50 text-warm-800 font-sans antialiased pb-20 selection:bg-warm-red selection:text-white">
+<body class="bg-warm-50 text-warm-800 font-sans antialiased pb-20 selection:bg-warm-red selection:text-white select-none">
     
     <main class="max-w-md mx-auto p-6 mt-4">
         <!-- Header -->
@@ -46,25 +46,46 @@
             </div>
         </section>
 
-        <!-- 2. Voice Capsule (UI Only for now) -->
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 mb-6 opacity-50">
+        <!-- 2. Voice Capsule -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 mb-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-medium">Voice Capsule</h2>
-                <span class="text-xs bg-warm-100 px-2 py-1 rounded text-gray-600">Coming soon</span>
+                <span class="text-xs bg-warm-100 px-2 py-1 rounded text-gray-600">Hold to record</span>
             </div>
-            <button class="w-full border-2 border-dashed border-gray-300 py-8 rounded-xl flex flex-col items-center justify-center text-gray-400 cursor-not-allowed">
-                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                <span>Record a note for Zusi</span>
+            <!-- Using touch-action: none to prevent scrolling while holding -->
+            <button id="record-btn" class="w-full border-2 border-dashed border-gray-300 py-8 rounded-xl flex flex-col items-center justify-center text-gray-400 transition-colors touch-none">
+                <svg class="w-8 h-8 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                <span id="record-text" class="pointer-events-none">Press and hold</span>
             </button>
         </section>
+
+        <!-- 3 & 4. Jars & Prayers (Grid) -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Appreciation Jar -->
+            <section class="bg-white p-5 rounded-2xl shadow-sm border border-warm-100">
+                <h2 class="font-medium mb-1">Appreciation</h2>
+                <p class="text-xs text-gray-500 mb-3">Add to the jar</p>
+                <div class="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-warm-200 transition-colors">
+                    <span class="text-xl">+</span>
+                </div>
+            </section>
+
+            <!-- Prayer Wall -->
+            <section class="bg-white p-5 rounded-2xl shadow-sm border border-warm-100">
+                <h2 class="font-medium mb-1">Prayer Wall</h2>
+                <p class="text-xs text-gray-500 mb-3">Shared requests</p>
+                <div class="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-warm-200 transition-colors">
+                    <span class="text-xl">+</span>
+                </div>
+            </section>
+        </div>
     </main>
 
-    <!-- Firebase SDKs (Modular type) -->
+    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // --- PASTE YOUR FIREBASE CONFIG HERE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDRB-cRm-iX6nXP_5-hF5ACelpqtvx-Bgo",
             authDomain: "project-us-15aa0.firebaseapp.com",
@@ -74,23 +95,17 @@
             appId: "1:77217285858:web:428597d6ace8c2e55640bb",
             measurementId: "G-YRE7RWQ48Q"
         };
-        // ----------------------------------------
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // DOM Elements
+        // --- FEATURE 1: CHOOSE AGAIN ---
         const chooseBtn = document.getElementById('choose-btn');
         const statusArea = document.getElementById('status-area');
         const timeDisplay = document.getElementById('last-clicked-time');
 
-        // 1. Write to database when clicked
         chooseBtn.addEventListener('click', async () => {
-            // Give instant UI feedback
             chooseBtn.disabled = true;
-            chooseBtn.classList.replace('bg-warm-800', 'bg-warm-100');
-            chooseBtn.classList.replace('text-white', 'text-gray-400');
             chooseBtn.innerText = "Syncing...";
 
             try {
@@ -98,31 +113,77 @@
                     timestamp: serverTimestamp()
                 });
             } catch (error) {
-                console.error("Error writing to database:", error);
-                chooseBtn.innerText = "Error - Try again";
+                console.error("Database error:", error);
+                chooseBtn.innerText = "Error - check Firestore rules";
+                chooseBtn.disabled = false;
             }
         });
 
-        // 2. Listen for real-time updates from either phone
         const q = query(collection(db, "choose_events"), orderBy("timestamp", "desc"), limit(1));
-        
         onSnapshot(q, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === "added") {
                     const data = change.doc.data();
-                    if (data.timestamp) {
-                        const date = data.timestamp.toDate();
-                        
-                        // Update UI to show it was clicked
-                        chooseBtn.classList.add('hidden');
-                        statusArea.classList.remove('hidden');
-                        
-                        // Format the time
-                        timeDisplay.innerText = `Last pressed: ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-                    }
+                    const date = data.timestamp ? data.timestamp.toDate() : new Date();
+                    
+                    chooseBtn.classList.add('hidden');
+                    statusArea.classList.remove('hidden');
+                    timeDisplay.innerText = `Last pressed: ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 }
             });
         });
+
+        // --- FEATURE 2: VOICE CAPSULE (MICROPHONE LOGIC) ---
+        const recordBtn = document.getElementById('record-btn');
+        const recordText = document.getElementById('record-text');
+        let mediaRecorder;
+        let audioChunks = [];
+        let stream;
+
+        recordBtn.addEventListener('pointerdown', async (e) => {
+            e.preventDefault();
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioChunks = [];
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                    
+                    recordText.innerText = "Played back! (Needs DB to save)";
+                    recordBtn.classList.remove('border-warm-red', 'text-warm-red');
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    setTimeout(() => { recordText.innerText = "Press and hold"; }, 3000);
+                };
+
+                mediaRecorder.start();
+                recordText.innerText = "Recording... Release to stop";
+                recordBtn.classList.add('border-warm-red', 'text-warm-red');
+                
+            } catch (err) {
+                alert("Microphone access denied or unavailable.");
+            }
+        });
+
+        const stopRecording = () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        };
+
+        recordBtn.addEventListener('pointerup', stopRecording);
+        recordBtn.addEventListener('pointercancel', stopRecording);
+        recordBtn.addEventListener('pointerleave', stopRecording);
+
     </script>
 </body>
 </html>
