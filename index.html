@@ -126,6 +126,7 @@
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
+        // Your exact Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDRB-cRm-iX6nXP_5-hF5ACelpqtvx-Bgo",
             authDomain: "project-us-15aa0.firebaseapp.com",
@@ -187,7 +188,7 @@
                     timestamp: serverTimestamp()
                 });
                 input.value = '';
-                switchTab('feed');
+                switchTab('feed'); 
             } catch (error) {
                 console.error("Text save failed:", error);
                 alert("Failed to save. Check internet or Firebase rules.");
@@ -226,7 +227,7 @@
             });
         });
 
-        // --- FEATURE 2: UNIVERSAL VOICE RECORDING ---
+        // --- FEATURE 2: UNIVERSAL VOICE RECORDING (VIA CLOUD STORAGE) ---
         const recordBtns = document.querySelectorAll('.record-btn');
         let mediaRecorder;
         let audioChunks = [];
@@ -249,16 +250,20 @@
                         audioChunks = [];
                         stream.getTracks().forEach(track => track.stop());
                         
-                        if(statusText) statusText.innerText = "Sending to database...";
+                        if(statusText) statusText.innerText = "Uploading to Storage...";
                         btn.classList.replace('border-warm-red', 'border-gray-300');
                         btn.classList.replace('text-warm-red', 'text-gray-400');
 
                         try {
+                            // 1. Upload the raw audio file to Cloud Storage
                             const fileName = `voice_notes/${Date.now()}_${currentUser}.webm`;
                             const storageRef = ref(storage, fileName);
-                            await uploadBytes(storageRef, audioBlob);
+                            await uploadBytes(storageRef, audioBlob); 
+                            
+                            // 2. Get the permanent URL for that file
                             const downloadUrl = await getDownloadURL(storageRef);
 
+                            // 3. Save that URL to Firestore so the feed can display it
                             await addDoc(collection(db, "voice_notes"), {
                                 format: 'audio',
                                 url: downloadUrl,
@@ -303,7 +308,8 @@
 
         // --- FEATURE 3: UNIFIED TIMELINE (FEED) ---
         const feed = document.getElementById('voice-feed');
-        const qTimeline = query(collection(db, "voice_notes"), orderBy("timestamp", "desc"), limit(20));
+        // Load up to 50 recent items 
+        const qTimeline = query(collection(db, "voice_notes"), orderBy("timestamp", "desc"), limit(50));
         
         onSnapshot(qTimeline, (snapshot) => {
             feed.innerHTML = ''; 
