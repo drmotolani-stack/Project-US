@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Space</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        warm: {
+                            50: '#FAF9F6', // Off-white/paper feel
+                            100: '#F5F5F0',
+                            800: '#2C2A29', // Soft black for text
+                            red: '#8B3A3A'  // Muted, mature red
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-warm-50 text-warm-800 font-sans antialiased pb-20 selection:bg-warm-red selection:text-white">
+    
+    <main class="max-w-md mx-auto p-6 mt-4">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <h1 class="text-2xl font-serif tracking-wide text-warm-800">Our Space</h1>
+            <p class="text-sm text-gray-500 mt-1">Motolani & Zusi</p>
+        </header>
+
+        <!-- 1. Choose Again -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 text-center mb-6">
+            <h2 class="text-lg font-medium mb-2">Today</h2>
+            <p class="text-gray-500 text-sm mb-6">No streak. No pressure. Just a quiet record.</p>
+            <button onclick="chooseAgain()" id="choose-btn" class="bg-warm-800 text-white w-full py-4 rounded-xl font-medium active:scale-95 transition-transform">
+                I choose you today
+            </button>
+            <p id="choose-confirm" class="text-warm-red text-sm mt-4 hidden italic">Recorded. ❤️</p>
+        </section>
+
+        <!-- 2. Voice Capsule -->
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-medium">Voice Capsule</h2>
+                <span class="text-xs bg-warm-100 px-2 py-1 rounded text-gray-600">Hold to record</span>
+            </div>
+            <button class="w-full border-2 border-dashed border-gray-300 py-8 rounded-xl flex flex-col items-center justify-center text-gray-400 active:bg-warm-50 transition-colors">
+                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                <span>Record a note for Zusi</span>
+            </button>
+        </section>
+
+        <!-- 3 & 4. Jars & Prayers (Grid) -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Appreciation Jar -->
+            <section class="bg-white p-5 rounded-2xl shadow-sm border border-warm-100">
+                <h2 class="font-medium mb-1">Appreciation</h2>
+                <p class="text-xs text-gray-500 mb-3">Add to the jar</p>
+                <div class="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-warm-200">
+                    <span class="text-xl">+</span>
+                </div>
+            </section>
+
+            <!-- Prayer Wall -->
+            <section class="bg-white p-5 rounded-2xl shadow-sm border border-warm-100">
+                <h2 class="font-medium mb-1">Prayer Wall</h2>
+                <p class="text-xs text-gray-500 mb-3">Shared requests</p>
+                <div class="w-10 h-10 bg-warm-100 rounded-full flex items-center justify-center cursor-pointer hover:bg-warm-200">
+                    <span class="text-xl">+</span>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Simple interaction script -->
+    <script>
+        function chooseAgain() {
+            const btn = document.getElementById('choose-btn');
+            const msg = document.getElementById('choose-confirm');
+            btn.classList.replace('bg-warm-800', 'bg-warm-100');
+            btn.classList.replace('text-white', 'text-gray-400');
+            btn.disabled = true;
+            btn.innerText = "Chosen";
+            msg.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
