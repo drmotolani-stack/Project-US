@@ -23,74 +23,102 @@
         }
     </script>
 </head>
-<body class="bg-warm-50 text-warm-800 font-sans antialiased pb-20 selection:bg-warm-red selection:text-white select-none">
+<body class="bg-warm-50 text-warm-800 font-sans antialiased selection:bg-warm-red selection:text-white select-none h-screen flex flex-col overflow-hidden">
     
-    <!-- Identity Switch (No Passwords) -->
-    <div class="absolute top-4 right-4">
+    <!-- Top Bar -->
+    <header class="pt-6 pb-4 px-6 bg-warm-50 z-10 flex justify-between items-center shrink-0">
+        <div>
+            <h1 class="text-xl font-serif tracking-wide text-warm-800">Our Space</h1>
+            <p class="text-xs text-gray-500 mt-1" id="greeting">Welcome</p>
+        </div>
         <select id="user-identity" class="bg-white border border-warm-100 text-xs text-warm-800 rounded-full px-3 py-1 outline-none shadow-sm">
             <option value="Motolani">I am Motolani</option>
             <option value="Zusi">I am Zusi</option>
         </select>
-    </div>
+    </header>
 
-    <main class="max-w-md mx-auto p-6 mt-8">
-        <!-- Header -->
-        <header class="mb-8 text-center">
-            <h1 class="text-2xl font-serif tracking-wide text-warm-800">Our Space</h1>
-            <p class="text-sm text-gray-500 mt-1" id="greeting">Welcome</p>
-        </header>
-
-        <!-- 1. Choose Again -->
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 text-center mb-6">
-            <h2 class="text-lg font-medium mb-2">Today</h2>
-            
-            <button id="choose-btn" class="bg-warm-800 text-white w-full py-4 rounded-xl font-medium active:scale-95 transition-all">
-                I choose you today
-            </button>
-            
-            <div id="status-area" class="mt-4 hidden flex flex-col items-center">
-                <p class="text-warm-red text-sm italic font-medium mb-1">❤️ Love chosen</p>
-                <p id="last-clicked-time" class="text-xs text-gray-400"></p>
-            </div>
-        </section>
-
-        <!-- 2. Voice Capsule -->
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 mb-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-medium">Voice Capsule</h2>
-                <span class="text-xs bg-warm-100 px-2 py-1 rounded text-gray-600">Hold to record</span>
-            </div>
-            
-            <button id="record-capsule" class="record-btn w-full border-2 border-dashed border-gray-300 py-6 rounded-xl flex flex-col items-center justify-center text-gray-400 transition-colors touch-none" data-type="capsule">
-                <svg class="w-8 h-8 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                <span class="pointer-events-none text-sm status-text">Record for Zusi</span>
-            </button>
-
-            <!-- Feed for Voice Notes -->
-            <div id="voice-feed" class="mt-4 space-y-3 empty:hidden">
-                <!-- Audio elements populate here -->
-            </div>
-        </section>
-
-        <!-- 3 & 4. Jars & Prayers (Voice First) -->
-        <div class="grid grid-cols-2 gap-4">
-            <!-- Appreciation Jar -->
-            <section class="bg-white p-4 rounded-2xl shadow-sm border border-warm-100 text-center">
-                <h2 class="font-medium mb-1 text-sm">Appreciation</h2>
-                <button class="record-btn w-full mt-2 bg-warm-50 border border-warm-100 py-3 rounded-xl flex justify-center items-center text-gray-400 touch-none active:bg-warm-100" data-type="appreciation">
-                    <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+    <!-- Scrollable Content Area -->
+    <main class="flex-1 overflow-y-auto px-6 pb-24" id="main-content">
+        
+        <!-- ================= TAB 1: HOME ================= -->
+        <div id="view-home" class="tab-view block space-y-6">
+            <!-- Choose Again -->
+            <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100 text-center mt-2">
+                <h2 class="text-lg font-medium mb-2">Today</h2>
+                <button id="choose-btn" class="bg-warm-800 text-white w-full py-4 rounded-xl font-medium active:scale-95 transition-all">
+                    I choose you today
                 </button>
+                <div id="status-area" class="mt-4 hidden flex flex-col items-center">
+                    <p class="text-warm-red text-sm italic font-medium mb-1">❤️ Love chosen</p>
+                    <p id="last-clicked-time" class="text-xs text-gray-400"></p>
+                </div>
             </section>
 
-            <!-- Prayer Wall -->
-            <section class="bg-white p-4 rounded-2xl shadow-sm border border-warm-100 text-center">
-                <h2 class="font-medium mb-1 text-sm">Prayer Wall</h2>
-                <button class="record-btn w-full mt-2 bg-warm-50 border border-warm-100 py-3 rounded-xl flex justify-center items-center text-gray-400 touch-none active:bg-warm-100" data-type="prayer">
-                    <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            <!-- Quick Voice Capsule -->
+            <section class="bg-white p-6 rounded-2xl shadow-sm border border-warm-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-medium">Voice Capsule</h2>
+                </div>
+                <button class="record-btn w-full border-2 border-dashed border-gray-300 py-8 rounded-xl flex flex-col items-center justify-center text-gray-400 transition-colors touch-none" data-type="capsule">
+                    <svg class="w-8 h-8 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <span class="pointer-events-none text-sm status-text">Hold to record for Zusi</span>
                 </button>
             </section>
         </div>
+
+        <!-- ================= TAB 2: FEED ================= -->
+        <div id="view-feed" class="tab-view hidden">
+            <h2 class="text-lg font-medium mb-4 mt-2">Timeline</h2>
+            <!-- Feed populates here -->
+            <div id="voice-feed" class="space-y-4 empty:hidden pb-10"></div>
+        </div>
+
+        <!-- ================= TAB 3: SHARED ================= -->
+        <div id="view-shared" class="tab-view hidden space-y-6 mt-2">
+            
+            <!-- Appreciation Jar -->
+            <section class="bg-white p-5 rounded-2xl shadow-sm border border-warm-100">
+                <h2 class="font-medium mb-3">Appreciation Jar</h2>
+                <textarea id="appreciation-text" placeholder="Type something nice..." class="w-full text-sm p-3 border border-warm-100 rounded-xl mb-3 focus:outline-none focus:border-warm-800 resize-none h-20"></textarea>
+                <div class="flex gap-2">
+                    <button class="bg-warm-800 text-white px-4 py-3 rounded-xl text-sm font-medium flex-1 active:bg-warm-900 transition-colors" onclick="sendTextNote('appreciation')">Save Text</button>
+                    <button class="record-btn bg-warm-50 border border-warm-100 px-4 py-3 rounded-xl flex-1 text-sm text-gray-600 touch-none flex justify-center items-center gap-2" data-type="appreciation">
+                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        <span class="pointer-events-none status-text">Hold (Voice)</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Prayer Wall -->
+            <section class="bg-white p-5 rounded-2xl shadow-sm border border-warm-100">
+                <h2 class="font-medium mb-3">Prayer Wall</h2>
+                <textarea id="prayer-text" placeholder="Add a prayer request..." class="w-full text-sm p-3 border border-warm-100 rounded-xl mb-3 focus:outline-none focus:border-warm-800 resize-none h-20"></textarea>
+                <div class="flex gap-2">
+                    <button class="bg-warm-800 text-white px-4 py-3 rounded-xl text-sm font-medium flex-1 active:bg-warm-900 transition-colors" onclick="sendTextNote('prayer')">Save Text</button>
+                    <button class="record-btn bg-warm-50 border border-warm-100 px-4 py-3 rounded-xl flex-1 text-sm text-gray-600 touch-none flex justify-center items-center gap-2" data-type="prayer">
+                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        <span class="pointer-events-none status-text">Hold (Voice)</span>
+                    </button>
+                </div>
+            </section>
+        </div>
     </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="absolute bottom-0 w-full max-w-md left-1/2 -translate-x-1/2 bg-white border-t border-warm-100 px-6 py-4 flex justify-between items-center text-gray-400 pb-8 rounded-t-3xl">
+        <button onclick="switchTab('home')" id="tab-home" class="nav-btn flex flex-col items-center text-warm-800">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span class="text-[10px] font-medium">Home</span>
+        </button>
+        <button onclick="switchTab('feed')" id="tab-feed" class="nav-btn flex flex-col items-center hover:text-warm-800 transition-colors">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            <span class="text-[10px] font-medium">Timeline</span>
+        </button>
+        <button onclick="switchTab('shared')" id="tab-shared" class="nav-btn flex flex-col items-center hover:text-warm-800 transition-colors">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <span class="text-[10px] font-medium">Shared</span>
+        </button>
+    </nav>
 
     <!-- Firebase SDKs -->
     <script type="module">
@@ -112,10 +140,21 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
+        // --- TAB NAVIGATION ---
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-warm-800');
+                btn.classList.add('text-gray-400');
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('text-gray-400');
+            document.getElementById(`tab-${tabId}`).classList.add('text-warm-800');
+        };
+
         // --- IDENTITY MANAGEMENT ---
         const identitySelect = document.getElementById('user-identity');
-        const greeting = document.getElementById('greeting');
-        
         let currentUser = localStorage.getItem('our_space_identity') || 'Motolani';
         identitySelect.value = currentUser;
         
@@ -123,13 +162,41 @@
             currentUser = identitySelect.value;
             localStorage.setItem('our_space_identity', currentUser);
             const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
-            document.querySelector('#record-capsule .status-text').innerText = `Record for ${otherPerson}`;
+            const capsuleText = document.querySelector('#view-home .status-text');
+            if(capsuleText) capsuleText.innerText = `Hold to record for ${otherPerson}`;
         };
         
         identitySelect.addEventListener('change', updateIdentity);
         updateIdentity();
 
-        // --- FEATURE 1: CHOOSE AGAIN (WITH DATE FORMATTING) ---
+        // --- FEATURE: TEXT NOTES (PRAYER/APPRECIATION) ---
+        window.sendTextNote = async (type) => {
+            const input = document.getElementById(`${type}-text`);
+            if (!input.value.trim()) return;
+
+            const textContent = input.value;
+            input.value = 'Saving...';
+            input.disabled = true;
+
+            try {
+                await addDoc(collection(db, "voice_notes"), {
+                    format: 'text',
+                    content: textContent,
+                    sender: currentUser,
+                    type: type,
+                    timestamp: serverTimestamp()
+                });
+                input.value = '';
+                switchTab('feed');
+            } catch (error) {
+                console.error("Text save failed:", error);
+                alert("Failed to save. Check internet or Firebase rules.");
+                input.value = textContent;
+            }
+            input.disabled = false;
+        };
+
+        // --- FEATURE 1: CHOOSE AGAIN ---
         const chooseBtn = document.getElementById('choose-btn');
         const statusArea = document.getElementById('status-area');
         const timeDisplay = document.getElementById('last-clicked-time');
@@ -152,30 +219,24 @@
                 if (change.type === "added") {
                     const data = change.doc.data();
                     const date = data.timestamp ? data.timestamp.toDate() : new Date();
-                    
                     chooseBtn.classList.add('hidden');
                     statusArea.classList.remove('hidden');
-                    
-                    // Formatted to show Date and Time
-                    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                    const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    timeDisplay.innerText = `Last pressed: ${dateStr}, ${timeStr}`;
+                    timeDisplay.innerText = `Last pressed: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 }
             });
         });
 
-        // --- FEATURE 2: UNIVERSAL VOICE RECORDING & STORAGE ---
+        // --- FEATURE 2: UNIVERSAL VOICE RECORDING ---
         const recordBtns = document.querySelectorAll('.record-btn');
         let mediaRecorder;
         let audioChunks = [];
         let stream;
-        let currentBtn;
 
         recordBtns.forEach(btn => {
             btn.addEventListener('pointerdown', async (e) => {
                 e.preventDefault();
-                currentBtn = btn;
                 const type = btn.getAttribute('data-type');
+                const statusText = btn.querySelector('.status-text');
                 
                 try {
                     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -188,22 +249,18 @@
                         audioChunks = [];
                         stream.getTracks().forEach(track => track.stop());
                         
-                        // Uploading State
-                        const statusText = btn.querySelector('.status-text');
-                        const originalText = statusText ? statusText.innerText : '';
-                        if(statusText) statusText.innerText = "Sending...";
+                        if(statusText) statusText.innerText = "Sending to database...";
                         btn.classList.replace('border-warm-red', 'border-gray-300');
                         btn.classList.replace('text-warm-red', 'text-gray-400');
 
                         try {
-                            // Upload to Storage
                             const fileName = `voice_notes/${Date.now()}_${currentUser}.webm`;
                             const storageRef = ref(storage, fileName);
                             await uploadBytes(storageRef, audioBlob);
                             const downloadUrl = await getDownloadURL(storageRef);
 
-                            // Save reference to Firestore
                             await addDoc(collection(db, "voice_notes"), {
+                                format: 'audio',
                                 url: downloadUrl,
                                 sender: currentUser,
                                 type: type,
@@ -212,9 +269,13 @@
                             });
 
                             if(statusText) statusText.innerText = "Sent! ✓";
-                            setTimeout(() => { if(statusText) updateIdentity(); }, 2000);
+                            setTimeout(() => { 
+                                if(statusText) updateIdentity(); 
+                                if(type !== 'capsule') switchTab('feed');
+                            }, 1500);
                         } catch (error) {
-                            console.error("Upload failed", error);
+                            console.error("Upload failed:", error);
+                            alert(`Upload failed: ${error.message}`);
                             if(statusText) statusText.innerText = "Upload failed";
                         }
                     };
@@ -222,7 +283,6 @@
                     mediaRecorder.start();
                     btn.classList.replace('border-gray-300', 'border-warm-red');
                     btn.classList.replace('text-gray-400', 'text-warm-red');
-                    const statusText = btn.querySelector('.status-text');
                     if(statusText) statusText.innerText = "Recording... Release to send";
                     
                 } catch (err) {
@@ -241,56 +301,64 @@
             btn.addEventListener('pointerleave', stopRecording);
         });
 
-        // --- FEATURE 3: VOICE FEED & READ RECEIPTS ---
+        // --- FEATURE 3: UNIFIED TIMELINE (FEED) ---
         const feed = document.getElementById('voice-feed');
-        const qVoice = query(collection(db, "voice_notes"), orderBy("timestamp", "desc"), limit(5));
+        const qTimeline = query(collection(db, "voice_notes"), orderBy("timestamp", "desc"), limit(20));
         
-        onSnapshot(qVoice, (snapshot) => {
-            feed.innerHTML = ''; // Clear feed
+        onSnapshot(qTimeline, (snapshot) => {
+            feed.innerHTML = ''; 
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const docId = docSnap.id;
                 const isMine = data.sender === currentUser;
                 const hasBeenPlayed = data.playedBy && data.playedBy.length > 0;
                 
-                // Format timestamp
                 const date = data.timestamp ? data.timestamp.toDate() : new Date();
+                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 
-                // Read receipt logic
                 let statusHtml = '';
-                if (isMine) {
-                    // Show double green checkmark if played, single grey if unplayed
+                if (isMine && data.format === 'audio') {
                     statusHtml = hasBeenPlayed 
-                        ? `<span class="text-warm-green text-xs font-bold tracking-tighter">✓✓</span>` 
-                        : `<span class="text-gray-400 text-xs">✓</span>`;
+                        ? `<span class="text-warm-green text-xs font-bold tracking-tighter ml-1">✓✓</span>` 
+                        : `<span class="text-gray-400 text-xs ml-1">✓</span>`;
+                }
+
+                let contentHtml = '';
+                if (data.format === 'text') {
+                    contentHtml = `<div class="mt-2 text-sm text-warm-800 bg-white p-3 rounded-lg border border-warm-100">${data.content}</div>`;
+                } else {
+                    contentHtml = `<audio src="${data.url}" controls class="w-full mt-2" id="audio-${docId}"></audio>`;
                 }
 
                 const itemHtml = `
-                    <div class="bg-warm-50 rounded-xl p-3 flex items-center justify-between border border-warm-100">
-                        <div class="flex flex-col">
-                            <span class="text-xs font-medium text-warm-800 capitalize">${data.type}</span>
-                            <span class="text-[10px] text-gray-500">${data.sender} • ${timeStr} ${statusHtml}</span>
+                    <div class="bg-warm-50 rounded-xl p-4 border border-warm-100 mb-3 shadow-sm">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-xs font-bold text-warm-800 uppercase tracking-wider">${data.type}</span>
+                            <span class="text-[10px] text-gray-500 bg-white px-2 py-1 rounded-md border border-warm-100">
+                                ${dateStr} • ${timeStr} ${statusHtml}
+                            </span>
                         </div>
-                        <audio src="${data.url}" controls class="h-8 w-48" id="audio-${docId}"></audio>
+                        <div class="text-xs text-gray-500 font-medium mb-1">${data.sender}</div>
+                        ${contentHtml}
                     </div>
                 `;
                 feed.insertAdjacentHTML('beforeend', itemHtml);
 
-                // Add listener to update read receipt when the OTHER person plays it
-                const audioElement = document.getElementById(`audio-${docId}`);
-                if (audioElement && !isMine) {
-                    audioElement.addEventListener('play', async () => {
-                        if (!data.playedBy.includes(currentUser)) {
-                            await updateDoc(doc(db, "voice_notes", docId), {
-                                playedBy: arrayUnion(currentUser)
-                            });
-                        }
-                    }, { once: true });
+                if (data.format === 'audio') {
+                    const audioElement = document.getElementById(`audio-${docId}`);
+                    if (audioElement && !isMine) {
+                        audioElement.addEventListener('play', async () => {
+                            if (!data.playedBy.includes(currentUser)) {
+                                await updateDoc(doc(db, "voice_notes", docId), {
+                                    playedBy: arrayUnion(currentUser)
+                                });
+                            }
+                        }, { once: true });
+                    }
                 }
             });
         });
-
     </script>
 </body>
 </html>
