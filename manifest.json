@@ -1,0 +1,15 @@
+{
+  "name": "Our Space",
+  "short_name": "Our Space",
+  "start_url": "/Project-US/",
+  "display": "standalone",
+  "background_color": "#FAF9F6",
+  "theme_color": "#FAF9F6",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/833/833472.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
