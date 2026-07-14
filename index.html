@@ -22,14 +22,14 @@
                 extend: {
                     colors: {
                         note: {
-                            paper: '#F4ECDA',
-                            paperDeep: '#E7DBBD',
-                            card: '#FBF7EC',
-                            ink: '#2E2A22',
-                            inkSoft: '#6E6252',
-                            rust: '#A23E2C',
-                            sage: '#5C7A5E',
-                            gold: '#B9862F'
+                            paper: 'rgb(var(--note-paper) / <alpha-value>)',
+                            paperDeep: 'rgb(var(--note-paperDeep) / <alpha-value>)',
+                            card: 'rgb(var(--note-card) / <alpha-value>)',
+                            ink: 'rgb(var(--note-ink) / <alpha-value>)',
+                            inkSoft: 'rgb(var(--note-inkSoft) / <alpha-value>)',
+                            rust: 'rgb(var(--note-rust) / <alpha-value>)',
+                            sage: 'rgb(var(--note-sage) / <alpha-value>)',
+                            gold: 'rgb(var(--note-gold) / <alpha-value>)'
                         }
                     },
                     fontFamily: {
@@ -45,10 +45,40 @@
     <style>
         * { -webkit-tap-highlight-color: transparent; }
 
+        :root {
+            --note-paper: 244 236 218;
+            --note-paperDeep: 231 219 189;
+            --note-card: 251 247 236;
+            --note-ink: 46 42 34;
+            --note-inkSoft: 110 98 82;
+            --note-rust: 162 62 44;
+            --note-sage: 92 122 94;
+            --note-gold: 185 134 47;
+            --c-rust: rgb(var(--note-rust));
+            --c-sage: rgb(var(--note-sage));
+            --c-gold: rgb(var(--note-gold));
+            --note-sheen: 0.5;
+            color-scheme: light;
+        }
+
+        html.dark {
+            --note-paper: 25 21 15;
+            --note-paperDeep: 34 28 20;
+            --note-card: 41 34 25;
+            --note-ink: 236 227 205;
+            --note-inkSoft: 173 161 137;
+            --note-rust: 224 110 84;
+            --note-sage: 143 176 143;
+            --note-gold: 222 178 96;
+            --note-sheen: 0.05;
+            color-scheme: dark;
+        }
+
         html, body {
             font-family: 'Karla', sans-serif;
             height: 100%;
-            background: #F4ECDA;
+            background: rgb(var(--note-paper));
+            transition: background 0.25s ease;
         }
 
         .font-display { font-family: 'Fraunces', serif; }
@@ -62,18 +92,18 @@
             z-index: 0;
             pointer-events: none;
             opacity: 0.05;
-            mix-blend-mode: multiply;
+            mix-blend-mode: overlay;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
         }
 
         /* ---------- Note cards (replace uniform glass panels) ---------- */
         .note-card {
             position: relative;
-            background: #FBF7EC;
-            border: 1px solid rgba(46,42,34,0.10);
+            background: rgb(var(--note-card));
+            border: 1px solid rgb(var(--note-ink) / 0.10);
             border-radius: 14px;
             padding: 26px 22px 22px;
-            box-shadow: 0 10px 24px -12px rgba(46,42,34,0.28), 0 1px 0 rgba(255,255,255,0.6) inset;
+            box-shadow: 0 10px 24px -12px rgb(var(--note-ink) / 0.28), 0 1px 0 rgb(255 255 255 / var(--note-sheen)) inset;
             transform: rotate(var(--rot, 0deg));
             animation: settle 0.5s ease-out;
         }
@@ -94,7 +124,7 @@
             background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.35) 0 4px, transparent 4px 9px);
             opacity: 0.9;
             border-radius: 2px;
-            box-shadow: 0 3px 5px -2px rgba(46,42,34,0.35);
+            box-shadow: 0 3px 5px -2px rgb(var(--note-ink) / 0.35);
         }
 
         /* ---------- Wax seal press button ---------- */
@@ -104,7 +134,7 @@
             height: 108px;
             border-radius: 50%;
             background: radial-gradient(circle at 32% 28%, #C1543D, #A23E2C 55%, #7E2E20 100%);
-            box-shadow: 0 10px 20px -6px rgba(162,62,44,0.55), inset 0 2px 4px rgba(255,255,255,0.25), inset 0 -6px 10px rgba(0,0,0,0.25);
+            box-shadow: 0 10px 20px -6px rgb(var(--note-rust) / 0.55), inset 0 2px 4px rgba(255,255,255,0.25), inset 0 -6px 10px rgba(0,0,0,0.25);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -112,7 +142,7 @@
         }
         .seal-btn:active {
             transform: scale(0.94) translateY(2px);
-            box-shadow: 0 4px 10px -4px rgba(162,62,44,0.5), inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -3px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 10px -4px rgb(var(--note-rust) / 0.5), inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -3px 6px rgba(0,0,0,0.3);
         }
         .seal-rings {
             position: absolute;
@@ -133,8 +163,8 @@
             font-family: 'Space Mono', monospace;
             font-size: 11px;
             letter-spacing: 0.2em;
-            color: #A23E2C;
-            border: 2px solid #A23E2C;
+            color: var(--c-rust);
+            border: 2px solid var(--c-rust);
             border-radius: 999px;
             padding: 5px 16px;
             transform: rotate(-4deg);
@@ -149,38 +179,38 @@
         /* ---------- Record (voice) buttons ---------- */
         .capsule-btn {
             width: 100%;
-            border: 2px dashed rgba(46,42,34,0.22);
+            border: 2px dashed rgb(var(--note-ink) / 0.22);
             border-radius: 12px;
             padding: 30px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: rgba(46,42,34,0.55);
+            color: rgb(var(--note-ink) / 0.55);
             touch-action: none;
             transition: border-color 0.2s ease, background 0.2s ease;
         }
         .record-btn.is-recording {
-            border-color: #A23E2C;
-            background: rgba(162,62,44,0.06);
-            box-shadow: 0 0 0 6px rgba(162,62,44,0.08);
+            border-color: var(--c-rust);
+            background: rgb(var(--note-rust) / 0.08);
+            box-shadow: 0 0 0 6px rgb(var(--note-rust) / 0.1);
         }
         .voice-mini-btn.is-recording {
-            border-color: #A23E2C;
-            background: rgba(162,62,44,0.08);
+            border-color: var(--c-rust);
+            background: rgb(var(--note-rust) / 0.1);
         }
 
-        textarea::placeholder { color: rgba(46,42,34,0.35); }
+        textarea::placeholder { color: rgb(var(--note-ink) / 0.35); }
 
         /* ---------- Feed postcards ---------- */
         .note-postcard {
-            background: #FBF7EC;
-            border: 1px solid rgba(46,42,34,0.10);
+            background: rgb(var(--note-card));
+            border: 1px solid rgb(var(--note-ink) / 0.10);
             border-left: 4px solid var(--c-rust);
             border-radius: 10px;
             padding: 14px 16px;
             margin-bottom: 12px;
-            box-shadow: 0 6px 14px -10px rgba(46,42,34,0.3);
+            box-shadow: 0 6px 14px -10px rgb(var(--note-ink) / 0.3);
             animation: settle 0.35s ease-out;
         }
         .note-postcard[data-entry="prayer"] { border-left-color: var(--c-sage); }
@@ -198,28 +228,22 @@
 
         /* ---------- Ticket-stub nav ---------- */
         .stub-nav {
-            background: #FBF7EC;
-            border-top: 1px dashed rgba(46,42,34,0.25);
-            box-shadow: 0 -8px 20px -14px rgba(46,42,34,0.35);
+            background: rgb(var(--note-card));
+            border-top: 1px dashed rgb(var(--note-ink) / 0.25);
+            box-shadow: 0 -8px 20px -14px rgb(var(--note-ink) / 0.35);
         }
-        .nav-btn { color: rgba(46,42,34,0.4); }
-        .nav-btn.active-nav { color: #2E2A22; }
+        .nav-btn { color: rgb(var(--note-ink) / 0.4); }
+        .nav-btn.active-nav { color: rgb(var(--note-ink)); }
         .nav-underline {
             width: 0%;
             height: 2px;
-            background: #A23E2C;
+            background: var(--c-rust);
             transition: width 0.2s ease;
             margin-top: 4px;
         }
         .nav-btn.active-nav .nav-underline { width: 60%; }
 
         ::-webkit-scrollbar { width: 0px; }
-
-        :root {
-            --c-rust: #A23E2C;
-            --c-sage: #5C7A5E;
-            --c-gold: #B9862F;
-        }
 
         @media (prefers-reduced-motion: reduce) {
             .note-card, .note-postcard, .chosen-heart { animation: none !important; }
@@ -235,10 +259,16 @@
                 <p class="font-display italic text-[26px] leading-none text-note-ink">Our Space</p>
                 <p class="text-[10px] text-note-inkSoft mt-1.5 font-mono uppercase tracking-[0.15em]" id="greeting">Sealed with us</p>
             </div>
-            <select id="user-identity" class="text-[11px] font-mono uppercase tracking-wide text-note-ink bg-note-paperDeep/60 border border-note-ink/15 rounded-full px-3 py-1.5 outline-none">
-                <option value="Motolani">I am Motolani</option>
-                <option value="Zusi">I am Zusi</option>
-            </select>
+            <div class="flex items-center gap-2">
+                <button id="theme-toggle" aria-label="Toggle dark mode" class="w-8 h-8 rounded-full bg-note-paperDeep/60 border border-note-ink/15 flex items-center justify-center text-note-ink/70 shrink-0">
+                    <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>
+                    <svg id="icon-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M12 3v1.5M12 19.5V21M4.22 4.22l1.06 1.06M18.72 18.72l1.06 1.06M3 12h1.5M19.5 12H21M4.22 19.78l1.06-1.06M18.72 5.28l1.06-1.06M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"></path></svg>
+                </button>
+                <select id="user-identity" class="text-[11px] font-mono uppercase tracking-wide text-note-ink bg-note-paperDeep/60 border border-note-ink/15 rounded-full px-3 py-1.5 outline-none">
+                    <option value="Motolani">I am Motolani</option>
+                    <option value="Zusi">I am Zusi</option>
+                </select>
+            </div>
         </div>
     </header>
 
@@ -367,6 +397,32 @@
             });
             document.getElementById(`tab-${tabId}`).classList.add('active-nav');
         };
+
+        // --- THEME (LIGHT / DARK) ---
+        const rootEl = document.documentElement;
+        const themeToggle = document.getElementById('theme-toggle');
+        const iconMoon = document.getElementById('icon-moon');
+        const iconSun = document.getElementById('icon-sun');
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+        const applyTheme = (mode) => {
+            rootEl.classList.toggle('dark', mode === 'dark');
+            iconMoon.classList.toggle('hidden', mode === 'dark');
+            iconSun.classList.toggle('hidden', mode !== 'dark');
+            localStorage.setItem('our_space_theme', mode);
+            if (themeMeta) {
+                const rgb = getComputedStyle(rootEl).getPropertyValue('--note-paper').trim().split(/\s+/);
+                if (rgb.length === 3) themeMeta.setAttribute('content', `rgb(${rgb.join(',')})`);
+            }
+        };
+
+        const storedTheme = localStorage.getItem('our_space_theme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(storedTheme || (prefersDark ? 'dark' : 'light'));
+
+        themeToggle.addEventListener('click', () => {
+            applyTheme(rootEl.classList.contains('dark') ? 'light' : 'dark');
+        });
 
         // --- IDENTITY MANAGEMENT ---
         const identitySelect = document.getElementById('user-identity');
