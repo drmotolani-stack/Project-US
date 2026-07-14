@@ -9,11 +9,11 @@
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#4B3A63">
+    <meta name="theme-color" content="#F4ECDA">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&family=Karla:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -21,21 +21,21 @@
             theme: {
                 extend: {
                     colors: {
-                        dusk: {
-                            deep: '#3D3159',
-                            plum: '#5A4470',
-                            mauve: '#8C6A8B',
-                            rose: '#C88A93',
-                            peach: '#F0C6A0',
-                            gold: '#E3B274',
-                            ink: '#3A2E4D',
-                            sage: '#7FA98A',
-                            mist: '#FBF6F1'
+                        note: {
+                            paper: '#F4ECDA',
+                            paperDeep: '#E7DBBD',
+                            card: '#FBF7EC',
+                            ink: '#2E2A22',
+                            inkSoft: '#6E6252',
+                            rust: '#A23E2C',
+                            sage: '#5C7A5E',
+                            gold: '#B9862F'
                         }
                     },
                     fontFamily: {
                         display: ['"Fraunces"', 'serif'],
-                        body: ['"Outfit"', 'sans-serif']
+                        body: ['"Karla"', 'sans-serif'],
+                        mono: ['"Space Mono"', 'monospace']
                     }
                 }
             }
@@ -46,206 +46,255 @@
         * { -webkit-tap-highlight-color: transparent; }
 
         html, body {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Karla', sans-serif;
             height: 100%;
+            background: #F4ECDA;
         }
 
         .font-display { font-family: 'Fraunces', serif; }
+        .font-mono { font-family: 'Space Mono', monospace; }
 
-        /* ---------- Dreamy sky backdrop ---------- */
-        .sky {
+        /* ---------- Paper grain (subtle, single texture pass) ---------- */
+        body::before {
+            content: '';
             position: fixed;
             inset: 0;
             z-index: 0;
-            background: linear-gradient(180deg,
-                #3D3159 0%,
-                #5A4470 24%,
-                #8C6A8B 52%,
-                #C88A93 74%,
-                #F0C6A0 100%);
-            overflow: hidden;
+            pointer-events: none;
+            opacity: 0.05;
+            mix-blend-mode: multiply;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
         }
 
-        .sky::before {
-            /* soft horizon glow */
-            content: '';
-            position: absolute;
-            bottom: -20%;
-            left: 50%;
-            width: 140%;
-            height: 60%;
-            transform: translateX(-50%);
-            background: radial-gradient(ellipse at center, rgba(255,224,178,0.55) 0%, rgba(255,224,178,0) 65%);
-            filter: blur(10px);
-        }
-
-        .stars {
-            position: absolute;
-            inset: 0;
-            background-repeat: repeat;
-            opacity: 0.9;
-        }
-        .stars span {
-            position: absolute;
-            display: block;
-            border-radius: 50%;
-            background: #FBF6F1;
-            animation: twinkle 4.5s ease-in-out infinite;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.15; transform: scale(0.8); }
-            50% { opacity: 0.95; transform: scale(1.15); }
-        }
-
-        .moon {
-            position: absolute;
-            top: 6%;
-            right: 12%;
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #FFF9EE, #F3DFB0 60%, #E3B274 100%);
-            box-shadow: 0 0 40px 10px rgba(243, 223, 176, 0.45);
-            opacity: 0.9;
-        }
-
-        /* ---------- Glass surfaces ---------- */
-        .glass {
-            background: linear-gradient(155deg, rgba(255,255,255,0.62), rgba(255,255,255,0.32));
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid rgba(255,255,255,0.55);
-            box-shadow: 0 10px 34px -6px rgba(58, 46, 77, 0.28), inset 0 1px 0 rgba(255,255,255,0.5);
-        }
-
-        .glass-deep {
-            background: linear-gradient(155deg, rgba(58,46,77,0.55), rgba(58,46,77,0.35));
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.18);
-            box-shadow: 0 10px 34px -6px rgba(20, 14, 30, 0.4);
-        }
-
-        /* ---------- Signature: breathing choose button ---------- */
-        .breathe-btn {
+        /* ---------- Note cards (replace uniform glass panels) ---------- */
+        .note-card {
             position: relative;
-            background: linear-gradient(135deg, #E3B274, #C88A93);
-            box-shadow: 0 0 0 0 rgba(227, 178, 116, 0.55);
-            animation: breathe 3.6s ease-in-out infinite;
+            background: #FBF7EC;
+            border: 1px solid rgba(46,42,34,0.10);
+            border-radius: 14px;
+            padding: 26px 22px 22px;
+            box-shadow: 0 10px 24px -12px rgba(46,42,34,0.28), 0 1px 0 rgba(255,255,255,0.6) inset;
+            transform: rotate(var(--rot, 0deg));
+            animation: settle 0.5s ease-out;
         }
-        @keyframes breathe {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(227, 178, 116, 0.45), 0 8px 24px -4px rgba(200,138,147,0.5); }
-            50% { box-shadow: 0 0 0 14px rgba(227, 178, 116, 0), 0 8px 24px -4px rgba(200,138,147,0.5); }
+        @keyframes settle {
+            0% { opacity: 0; transform: rotate(var(--rot, 0deg)) translateY(8px); }
+            100% { opacity: 1; transform: rotate(var(--rot, 0deg)) translateY(0); }
         }
 
-        .chosen-heart {
-            animation: rise-fade 0.6s ease-out;
+        /* washi-tape accent, color set per-card via --tape */
+        .washi {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            width: 56px;
+            height: 20px;
+            transform: translateX(-50%) rotate(-3deg);
+            background-color: color-mix(in srgb, var(--tape, #A23E2C) 78%, white);
+            background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.35) 0 4px, transparent 4px 9px);
+            opacity: 0.9;
+            border-radius: 2px;
+            box-shadow: 0 3px 5px -2px rgba(46,42,34,0.35);
         }
+
+        /* ---------- Wax seal press button ---------- */
+        .seal-btn {
+            position: relative;
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 32% 28%, #C1543D, #A23E2C 55%, #7E2E20 100%);
+            box-shadow: 0 10px 20px -6px rgba(162,62,44,0.55), inset 0 2px 4px rgba(255,255,255,0.25), inset 0 -6px 10px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .seal-btn:active {
+            transform: scale(0.94) translateY(2px);
+            box-shadow: 0 4px 10px -4px rgba(162,62,44,0.5), inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -3px 6px rgba(0,0,0,0.3);
+        }
+        .seal-rings {
+            position: absolute;
+            inset: 10px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.28);
+            box-shadow: 0 0 0 6px rgba(255,255,255,0.08), 0 0 0 12px rgba(255,255,255,0.05);
+        }
+        .seal-mono {
+            color: #F6E3D3;
+            font-size: 15px;
+            letter-spacing: 0.02em;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.35);
+        }
+
+        /* postmark stamp shown once chosen */
+        .postmark {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: #A23E2C;
+            border: 2px solid #A23E2C;
+            border-radius: 999px;
+            padding: 5px 16px;
+            transform: rotate(-4deg);
+            opacity: 0.9;
+        }
+        .chosen-heart { animation: rise-fade 0.5s ease-out; }
         @keyframes rise-fade {
-            0% { opacity: 0; transform: translateY(6px) scale(0.9); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            0% { opacity: 0; transform: translateY(6px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
 
-        /* ---------- Record button glow while active ---------- */
+        /* ---------- Record (voice) buttons ---------- */
+        .capsule-btn {
+            width: 100%;
+            border: 2px dashed rgba(46,42,34,0.22);
+            border-radius: 12px;
+            padding: 30px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(46,42,34,0.55);
+            touch-action: none;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
         .record-btn.is-recording {
-            box-shadow: 0 0 0 8px rgba(200, 138, 147, 0.18);
+            border-color: #A23E2C;
+            background: rgba(162,62,44,0.06);
+            box-shadow: 0 0 0 6px rgba(162,62,44,0.08);
+        }
+        .voice-mini-btn.is-recording {
+            border-color: #A23E2C;
+            background: rgba(162,62,44,0.08);
         }
 
-        /* ---------- Nav pill ---------- */
-        .nav-pill {
-            background: linear-gradient(155deg, rgba(255,255,255,0.75), rgba(255,255,255,0.5));
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.6);
-            box-shadow: 0 12px 30px -8px rgba(58,46,77,0.35);
-        }
+        textarea::placeholder { color: rgba(46,42,34,0.35); }
 
-        .nav-btn.active-nav {
-            color: #3A2E4D;
+        /* ---------- Feed postcards ---------- */
+        .note-postcard {
+            background: #FBF7EC;
+            border: 1px solid rgba(46,42,34,0.10);
+            border-left: 4px solid var(--c-rust);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 6px 14px -10px rgba(46,42,34,0.3);
+            animation: settle 0.35s ease-out;
         }
-        .nav-btn .nav-dot {
-            width: 4px; height: 4px; border-radius: 50%;
-            background: transparent;
-            margin-top: 3px;
-            transition: background 0.25s ease;
+        .note-postcard[data-entry="prayer"] { border-left-color: var(--c-sage); }
+        .note-postcard[data-entry="appreciation"] { border-left-color: var(--c-gold); }
+        .note-postcard[data-entry="capsule"] { border-left-color: var(--c-rust); }
+
+        .stamp-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            display: inline-block;
+            background: var(--c-rust);
         }
-        .nav-btn.active-nav .nav-dot {
-            background: #C88A93;
+        .note-postcard[data-entry="prayer"] .stamp-dot { background: var(--c-sage); }
+        .note-postcard[data-entry="appreciation"] .stamp-dot { background: var(--c-gold); }
+        .note-postcard[data-entry="capsule"] .stamp-dot { background: var(--c-rust); }
+
+        /* ---------- Ticket-stub nav ---------- */
+        .stub-nav {
+            background: #FBF7EC;
+            border-top: 1px dashed rgba(46,42,34,0.25);
+            box-shadow: 0 -8px 20px -14px rgba(46,42,34,0.35);
         }
+        .nav-btn { color: rgba(46,42,34,0.4); }
+        .nav-btn.active-nav { color: #2E2A22; }
+        .nav-underline {
+            width: 0%;
+            height: 2px;
+            background: #A23E2C;
+            transition: width 0.2s ease;
+            margin-top: 4px;
+        }
+        .nav-btn.active-nav .nav-underline { width: 60%; }
 
         ::-webkit-scrollbar { width: 0px; }
 
-        textarea::placeholder { color: rgba(58,46,77,0.4); }
+        :root {
+            --c-rust: #A23E2C;
+            --c-sage: #5C7A5E;
+            --c-gold: #B9862F;
+        }
 
         @media (prefers-reduced-motion: reduce) {
-            .breathe-btn, .stars span { animation: none !important; }
+            .note-card, .note-postcard, .chosen-heart { animation: none !important; }
         }
     </style>
 </head>
-<body class="text-dusk-ink antialiased selection:bg-dusk-rose selection:text-white select-none h-screen flex flex-col overflow-hidden relative">
-
-    <!-- Dreamy sky background -->
-    <div class="sky" aria-hidden="true">
-        <div class="moon"></div>
-        <div class="stars" id="star-field"></div>
-    </div>
+<body class="text-note-ink antialiased selection:bg-note-rust selection:text-white select-none h-screen flex flex-col overflow-hidden relative bg-note-paper">
 
     <!-- Top Bar -->
-    <header class="pt-7 pb-4 px-6 z-10 flex justify-between items-end shrink-0 relative">
-        <div>
-            <p class="font-display italic text-3xl tracking-wide text-dusk-mist drop-shadow-sm">Our Space</p>
-            <p class="text-xs text-dusk-mist/80 mt-1 font-body tracking-wide" id="greeting">A quiet place, just for us</p>
+    <header class="pt-6 pb-4 px-5 z-10 shrink-0 relative border-b border-note-ink/10">
+        <div class="flex justify-between items-end">
+            <div>
+                <p class="font-display italic text-[26px] leading-none text-note-ink">Our Space</p>
+                <p class="text-[10px] text-note-inkSoft mt-1.5 font-mono uppercase tracking-[0.15em]" id="greeting">Sealed with us</p>
+            </div>
+            <select id="user-identity" class="text-[11px] font-mono uppercase tracking-wide text-note-ink bg-note-paperDeep/60 border border-note-ink/15 rounded-full px-3 py-1.5 outline-none">
+                <option value="Motolani">I am Motolani</option>
+                <option value="Zusi">I am Zusi</option>
+            </select>
         </div>
-        <select id="user-identity" class="glass text-xs text-dusk-ink rounded-full px-3 py-1.5 outline-none font-body">
-            <option value="Motolani">I am Motolani</option>
-            <option value="Zusi">I am Zusi</option>
-        </select>
     </header>
 
     <!-- Scrollable Content Area -->
-    <main class="flex-1 overflow-y-auto px-5 pb-28 z-10 relative" id="main-content">
+    <main class="flex-1 overflow-y-auto px-5 pt-5 pb-28 z-10 relative" id="main-content">
 
         <!-- ================= TAB 1: HOME ================= -->
-        <div id="view-home" class="tab-view block space-y-5">
+        <div id="view-home" class="tab-view block space-y-6">
+
             <!-- Choose Again -->
-            <section class="glass p-7 rounded-[28px] text-center mt-1">
-                <p class="font-display italic text-lg text-dusk-ink/70 mb-4">Today</p>
-                <button id="choose-btn" class="breathe-btn text-white w-full py-4 rounded-2xl font-display italic text-lg tracking-wide active:scale-95 transition-transform">
-                    I choose you today
-                </button>
+            <section class="note-card text-center" style="--rot:-0.6deg; --tape:#A23E2C">
+                <span class="washi" aria-hidden="true"></span>
+                <p class="font-display italic text-[15px] text-note-inkSoft mb-5">Today</p>
+
+                <div class="flex flex-col items-center">
+                    <button id="choose-btn" class="seal-btn" aria-label="Press to choose each other today">
+                        <span class="seal-rings"></span>
+                        <span class="seal-mono font-display italic">M &#9825; Z</span>
+                    </button>
+                    <p class="mt-4 text-[13px] font-body text-note-inkSoft max-w-[220px] leading-snug">Press the seal to choose each other, again, today</p>
+                </div>
+
                 <div id="status-area" class="mt-5 hidden flex-col items-center chosen-heart">
-                    <p class="text-dusk-rose text-base font-display italic mb-1">love, chosen ❤</p>
-                    <p id="last-clicked-time" class="text-[11px] text-dusk-ink/50 font-body tracking-wide"></p>
+                    <span class="postmark">SEALED</span>
+                    <p id="last-clicked-time" class="text-[11px] text-note-inkSoft font-mono tracking-wide mt-3"></p>
                 </div>
             </section>
 
             <!-- Quick Voice Capsule -->
-            <section class="glass p-6 rounded-[28px]">
-                <p class="font-display italic text-lg text-dusk-ink/80 mb-4">Voice capsule</p>
-                <button class="record-btn w-full border-2 border-dashed border-dusk-plum/25 py-9 rounded-2xl flex flex-col items-center justify-center text-dusk-ink/50 transition-colors touch-none" data-type="capsule">
-                    <svg class="w-7 h-7 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                    <span class="pointer-events-none text-sm status-text font-body">Hold to record for Zusi</span>
+            <section class="note-card" style="--rot:0.5deg; --tape:#5C7A5E">
+                <span class="washi" aria-hidden="true"></span>
+                <p class="font-display italic text-[15px] text-note-ink mb-4">Voice capsule</p>
+                <button class="record-btn capsule-btn" data-type="capsule">
+                    <svg class="w-6 h-6 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <span class="pointer-events-none status-text font-mono text-[11px] uppercase tracking-wide">Hold to record for Zusi</span>
                 </button>
             </section>
         </div>
 
         <!-- ================= TAB 2: FEED ================= -->
         <div id="view-feed" class="tab-view hidden">
-            <p class="font-display italic text-xl text-dusk-mist mb-4 mt-1 drop-shadow-sm">Our timeline</p>
-            <div id="voice-feed" class="space-y-3 empty:hidden pb-10"></div>
+            <p class="font-display italic text-[20px] text-note-ink mb-4">Our timeline</p>
+            <div id="voice-feed" class="empty:hidden pb-10"></div>
         </div>
 
         <!-- ================= TAB 3: SHARED ================= -->
-        <div id="view-shared" class="tab-view hidden space-y-5 mt-1">
+        <div id="view-shared" class="tab-view hidden space-y-6">
 
             <!-- Appreciation Jar -->
-            <section class="glass p-5 rounded-[26px]">
-                <p class="font-display italic text-lg text-dusk-ink/80 mb-3">Appreciation jar</p>
-                <textarea id="appreciation-text" placeholder="Type something nice..." class="w-full text-sm p-3 bg-white/40 border border-white/60 rounded-xl mb-3 focus:outline-none focus:border-dusk-gold resize-none h-20 font-body text-dusk-ink placeholder:text-dusk-ink/40"></textarea>
+            <section class="note-card" style="--rot:-0.4deg; --tape:#B9862F">
+                <span class="washi" aria-hidden="true"></span>
+                <p class="font-display italic text-[15px] text-note-ink mb-3">Appreciation jar</p>
+                <textarea id="appreciation-text" placeholder="Type something nice..." class="w-full text-sm p-3 bg-note-paperDeep/40 border border-note-ink/15 rounded-[10px] mb-3 focus:outline-none focus:border-note-gold resize-none h-20 font-body text-note-ink placeholder:text-note-ink/40"></textarea>
                 <div class="flex gap-2">
-                    <button class="bg-dusk-ink/90 text-white px-4 py-3 rounded-xl text-sm font-medium flex-1 active:scale-95 transition-transform font-body" onclick="sendTextNote('appreciation')">Save text</button>
-                    <button class="record-btn bg-white/40 border border-white/60 px-4 py-3 rounded-xl flex-1 text-sm text-dusk-ink/70 touch-none flex justify-center items-center gap-2 font-body" data-type="appreciation">
+                    <button class="bg-note-ink text-note-paper px-4 py-3 rounded-[10px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body" onclick="sendTextNote('appreciation')">Save text</button>
+                    <button class="record-btn voice-mini-btn bg-note-paperDeep/40 border border-note-ink/15 px-4 py-3 rounded-[10px] flex-1 text-sm text-note-ink/70 flex justify-center items-center gap-2 font-body" data-type="appreciation">
                         <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                         <span class="pointer-events-none status-text">Hold (voice)</span>
                     </button>
@@ -253,12 +302,13 @@
             </section>
 
             <!-- Prayer Wall -->
-            <section class="glass p-5 rounded-[26px]">
-                <p class="font-display italic text-lg text-dusk-ink/80 mb-3">Prayer wall</p>
-                <textarea id="prayer-text" placeholder="Add a prayer request..." class="w-full text-sm p-3 bg-white/40 border border-white/60 rounded-xl mb-3 focus:outline-none focus:border-dusk-gold resize-none h-20 font-body text-dusk-ink placeholder:text-dusk-ink/40"></textarea>
+            <section class="note-card" style="--rot:0.4deg; --tape:#5C7A5E">
+                <span class="washi" aria-hidden="true"></span>
+                <p class="font-display italic text-[15px] text-note-ink mb-3">Prayer wall</p>
+                <textarea id="prayer-text" placeholder="Add a prayer request..." class="w-full text-sm p-3 bg-note-paperDeep/40 border border-note-ink/15 rounded-[10px] mb-3 focus:outline-none focus:border-note-sage resize-none h-20 font-body text-note-ink placeholder:text-note-ink/40"></textarea>
                 <div class="flex gap-2">
-                    <button class="bg-dusk-ink/90 text-white px-4 py-3 rounded-xl text-sm font-medium flex-1 active:scale-95 transition-transform font-body" onclick="sendTextNote('prayer')">Save text</button>
-                    <button class="record-btn bg-white/40 border border-white/60 px-4 py-3 rounded-xl flex-1 text-sm text-dusk-ink/70 touch-none flex justify-center items-center gap-2 font-body" data-type="prayer">
+                    <button class="bg-note-ink text-note-paper px-4 py-3 rounded-[10px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body" onclick="sendTextNote('prayer')">Save text</button>
+                    <button class="record-btn voice-mini-btn bg-note-paperDeep/40 border border-note-ink/15 px-4 py-3 rounded-[10px] flex-1 text-sm text-note-ink/70 flex justify-center items-center gap-2 font-body" data-type="prayer">
                         <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                         <span class="pointer-events-none status-text">Hold (voice)</span>
                     </button>
@@ -268,42 +318,23 @@
     </main>
 
     <!-- Bottom Navigation Bar -->
-    <nav class="absolute bottom-5 w-[calc(100%-2.5rem)] max-w-md left-1/2 -translate-x-1/2 nav-pill px-6 py-3.5 flex justify-between items-center text-dusk-ink/40 rounded-full z-20 font-body">
-        <button onclick="switchTab('home')" id="tab-home" class="nav-btn active-nav flex flex-col items-center gap-1">
+    <nav class="absolute bottom-0 w-full stub-nav px-8 py-3.5 flex justify-between items-center z-20 font-body">
+        <button onclick="switchTab('home')" id="tab-home" class="nav-btn active-nav flex flex-col items-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span class="text-[10px] font-medium">Home</span>
-            <span class="nav-dot"></span>
+            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Home</span>
+            <span class="nav-underline"></span>
         </button>
-        <button onclick="switchTab('feed')" id="tab-feed" class="nav-btn flex flex-col items-center gap-1 transition-colors">
+        <button onclick="switchTab('feed')" id="tab-feed" class="nav-btn flex flex-col items-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-            <span class="text-[10px] font-medium">Timeline</span>
-            <span class="nav-dot"></span>
+            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Timeline</span>
+            <span class="nav-underline"></span>
         </button>
-        <button onclick="switchTab('shared')" id="tab-shared" class="nav-btn flex flex-col items-center gap-1 transition-colors">
+        <button onclick="switchTab('shared')" id="tab-shared" class="nav-btn flex flex-col items-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-            <span class="text-[10px] font-medium">Shared</span>
-            <span class="nav-dot"></span>
+            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Shared</span>
+            <span class="nav-underline"></span>
         </button>
     </nav>
-
-    <!-- Generate scattered stars -->
-    <script>
-        (function seedStars() {
-            const field = document.getElementById('star-field');
-            const count = 46;
-            for (let i = 0; i < count; i++) {
-                const s = document.createElement('span');
-                const size = Math.random() * 2 + 1;
-                s.style.width = size + 'px';
-                s.style.height = size + 'px';
-                s.style.left = Math.random() * 100 + '%';
-                s.style.top = Math.random() * 55 + '%';
-                s.style.animationDelay = (Math.random() * 4) + 's';
-                s.style.animationDuration = (3 + Math.random() * 3) + 's';
-                field.appendChild(s);
-            }
-        })();
-    </script>
 
     <!-- Firebase SDKs -->
     <script type="module">
@@ -333,9 +364,7 @@
 
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active-nav');
-                btn.classList.add('text-dusk-ink/40');
             });
-            document.getElementById(`tab-${tabId}`).classList.remove('text-dusk-ink/40');
             document.getElementById(`tab-${tabId}`).classList.add('active-nav');
         };
 
@@ -345,7 +374,7 @@
         identitySelect.value = currentUser;
 
         const greetingEl = document.getElementById('greeting');
-        const dreamyGreetings = ['A quiet place, just for us', 'Still here, still choosing you', 'Softly, always yours'];
+        const dreamyGreetings = ['Sealed with us', 'Still choosing you', 'Kept safe here'];
 
         const updateIdentity = () => {
             currentUser = identitySelect.value;
@@ -393,12 +422,12 @@
 
         chooseBtn.addEventListener('click', async () => {
             chooseBtn.disabled = true;
-            chooseBtn.innerText = "Syncing...";
+            chooseBtn.innerText = "...";
             try {
                 await addDoc(collection(db, "choose_events"), { timestamp: serverTimestamp(), user: currentUser });
             } catch (error) {
                 console.error(error);
-                chooseBtn.innerText = "Error - Try again";
+                chooseBtn.innerText = "retry";
                 chooseBtn.disabled = false;
             }
         });
@@ -412,7 +441,7 @@
                     chooseBtn.classList.add('hidden');
                     statusArea.classList.remove('hidden');
                     statusArea.classList.add('flex');
-                    timeDisplay.innerText = `Last pressed: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                    timeDisplay.innerText = `Last sealed: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 }
             });
         });
@@ -440,7 +469,7 @@
                         audioChunks = [];
                         stream.getTracks().forEach(track => track.stop());
 
-                        if (statusText) statusText.innerText = "Uploading to Storage...";
+                        if (statusText) statusText.innerText = "Uploading...";
                         btn.classList.remove('is-recording');
 
                         try {
@@ -514,26 +543,27 @@
                 let statusHtml = '';
                 if (isMine && data.format === 'audio') {
                     statusHtml = hasBeenPlayed
-                        ? `<span class="text-dusk-sage text-xs font-bold tracking-tighter ml-1">seen</span>`
-                        : `<span class="text-dusk-ink/40 text-xs ml-1">sent</span>`;
+                        ? `<span class="text-note-sage font-bold ml-1">seen</span>`
+                        : `<span class="text-note-inkSoft/60 ml-1">sent</span>`;
                 }
 
                 let contentHtml = '';
                 if (data.format === 'text') {
-                    contentHtml = `<div class="mt-2 text-sm text-dusk-ink font-body bg-white/50 p-3 rounded-xl border border-white/60">${data.content}</div>`;
+                    contentHtml = `<div class="mt-2 text-sm text-note-ink font-body bg-note-paperDeep/40 p-3 rounded-[8px] border border-note-ink/10">${data.content}</div>`;
                 } else {
                     contentHtml = `<audio src="${data.url}" controls class="w-full mt-2" id="audio-${docId}"></audio>`;
                 }
 
                 const itemHtml = `
-                    <div class="glass rounded-2xl p-4 mb-3">
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-[11px] font-semibold text-dusk-ink/70 uppercase tracking-wider font-body">${data.type}</span>
-                            <span class="text-[10px] text-dusk-ink/50 bg-white/50 px-2 py-1 rounded-md border border-white/60 font-body">
-                                ${dateStr} • ${timeStr} ${statusHtml}
+                    <div class="note-postcard" data-entry="${data.type}">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="flex items-center gap-1.5">
+                                <span class="stamp-dot" aria-hidden="true"></span>
+                                <span class="text-[10px] font-mono uppercase tracking-wide text-note-ink/80">${data.type}</span>
                             </span>
+                            <span class="text-[10px] font-mono text-note-inkSoft">${dateStr} &middot; ${timeStr} ${statusHtml}</span>
                         </div>
-                        <div class="text-xs text-dusk-ink/50 font-medium mb-1 font-body">${data.sender}</div>
+                        <div class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/80">${data.sender}</div>
                         ${contentHtml}
                     </div>
                 `;
