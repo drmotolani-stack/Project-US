@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Space</title>
 
-    <!-- Web App Manifest & Mobile Setup -->
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -29,7 +28,9 @@
                             inkSoft: 'rgb(var(--note-inkSoft) / <alpha-value>)',
                             rust: 'rgb(var(--note-rust) / <alpha-value>)',
                             sage: 'rgb(var(--note-sage) / <alpha-value>)',
-                            gold: 'rgb(var(--note-gold) / <alpha-value>)'
+                            gold: 'rgb(var(--note-gold) / <alpha-value>)',
+                            plum: 'rgb(var(--note-plum) / <alpha-value>)',
+                            rose: 'rgb(var(--note-rose) / <alpha-value>)'
                         }
                     },
                     fontFamily: {
@@ -54,9 +55,13 @@
             --note-rust: 162 62 44;
             --note-sage: 92 122 94;
             --note-gold: 185 134 47;
+            --note-plum: 108 91 123;
+            --note-rose: 179 90 100;
             --c-rust: rgb(var(--note-rust));
             --c-sage: rgb(var(--note-sage));
             --c-gold: rgb(var(--note-gold));
+            --c-plum: rgb(var(--note-plum));
+            --c-rose: rgb(var(--note-rose));
             --note-sheen: 0.5;
             color-scheme: light;
         }
@@ -70,6 +75,8 @@
             --note-rust: 224 110 84;
             --note-sage: 143 176 143;
             --note-gold: 222 178 96;
+            --note-plum: 176 156 194;
+            --note-rose: 214 140 148;
             --note-sheen: 0.05;
             color-scheme: dark;
         }
@@ -84,7 +91,6 @@
         .font-display { font-family: 'Fraunces', serif; }
         .font-mono { font-family: 'Space Mono', monospace; }
 
-        /* ---------- Paper grain (subtle, single texture pass) ---------- */
         body::before {
             content: '';
             position: fixed;
@@ -96,7 +102,6 @@
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
         }
 
-        /* ---------- Note cards (replace uniform glass panels) ---------- */
         .note-card {
             position: relative;
             background: rgb(var(--note-card));
@@ -112,7 +117,6 @@
             100% { opacity: 1; transform: rotate(var(--rot, 0deg)) translateY(0); }
         }
 
-        /* washi-tape accent, color set per-card via --tape */
         .washi {
             position: absolute;
             top: -10px;
@@ -127,7 +131,6 @@
             box-shadow: 0 3px 5px -2px rgb(var(--note-ink) / 0.35);
         }
 
-        /* ---------- Wax seal press button ---------- */
         .seal-btn {
             position: relative;
             width: 108px;
@@ -158,7 +161,6 @@
             text-shadow: 0 1px 1px rgba(0,0,0,0.35);
         }
 
-        /* postmark stamp shown once chosen */
         .postmark {
             font-family: 'Space Mono', monospace;
             font-size: 11px;
@@ -176,7 +178,6 @@
             100% { opacity: 1; transform: translateY(0); }
         }
 
-        /* ---------- Record (voice) buttons ---------- */
         .capsule-btn {
             width: 100%;
             border: 2px dashed rgb(var(--note-ink) / 0.22);
@@ -202,7 +203,6 @@
 
         textarea::placeholder { color: rgb(var(--note-ink) / 0.35); }
 
-        /* ---------- Feed postcards ---------- */
         .note-postcard {
             background: rgb(var(--note-card));
             border: 1px solid rgb(var(--note-ink) / 0.10);
@@ -216,6 +216,8 @@
         .note-postcard[data-entry="prayer"] { border-left-color: var(--c-sage); }
         .note-postcard[data-entry="appreciation"] { border-left-color: var(--c-gold); }
         .note-postcard[data-entry="capsule"] { border-left-color: var(--c-rust); }
+        .note-postcard[data-entry="mood"] { border-left-color: var(--c-plum); }
+        .note-postcard[data-entry="thinking-of-you"] { border-left-color: var(--c-rose); }
 
         .stamp-dot {
             width: 8px; height: 8px; border-radius: 50%;
@@ -225,8 +227,9 @@
         .note-postcard[data-entry="prayer"] .stamp-dot { background: var(--c-sage); }
         .note-postcard[data-entry="appreciation"] .stamp-dot { background: var(--c-gold); }
         .note-postcard[data-entry="capsule"] .stamp-dot { background: var(--c-rust); }
+        .note-postcard[data-entry="mood"] .stamp-dot { background: var(--c-plum); }
+        .note-postcard[data-entry="thinking-of-you"] .stamp-dot { background: var(--c-rose); }
 
-        /* ---------- Ticket-stub nav ---------- */
         .stub-nav {
             background: rgb(var(--note-card));
             border-top: 1px dashed rgb(var(--note-ink) / 0.25);
@@ -244,6 +247,37 @@
         .nav-btn.active-nav .nav-underline { width: 60%; }
 
         ::-webkit-scrollbar { width: 0px; }
+
+        /* ---------- Mood grid ---------- */
+        .mood-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 12px 4px;
+            border-radius: 10px;
+            border: 1.5px solid rgb(var(--note-ink) / 0.12);
+            background: rgb(var(--note-paperDeep) / 0.35);
+            transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+        }
+        .mood-btn span.emoji { font-size: 20px; line-height: 1; }
+        .mood-btn span.label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: rgb(var(--note-inkSoft)); font-family: 'Space Mono', monospace; }
+        .mood-btn.selected {
+            border-color: var(--c-plum);
+            background: rgb(var(--note-plum) / 0.12);
+            transform: scale(1.04);
+        }
+
+        .mini-mood-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgb(var(--note-paperDeep) / 0.5);
+            border: 1px solid rgb(var(--note-ink) / 0.10);
+            border-radius: 999px;
+            padding: 6px 12px;
+        }
 
         @media (prefers-reduced-motion: reduce) {
             .note-card, .note-postcard, .chosen-heart { animation: none !important; }
@@ -275,8 +309,10 @@
     <!-- Scrollable Content Area -->
     <main class="flex-1 overflow-y-auto px-5 pt-5 pb-28 z-10 relative" id="main-content">
 
-        <!-- ================= TAB 1: HOME ================= -->
+        <!-- ================= TAB 1: US (home) ================= -->
         <div id="view-home" class="tab-view block space-y-6">
+
+            <p id="today-date" class="text-center font-mono text-[11px] uppercase tracking-[0.15em] text-note-inkSoft"></p>
 
             <!-- Choose Again -->
             <section class="note-card text-center" style="--rot:-0.6deg; --tape:#A23E2C">
@@ -297,6 +333,35 @@
                 </div>
             </section>
 
+            <!-- How are we -->
+            <section class="note-card" style="--rot:0.4deg; --tape:#6C5B7B">
+                <span class="washi" aria-hidden="true"></span>
+                <p class="font-display italic text-[15px] text-note-ink mb-4">How are we?</p>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-1.5">Motolani</p>
+                        <div id="mood-mini-Motolani" class="mini-mood-pill text-sm">
+                            <span class="text-note-inkSoft/50">No mood yet</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-1.5">Zusi</p>
+                        <div id="mood-mini-Zusi" class="mini-mood-pill text-sm">
+                            <span class="text-note-inkSoft/50">No mood yet</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent from partner -->
+            <section class="note-card" style="--rot:-0.3deg; --tape:#B35A64">
+                <span class="washi" aria-hidden="true"></span>
+                <p class="font-display italic text-[15px] text-note-ink mb-3"><span id="recent-from-label">Recent</span></p>
+                <div id="recent-from-partner" class="text-sm text-note-inkSoft">
+                    Nothing yet — be the first to leave something.
+                </div>
+            </section>
+
             <!-- Quick Voice Capsule -->
             <section class="note-card" style="--rot:0.5deg; --tape:#5C7A5E">
                 <span class="washi" aria-hidden="true"></span>
@@ -308,13 +373,54 @@
             </section>
         </div>
 
-        <!-- ================= TAB 2: FEED ================= -->
+        <!-- ================= TAB 2: FEEL ================= -->
+        <div id="view-feel" class="tab-view hidden space-y-6">
+
+            <!-- Mood check-in -->
+            <section class="note-card" style="--rot:-0.4deg; --tape:#6C5B7B">
+                <span class="washi" aria-hidden="true"></span>
+                <p class="font-display italic text-[15px] text-note-ink mb-1">How are you feeling?</p>
+                <p class="text-[12px] text-note-inkSoft mb-4">Tap one — you can say more after</p>
+
+                <div id="mood-grid" class="grid grid-cols-3 gap-2 mb-4">
+                    <!-- filled by JS -->
+                </div>
+
+                <div id="mood-detail" class="hidden">
+                    <textarea id="mood-text" placeholder="Want to say more? (optional)" class="w-full text-sm p-3 bg-note-paperDeep/40 border border-note-ink/15 rounded-[10px] mb-3 focus:outline-none focus:border-note-plum resize-none h-16 font-body text-note-ink placeholder:text-note-ink/40"></textarea>
+                    <div class="flex gap-2">
+                        <button id="mood-save-btn" class="bg-note-ink text-note-paper px-4 py-3 rounded-[10px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body">Save mood</button>
+                        <button class="record-btn voice-mini-btn bg-note-paperDeep/40 border border-note-ink/15 px-4 py-3 rounded-[10px] flex-1 text-sm text-note-ink/70 flex justify-center items-center gap-2 font-body" data-type="mood">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                            <span class="pointer-events-none status-text">Hold (voice)</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Something I want you to know -->
+            <section class="note-card" style="--rot:0.3deg; --tape:#B35A64">
+                <span class="washi" aria-hidden="true"></span>
+                <p class="font-display italic text-[15px] text-note-ink mb-1">Something I want you to know</p>
+                <p class="text-[12px] text-note-inkSoft mb-3">For the things too small for a whole conversation</p>
+                <textarea id="tender-text" placeholder="Say it here..." class="w-full text-sm p-3 bg-note-paperDeep/40 border border-note-ink/15 rounded-[10px] mb-3 focus:outline-none focus:border-note-rose resize-none h-20 font-body text-note-ink placeholder:text-note-ink/40"></textarea>
+                <div class="flex gap-2">
+                    <button class="bg-note-ink text-note-paper px-4 py-3 rounded-[10px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body" onclick="sendTextNote('thinking-of-you')">Save</button>
+                    <button class="record-btn voice-mini-btn bg-note-paperDeep/40 border border-note-ink/15 px-4 py-3 rounded-[10px] flex-1 text-sm text-note-ink/70 flex justify-center items-center gap-2 font-body" data-type="thinking-of-you">
+                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        <span class="pointer-events-none status-text">Hold (voice)</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================= TAB 3: TIMELINE ================= -->
         <div id="view-feed" class="tab-view hidden">
             <p class="font-display italic text-[20px] text-note-ink mb-4">Our timeline</p>
             <div id="voice-feed" class="empty:hidden pb-10"></div>
         </div>
 
-        <!-- ================= TAB 3: SHARED ================= -->
+        <!-- ================= TAB 4: SHARED ================= -->
         <div id="view-shared" class="tab-view hidden space-y-6">
 
             <!-- Appreciation Jar -->
@@ -348,10 +454,15 @@
     </main>
 
     <!-- Bottom Navigation Bar -->
-    <nav class="absolute bottom-0 w-full stub-nav px-8 py-3.5 flex justify-between items-center z-20 font-body">
+    <nav class="absolute bottom-0 w-full stub-nav px-5 py-3.5 flex justify-between items-center z-20 font-body">
         <button onclick="switchTab('home')" id="tab-home" class="nav-btn active-nav flex flex-col items-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Home</span>
+            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Us</span>
+            <span class="nav-underline"></span>
+        </button>
+        <button onclick="switchTab('feel')" id="tab-feel" class="nav-btn flex flex-col items-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Feel</span>
             <span class="nav-underline"></span>
         </button>
         <button onclick="switchTab('feed')" id="tab-feed" class="nav-btn flex flex-col items-center">
@@ -360,7 +471,7 @@
             <span class="nav-underline"></span>
         </button>
         <button onclick="switchTab('shared')" id="tab-shared" class="nav-btn flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M9 12h6m-6 4h6M9 8h1m-4 12h12a2 2 0 002-2V6a2 2 0 00-2-2H8L4 8v10a2 2 0 002 2z"></path></svg>
             <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Shared</span>
             <span class="nav-underline"></span>
         </button>
@@ -372,7 +483,6 @@
         import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-        // Your exact Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDRB-cRm-iX6nXP_5-hF5ACelpqtvx-Bgo",
             authDomain: "project-us-15aa0.firebaseapp.com",
@@ -387,6 +497,28 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
+        const MOODS = [
+            { emoji: '❤️', label: 'Loved' },
+            { emoji: '🥰', label: 'Happy' },
+            { emoji: '😔', label: 'Sad' },
+            { emoji: '😤', label: 'Frustrated' },
+            { emoji: '🫠', label: 'Overwhelmed' },
+            { emoji: '🥹', label: 'Missing you' },
+            { emoji: '😌', label: 'Peaceful' },
+            { emoji: '🔥', label: 'Excited' },
+            { emoji: '🤍', label: 'Grateful' }
+        ];
+
+        const TYPE_LABELS = {
+            prayer: 'prayer',
+            appreciation: 'appreciation',
+            capsule: 'capsule',
+            mood: 'mood',
+            'thinking-of-you': 'for you'
+        };
+
+        let selectedMood = null; // { emoji, label }
+
         // --- TAB NAVIGATION ---
         window.switchTab = (tabId) => {
             document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
@@ -397,6 +529,10 @@
             });
             document.getElementById(`tab-${tabId}`).classList.add('active-nav');
         };
+
+        // --- TODAY'S DATE ---
+        document.getElementById('today-date').innerText =
+            new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
 
         // --- THEME (LIGHT / DARK) ---
         const rootEl = document.documentElement;
@@ -431,6 +567,7 @@
 
         const greetingEl = document.getElementById('greeting');
         const dreamyGreetings = ['Sealed with us', 'Still choosing you', 'Kept safe here'];
+        const recentFromLabel = document.getElementById('recent-from-label');
 
         const updateIdentity = () => {
             currentUser = identitySelect.value;
@@ -439,14 +576,62 @@
             const capsuleText = document.querySelector('#view-home .status-text');
             if (capsuleText) capsuleText.innerText = `Hold to record for ${otherPerson}`;
             if (greetingEl) greetingEl.innerText = dreamyGreetings[Math.floor(Math.random() * dreamyGreetings.length)];
+            if (recentFromLabel) recentFromLabel.innerText = `Recent from ${otherPerson}`;
         };
 
         identitySelect.addEventListener('change', updateIdentity);
         updateIdentity();
 
-        // --- FEATURE: TEXT NOTES (PRAYER/APPRECIATION) ---
+        // --- MOOD GRID (FEEL TAB) ---
+        const moodGrid = document.getElementById('mood-grid');
+        const moodDetail = document.getElementById('mood-detail');
+        const moodTextInput = document.getElementById('mood-text');
+        const moodSaveBtn = document.getElementById('mood-save-btn');
+
+        MOODS.forEach(m => {
+            const btn = document.createElement('button');
+            btn.className = 'mood-btn';
+            btn.innerHTML = `<span class="emoji">${m.emoji}</span><span class="label">${m.label}</span>`;
+            btn.addEventListener('click', () => {
+                selectedMood = m;
+                document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                moodDetail.classList.remove('hidden');
+            });
+            moodGrid.appendChild(btn);
+        });
+
+        moodSaveBtn.addEventListener('click', async () => {
+            if (!selectedMood) return;
+            moodSaveBtn.disabled = true;
+            moodSaveBtn.innerText = 'Saving...';
+            try {
+                await addDoc(collection(db, "voice_notes"), {
+                    format: 'text',
+                    type: 'mood',
+                    mood: selectedMood.label,
+                    emoji: selectedMood.emoji,
+                    content: moodTextInput.value.trim(),
+                    sender: currentUser,
+                    timestamp: serverTimestamp()
+                });
+                moodTextInput.value = '';
+                document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+                moodDetail.classList.add('hidden');
+                selectedMood = null;
+                switchTab('feed');
+            } catch (err) {
+                console.error('Mood save failed:', err);
+                alert('Could not save mood. Check your connection.');
+            }
+            moodSaveBtn.disabled = false;
+            moodSaveBtn.innerText = 'Save mood';
+        });
+
+        // --- FEATURE: TEXT NOTES (PRAYER / APPRECIATION / THINKING-OF-YOU) ---
         window.sendTextNote = async (type) => {
-            const input = document.getElementById(`${type}-text`);
+            const inputId = type === 'thinking-of-you' ? 'tender-text' : `${type}-text`;
+            const input = document.getElementById(inputId);
             if (!input.value.trim()) return;
 
             const textContent = input.value;
@@ -514,6 +699,12 @@
                 const type = btn.getAttribute('data-type');
                 const statusText = btn.querySelector('.status-text');
 
+                // For mood voice notes, require a mood to be selected first
+                if (type === 'mood' && !selectedMood) {
+                    alert('Pick a mood first, then hold to add a voice note.');
+                    return;
+                }
+
                 try {
                     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder = new MediaRecorder(stream);
@@ -529,27 +720,38 @@
                         btn.classList.remove('is-recording');
 
                         try {
-                            // 1. Upload the raw audio file to Cloud Storage
                             const fileName = `voice_notes/${Date.now()}_${currentUser}.webm`;
                             const storageRef = ref(storage, fileName);
                             await uploadBytes(storageRef, audioBlob);
 
-                            // 2. Get the permanent URL for that file
                             const downloadUrl = await getDownloadURL(storageRef);
 
-                            // 3. Save that URL to Firestore so the feed can display it
-                            await addDoc(collection(db, "voice_notes"), {
+                            const docPayload = {
                                 format: 'audio',
                                 url: downloadUrl,
                                 sender: currentUser,
                                 type: type,
                                 playedBy: [],
                                 timestamp: serverTimestamp()
-                            });
+                            };
+
+                            if (type === 'mood' && selectedMood) {
+                                docPayload.mood = selectedMood.label;
+                                docPayload.emoji = selectedMood.emoji;
+                            }
+
+                            await addDoc(collection(db, "voice_notes"), docPayload);
 
                             if (statusText) statusText.innerText = "Sent";
                             setTimeout(() => {
-                                if (statusText) updateIdentity();
+                                const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
+                                if (statusText && type === 'capsule') statusText.innerText = `Hold to record for ${otherPerson}`;
+                                else if (statusText) statusText.innerText = "Hold (voice)";
+                                if (type === 'mood') {
+                                    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+                                    moodDetail.classList.add('hidden');
+                                    selectedMood = null;
+                                }
                                 if (type !== 'capsule') switchTab('feed');
                             }, 1500);
                         } catch (error) {
@@ -579,16 +781,19 @@
             btn.addEventListener('pointerleave', stopRecording);
         });
 
-        // --- FEATURE 3: UNIFIED TIMELINE (FEED) ---
+        // --- FEATURE 3: UNIFIED TIMELINE (FEED) + US-TAB WIDGETS ---
         const feed = document.getElementById('voice-feed');
-        // Load up to 50 recent items
         const qTimeline = query(collection(db, "voice_notes"), orderBy("timestamp", "desc"), limit(50));
 
         onSnapshot(qTimeline, (snapshot) => {
             feed.innerHTML = '';
+            const allDocs = [];
+
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const docId = docSnap.id;
+                allDocs.push({ id: docId, ...data });
+
                 const isMine = data.sender === currentUser;
                 const hasBeenPlayed = data.playedBy && data.playedBy.length > 0;
 
@@ -603,9 +808,17 @@
                         : `<span class="text-note-inkSoft/60 ml-1">sent</span>`;
                 }
 
+                let typeLabel = TYPE_LABELS[data.type] || data.type;
+                let moodHeaderHtml = '';
+                if (data.type === 'mood' && data.emoji) {
+                    typeLabel = `${data.emoji} ${data.mood}`;
+                }
+
                 let contentHtml = '';
                 if (data.format === 'text') {
-                    contentHtml = `<div class="mt-2 text-sm text-note-ink font-body bg-note-paperDeep/40 p-3 rounded-[8px] border border-note-ink/10">${data.content}</div>`;
+                    if (data.content) {
+                        contentHtml = `<div class="mt-2 text-sm text-note-ink font-body bg-note-paperDeep/40 p-3 rounded-[8px] border border-note-ink/10">${data.content}</div>`;
+                    }
                 } else {
                     contentHtml = `<audio src="${data.url}" controls class="w-full mt-2" id="audio-${docId}"></audio>`;
                 }
@@ -615,7 +828,7 @@
                         <div class="flex justify-between items-center mb-1.5">
                             <span class="flex items-center gap-1.5">
                                 <span class="stamp-dot" aria-hidden="true"></span>
-                                <span class="text-[10px] font-mono uppercase tracking-wide text-note-ink/80">${data.type}</span>
+                                <span class="text-[10px] font-mono uppercase tracking-wide text-note-ink/80">${typeLabel}</span>
                             </span>
                             <span class="text-[10px] font-mono text-note-inkSoft">${dateStr} &middot; ${timeStr} ${statusHtml}</span>
                         </div>
@@ -638,6 +851,42 @@
                     }
                 }
             });
+
+            // --- "How are we" mini widgets ---
+            ['Motolani', 'Zusi'].forEach(person => {
+                const latestMood = allDocs.find(d => d.type === 'mood' && d.sender === person);
+                const el = document.getElementById(`mood-mini-${person}`);
+                if (!el) return;
+                if (latestMood) {
+                    el.innerHTML = `<span>${latestMood.emoji || '•'}</span><span class="text-note-ink">${latestMood.mood || ''}</span>`;
+                } else {
+                    el.innerHTML = `<span class="text-note-inkSoft/50">No mood yet</span>`;
+                }
+            });
+
+            // --- "Recent from partner" widget ---
+            const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
+            const recentFromOther = allDocs.find(d => d.sender === otherPerson);
+            const recentEl = document.getElementById('recent-from-partner');
+            if (recentFromOther) {
+                let label = TYPE_LABELS[recentFromOther.type] || recentFromOther.type;
+                if (recentFromOther.type === 'mood' && recentFromOther.emoji) {
+                    label = `${recentFromOther.emoji} ${recentFromOther.mood}`;
+                }
+                if (recentFromOther.format === 'audio') {
+                    recentEl.innerHTML = `
+                        <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-2">${label}</p>
+                        <audio src="${recentFromOther.url}" controls class="w-full"></audio>
+                    `;
+                } else {
+                    recentEl.innerHTML = `
+                        <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-2">${label}</p>
+                        <p class="text-note-ink">${recentFromOther.content || '(no note)'}</p>
+                    `;
+                }
+            } else {
+                recentEl.innerHTML = `Nothing yet — be the first to leave something.`;
+            }
         });
     </script>
 </body>
