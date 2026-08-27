@@ -4,38 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Space</title>
-
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#14110E">
-
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&family=Jost:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Jost:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        note: {
-                            paper: 'rgb(var(--note-paper) / <alpha-value>)',
-                            paperDeep: 'rgb(var(--note-paperDeep) / <alpha-value>)',
-                            card: 'rgb(var(--note-card) / <alpha-value>)',
-                            ink: 'rgb(var(--note-ink) / <alpha-value>)',
-                            inkSoft: 'rgb(var(--note-inkSoft) / <alpha-value>)',
-                            wine: 'rgb(var(--note-wine) / <alpha-value>)',
-                            gold: 'rgb(var(--note-gold) / <alpha-value>)',
-                            hunter: 'rgb(var(--note-hunter) / <alpha-value>)',
-                            aubergine: 'rgb(var(--note-aubergine) / <alpha-value>)',
-                            rose: 'rgb(var(--note-rose) / <alpha-value>)'
+                        suv: {
+                            bg: '#121110',
+                            card: '#1A1817',
+                            gold: '#C5A25A',
+                            text: '#D4CFC7',
+                            muted: '#8A857D',
+                            wine: '#78282B',
+                            olive: '#3A4234'
                         }
                     },
                     fontFamily: {
-                        display: ['"Fraunces"', 'serif'],
-                        body: ['"Jost"', 'sans-serif'],
+                        serif: ['"Fraunces"', 'serif'],
+                        sans: ['"Jost"', 'sans-serif'],
                         mono: ['"Space Mono"', 'monospace']
                     }
                 }
@@ -45,846 +37,334 @@
 
     <style>
         * { -webkit-tap-highlight-color: transparent; }
-
-        :root {
-            /* Dark — the primary identity, matches the reference */
-            --note-paper: 20 17 14;
-            --note-paperDeep: 14 12 10;
-            --note-card: 26 22 18;
-            --note-ink: 237 230 216;
-            --note-inkSoft: 168 156 139;
-            --note-wine: 128 34 42;
-            --note-gold: 197 162 90;
-            --note-hunter: 74 92 66;
-            --note-aubergine: 108 74 112;
-            --note-rose: 168 96 104;
-            --c-wine: rgb(var(--note-wine));
-            --c-gold: rgb(var(--note-gold));
-            --c-hunter: rgb(var(--note-hunter));
-            --c-aubergine: rgb(var(--note-aubergine));
-            --c-rose: rgb(var(--note-rose));
-            color-scheme: dark;
+        
+        body {
+            background-color: theme('colors.suv.bg');
+            color: theme('colors.suv.text');
         }
 
-        html.light {
-            /* Light — warm ivory boutique alt, same accents */
-            --note-paper: 245 240 230;
-            --note-paperDeep: 234 224 205;
-            --note-card: 255 252 246;
-            --note-ink: 34 28 22;
-            --note-inkSoft: 122 107 90;
-            --note-wine: 110 27 34;
-            --note-gold: 156 118 52;
-            --note-hunter: 68 86 60;
-            --note-aubergine: 96 62 100;
-            --note-rose: 150 78 88;
-            color-scheme: light;
-        }
-
-        html, body {
-            font-family: 'Jost', sans-serif;
-            height: 100%;
-            background: rgb(var(--note-paper));
-            transition: background 0.25s ease;
-        }
-
-        .font-display { font-family: 'Fraunces', serif; }
-        .font-mono { font-family: 'Space Mono', monospace; }
-
+        /* Subtle noise texture for editorial print feel */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
             z-index: 0;
             pointer-events: none;
-            opacity: 0.04;
+            opacity: 0.05;
             mix-blend-mode: overlay;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
         }
 
-        /* ---------- Editorial cards ---------- */
-        .note-card {
-            position: relative;
-            background: rgb(var(--note-card));
-            border: 1px solid rgb(var(--note-gold) / 0.18);
-            border-radius: 3px;
-            padding: 28px 24px 24px;
-            box-shadow: 0 18px 34px -20px rgb(0 0 0 / 0.55);
-            animation: rise 0.5s ease-out;
-        }
-        @keyframes rise {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
+        /* Hide scrollbar */
+        ::-webkit-scrollbar { width: 0px; display: none; }
+        
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(197, 162, 90, 0.15);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
         }
 
-        .eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Space Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
-            color: var(--c-gold);
-            margin-bottom: 14px;
-        }
-        .eyebrow::before {
-            content: '';
-            width: 16px;
-            height: 1px;
-            background: var(--c-gold);
-            opacity: 0.7;
-        }
-
-        /* ---------- Seal emblem (signature element) ---------- */
         .seal-btn {
             position: relative;
-            width: 116px;
-            height: 116px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            background: radial-gradient(circle at 34% 26%, rgb(var(--note-wine)) 0%, rgb(var(--note-wine) / 0.85) 45%, rgb(var(--note-paperDeep)) 130%);
-            border: 1px solid rgb(var(--note-gold) / 0.55);
-            box-shadow: 0 14px 28px -10px rgb(var(--note-wine) / 0.55), inset 0 0 0 1px rgb(0 0 0 / 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            background: radial-gradient(circle at 30% 30%, theme('colors.suv.wine') 0%, #4A1619 80%);
+            border: 1px solid rgba(197, 162, 90, 0.3);
+            box-shadow: 0 10px 30px -10px theme('colors.suv.wine');
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .seal-btn:active {
-            transform: scale(0.95) translateY(1px);
-        }
-        .seal-rings {
-            position: absolute;
-            inset: 9px;
-            border-radius: 50%;
-            border: 1px solid rgb(var(--note-gold) / 0.45);
-        }
-        .seal-mono {
-            color: rgb(var(--note-gold));
-            font-size: 16px;
-            letter-spacing: 0.06em;
-            text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+            transform: scale(0.95);
         }
 
-        .postmark {
-            font-family: 'Space Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 0.24em;
-            color: var(--c-gold);
-            border: 1px solid rgb(var(--note-gold) / 0.55);
-            border-radius: 999px;
-            padding: 6px 18px;
-            text-transform: uppercase;
+        .nav-item {
+            color: theme('colors.suv.muted');
+            transition: color 0.3s ease;
         }
-        .chosen-heart { animation: rise-fade 0.5s ease-out; }
-        @keyframes rise-fade {
-            0% { opacity: 0; transform: translateY(6px); }
-            100% { opacity: 1; transform: translateY(0); }
+        .nav-item.active {
+            color: theme('colors.suv.gold');
         }
 
-        /* ---------- Record buttons ---------- */
-        .capsule-btn {
-            width: 100%;
-            border: 1px solid rgb(var(--note-gold) / 0.3);
-            border-radius: 3px;
-            padding: 30px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: rgb(var(--note-inkSoft));
-            touch-action: none;
-            transition: border-color 0.2s ease, background 0.2s ease;
-        }
-        .record-btn.is-recording {
-            border-color: rgb(var(--note-wine));
-            background: rgb(var(--note-wine) / 0.12);
-            box-shadow: 0 0 0 4px rgb(var(--note-wine) / 0.12);
-        }
-        .voice-mini-btn.is-recording {
-            border-color: rgb(var(--note-wine));
-            background: rgb(var(--note-wine) / 0.14);
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        textarea::placeholder { color: rgb(var(--note-ink) / 0.32); }
-
-        /* ---------- Feed dossier cards ---------- */
-        .note-postcard {
-            background: rgb(var(--note-card));
-            border: 1px solid rgb(var(--note-gold) / 0.14);
-            border-left: 3px solid var(--c-wine);
-            border-radius: 3px;
-            padding: 15px 17px;
-            margin-bottom: 12px;
-            box-shadow: 0 10px 20px -16px rgb(0 0 0 / 0.6);
-            animation: rise 0.35s ease-out;
+        .mood-pill {
+            transition: all 0.2s ease;
         }
-        .note-postcard[data-entry="prayer"] { border-left-color: var(--c-hunter); }
-        .note-postcard[data-entry="appreciation"] { border-left-color: var(--c-gold); }
-        .note-postcard[data-entry="capsule"] { border-left-color: var(--c-wine); }
-        .note-postcard[data-entry="mood"] { border-left-color: var(--c-aubergine); }
-        .note-postcard[data-entry="thinking-of-you"] { border-left-color: var(--c-rose); }
-
-        .stamp-dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            display: inline-block;
-            background: var(--c-wine);
-        }
-        .note-postcard[data-entry="prayer"] .stamp-dot { background: var(--c-hunter); }
-        .note-postcard[data-entry="appreciation"] .stamp-dot { background: var(--c-gold); }
-        .note-postcard[data-entry="capsule"] .stamp-dot { background: var(--c-wine); }
-        .note-postcard[data-entry="mood"] .stamp-dot { background: var(--c-aubergine); }
-        .note-postcard[data-entry="thinking-of-you"] .stamp-dot { background: var(--c-rose); }
-
-        /* ---------- Nav ---------- */
-        .stub-nav {
-            background: rgb(var(--note-paperDeep));
-            border-top: 1px solid rgb(var(--note-gold) / 0.18);
-        }
-        .nav-btn { color: rgb(var(--note-inkSoft)); }
-        .nav-btn.active-nav { color: rgb(var(--note-gold)); }
-        .nav-underline {
-            width: 0%;
-            height: 1px;
-            background: var(--c-gold);
-            transition: width 0.2s ease;
-            margin-top: 5px;
-        }
-        .nav-btn.active-nav .nav-underline { width: 60%; }
-
-        ::-webkit-scrollbar { width: 0px; }
-
-        /* ---------- Mood grid ---------- */
-        .mood-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            padding: 13px 4px;
-            border-radius: 3px;
-            border: 1px solid rgb(var(--note-gold) / 0.2);
-            background: rgb(var(--note-paperDeep) / 0.5);
-            transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
-        }
-        .mood-btn span.emoji { font-size: 19px; line-height: 1; }
-        .mood-btn span.label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: rgb(var(--note-inkSoft)); font-family: 'Space Mono', monospace; }
-        .mood-btn.selected {
-            border-color: var(--c-gold);
-            background: rgb(var(--note-wine) / 0.16);
-            transform: scale(1.03);
-        }
-
-        .mini-mood-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgb(var(--note-paperDeep) / 0.6);
-            border: 1px solid rgb(var(--note-gold) / 0.16);
-            border-radius: 999px;
-            padding: 6px 12px;
-        }
-
-        /* ---------- Header wordmark ---------- */
-        .brand-micro {
-            font-family: 'Space Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 0.3em;
-            color: rgb(var(--note-gold));
-            text-transform: uppercase;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .note-card, .note-postcard, .chosen-heart { animation: none !important; }
+        .mood-pill.selected {
+            background: rgba(197, 162, 90, 0.1);
+            border-color: theme('colors.suv.gold');
+            color: theme('colors.suv.gold');
         }
     </style>
 </head>
-<body class="text-note-ink antialiased selection:bg-note-wine selection:text-white select-none h-screen flex flex-col overflow-hidden relative bg-note-paper">
+<body class="font-sans antialiased h-screen flex flex-col overflow-hidden relative selection:bg-suv-gold selection:text-suv-bg">
 
-    <!-- Top Bar -->
-    <header class="pt-6 pb-4 px-5 z-10 shrink-0 relative border-b border-note-gold/15">
-        <div class="flex justify-between items-end">
-            <div>
-                <p class="brand-micro mb-1.5">M &#10022; Z</p>
-                <p class="font-display italic text-[28px] leading-none text-note-ink">Our Space</p>
-                <p class="text-[10px] text-note-inkSoft mt-1.5 font-mono uppercase tracking-[0.15em]" id="greeting">Sealed with us</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="theme-toggle" aria-label="Toggle light mode" class="w-8 h-8 rounded-full bg-note-paperDeep/70 border border-note-gold/25 flex items-center justify-center text-note-gold shrink-0">
-                    <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>
-                    <svg id="icon-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M12 3v1.5M12 19.5V21M4.22 4.22l1.06 1.06M18.72 18.72l1.06 1.06M3 12h1.5M19.5 12H21M4.22 19.78l1.06-1.06M18.72 5.28l1.06-1.06M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"></path></svg>
+    <main class="flex-1 overflow-y-auto px-6 pt-12 pb-32 z-10 relative" id="main-container">
+        
+        <div id="tab-us" class="view-section fade-in space-y-10">
+            
+            <header class="text-center space-y-2">
+                <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-suv-gold">Motolani & Zusi</p>
+                <h1 class="font-serif italic text-4xl text-white">Our Space</h1>
+                <p id="current-date" class="font-mono text-[11px] uppercase tracking-widest text-suv-muted pt-2"></p>
+            </header>
+
+            <section class="flex flex-col items-center justify-center py-6">
+                <p class="font-serif italic text-xl text-suv-text mb-6">Today, I choose you.</p>
+                <button class="seal-btn flex items-center justify-center">
+                    <span class="absolute inset-2 rounded-full border border-suv-gold/30"></span>
+                    <span class="font-serif italic text-suv-gold text-lg">Seal it</span>
                 </button>
-                <select id="user-identity" class="text-[11px] font-mono uppercase tracking-wide text-note-ink bg-note-paperDeep/70 border border-note-gold/25 rounded-full px-3 py-1.5 outline-none">
-                    <option value="Motolani">I am Motolani</option>
-                    <option value="Zusi">I am Zusi</option>
-                </select>
-            </div>
-        </div>
-    </header>
+            </section>
 
-    <!-- Scrollable Content Area -->
-    <main class="flex-1 overflow-y-auto px-5 pt-5 pb-28 z-10 relative" id="main-content">
-
-        <!-- ================= TAB 1: US (home) ================= -->
-        <div id="view-home" class="tab-view block space-y-5">
-
-            <p id="today-date" class="text-center font-mono text-[10px] uppercase tracking-[0.22em] text-note-inkSoft">&nbsp;</p>
-
-            <!-- Choose Again -->
-            <section class="note-card text-center">
-                <span class="eyebrow mx-auto">Today</span>
-
-                <div class="flex flex-col items-center">
-                    <button id="choose-btn" class="seal-btn" aria-label="Press to choose each other today">
-                        <span class="seal-rings"></span>
-                        <span class="seal-mono font-display italic">M &#10022; Z</span>
-                    </button>
-                    <p class="mt-5 text-[13px] font-body text-note-inkSoft max-w-[220px] leading-snug">Press the seal to choose each other, again, today</p>
-                </div>
-
-                <div id="status-area" class="mt-5 hidden flex-col items-center chosen-heart">
-                    <span class="postmark">Sealed</span>
-                    <p id="last-clicked-time" class="text-[11px] text-note-inkSoft font-mono tracking-wide mt-3"></p>
+            <section class="space-y-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">How are we</p>
+                <div class="flex gap-4">
+                    <div class="flex-1 bg-suv-card/50 p-4 rounded-lg border border-white/5">
+                        <p class="text-[10px] font-mono uppercase tracking-wide text-suv-muted mb-2">Motolani</p>
+                        <p class="text-sm">🙂 <span class="ml-2 font-light">Good</span></p>
+                    </div>
+                    <div class="flex-1 bg-suv-card/50 p-4 rounded-lg border border-white/5">
+                        <p class="text-[10px] font-mono uppercase tracking-wide text-suv-muted mb-2">Zusi</p>
+                        <p class="text-sm">🥹 <span class="ml-2 font-light text-suv-gold">Missing you</span></p>
+                    </div>
                 </div>
             </section>
 
-            <!-- How are we -->
-            <section class="note-card">
-                <span class="eyebrow">How are we</span>
+            <section class="space-y-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">Recent from Zusi</p>
+                <div class="bg-suv-card p-5 rounded-lg border border-suv-wine/30 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-suv-wine"></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-mono uppercase tracking-widest text-suv-muted">Voice Capsule</span>
+                        <span class="text-[10px] font-mono text-suv-muted">8:42 PM</span>
+                    </div>
+                    <p class="font-serif italic text-lg text-white mb-3">"I was thinking about you today..."</p>
+                    <div class="w-full h-8 bg-white/5 rounded flex items-center px-3 gap-2">
+                        <svg class="w-4 h-4 text-suv-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <div class="flex-1 h-0.5 bg-suv-gold/20 rounded"><div class="w-1/3 h-full bg-suv-gold rounded"></div></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="tab-feel" class="view-section hidden fade-in space-y-8">
+            <header class="mb-8">
+                <h2 class="font-serif italic text-3xl text-white mb-2">Inside</h2>
+                <p class="font-sans font-light text-sm text-suv-muted">The emotional heartbeat of us.</p>
+            </header>
+
+            <section class="space-y-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold">How are you feeling?</p>
+                <div class="flex flex-wrap gap-3">
+                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2"><span>❤️</span> Loved</button>
+                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2"><span>🥰</span> Happy</button>
+                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2"><span>🫠</span> Overwhelmed</button>
+                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2 selected"><span>😌</span> Peaceful</button>
+                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2"><span>🤍</span> Grateful</button>
+                </div>
+            </section>
+
+            <section class="space-y-4 pt-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">For You</p>
+                <p class="text-xs font-light text-suv-muted">Something I want you to know.</p>
+                <textarea placeholder="Type a thought..." class="w-full bg-suv-card/50 border border-white/10 rounded-lg p-4 font-sans font-light text-sm text-white focus:outline-none focus:border-suv-gold/50 resize-none h-24 placeholder:text-suv-muted/50"></textarea>
                 <div class="flex gap-3">
-                    <div class="flex-1">
-                        <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-1.5">Motolani</p>
-                        <div id="mood-mini-Motolani" class="mini-mood-pill text-sm">
-                            <span class="text-note-inkSoft/50">No mood yet</span>
+                    <button class="flex-1 bg-white/5 border border-white/10 py-3 rounded-lg text-sm flex items-center justify-center gap-2 text-suv-text active:scale-95 transition-transform"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg> Voice</button>
+                    <button class="flex-1 bg-suv-wine border border-suv-wine text-white py-3 rounded-lg text-sm active:scale-95 transition-transform">Leave Note</button>
+                </div>
+            </section>
+        </div>
+
+        <div id="tab-plan" class="view-section hidden fade-in space-y-8">
+            <header class="mb-8">
+                <h2 class="font-serif italic text-3xl text-white mb-2">Our Life</h2>
+                <p class="font-sans font-light text-sm text-suv-muted">Building the foundation.</p>
+            </header>
+
+            <section class="space-y-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">This Week</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <p class="font-mono text-[10px] text-suv-muted mb-2">WED 26</p>
+                        <div class="flex items-center gap-3 mb-2 opacity-50 line-through">
+                            <div class="w-4 h-4 rounded-sm border border-suv-gold bg-suv-gold/20 flex items-center justify-center"><svg class="w-3 h-3 text-suv-gold" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
+                            <p class="font-light text-sm">Finance discussion</p>
                         </div>
                     </div>
-                    <div class="flex-1">
-                        <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-1.5">Zusi</p>
-                        <div id="mood-mini-Zusi" class="mini-mood-pill text-sm">
-                            <span class="text-note-inkSoft/50">No mood yet</span>
+                    
+                    <div>
+                        <p class="font-mono text-[10px] text-suv-muted mb-2">SAT 29</p>
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-4 h-4 rounded-sm border border-white/30"></div>
+                            <p class="font-light text-sm">❤️ Date night</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-4 h-4 rounded-sm border border-white/30"></div>
+                            <p class="font-light text-sm">Decide restaurant</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Recent from partner -->
-            <section class="note-card">
-                <span class="eyebrow"><span id="recent-from-label">Recent</span></span>
-                <div id="recent-from-partner" class="text-sm text-note-inkSoft">
-                    Nothing yet — be the first to leave something.
+            <section class="space-y-4 pt-4">
+                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">Active Project</p>
+                <div class="bg-suv-card border border-white/10 rounded-lg p-5">
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <p class="font-serif italic text-lg text-white">💰 Understanding Money</p>
+                            <p class="font-mono text-[10px] text-suv-muted mt-1">AUGUST FOCUS</p>
+                        </div>
+                        <span class="font-mono text-xs text-suv-gold">70%</span>
+                    </div>
+                    <div class="w-full h-1 bg-white/10 rounded-full mb-4">
+                        <div class="w-[70%] h-full bg-suv-gold rounded-full"></div>
+                    </div>
+                    <ul class="space-y-2 font-light text-sm text-suv-text">
+                        <li class="flex items-center gap-2"><span class="text-suv-gold text-[10px]">■</span> Psychology of Money</li>
+                        <li class="flex items-center gap-2"><span class="text-suv-muted text-[10px]">□</span> Joint financial plan</li>
+                    </ul>
                 </div>
-            </section>
-
-            <!-- Quick Voice Capsule -->
-            <section class="note-card">
-                <span class="eyebrow">Voice capsule</span>
-                <button class="record-btn capsule-btn" data-type="capsule">
-                    <svg class="w-6 h-6 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                    <span class="pointer-events-none status-text font-mono text-[11px] uppercase tracking-wide">Hold to record for Zusi</span>
-                </button>
             </section>
         </div>
 
-        <!-- ================= TAB 2: FEEL ================= -->
-        <div id="view-feel" class="tab-view hidden space-y-5">
+        <div id="tab-dream" class="view-section hidden fade-in space-y-8">
+            <header class="mb-6">
+                <h2 class="font-serif italic text-3xl text-white mb-2">Our Future</h2>
+                <p class="font-sans font-light text-sm text-suv-muted">Where we are going.</p>
+            </header>
 
-            <!-- Mood check-in -->
-            <section class="note-card">
-                <span class="eyebrow">How are you feeling</span>
-                <p class="text-[12px] text-note-inkSoft mb-4 -mt-2">Tap one — you can say more after</p>
-
-                <div id="mood-grid" class="grid grid-cols-3 gap-2 mb-4"></div>
-
-                <div id="mood-detail" class="hidden">
-                    <textarea id="mood-text" placeholder="Want to say more? (optional)" class="w-full text-sm p-3 bg-note-paperDeep/50 border border-note-gold/20 rounded-[3px] mb-3 focus:outline-none focus:border-note-gold resize-none h-16 font-body text-note-ink placeholder:text-note-ink/35"></textarea>
-                    <div class="flex gap-2">
-                        <button id="mood-save-btn" class="bg-note-wine text-note-ink px-4 py-3 rounded-[3px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body border border-note-gold/25">Save mood</button>
-                        <button class="record-btn voice-mini-btn bg-note-paperDeep/50 border border-note-gold/20 px-4 py-3 rounded-[3px] flex-1 text-sm text-note-inkSoft flex justify-center items-center gap-2 font-body" data-type="mood">
-                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                            <span class="pointer-events-none status-text">Hold (voice)</span>
-                        </button>
+            <div class="columns-2 gap-4 space-y-4">
+                
+                <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
+                    <div class="aspect-[3/4] bg-gradient-to-br from-suv-card to-[#2A2825] flex items-end p-4">
+                        <div class="absolute inset-0 bg-black/20"></div>
+                        <div class="relative z-10">
+                            <p class="font-mono text-[10px] uppercase tracking-widest text-suv-gold mb-1">Travel</p>
+                            <p class="font-serif italic text-lg text-white">Santorini, Greece</p>
+                        </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- Something I want you to know -->
-            <section class="note-card">
-                <span class="eyebrow">For you</span>
-                <p class="font-display italic text-[16px] text-note-ink mb-1">Something I want you to know</p>
-                <p class="text-[12px] text-note-inkSoft mb-3">For the things too small for a whole conversation</p>
-                <textarea id="tender-text" placeholder="Say it here..." class="w-full text-sm p-3 bg-note-paperDeep/50 border border-note-gold/20 rounded-[3px] mb-3 focus:outline-none focus:border-note-gold resize-none h-20 font-body text-note-ink placeholder:text-note-ink/35"></textarea>
-                <div class="flex gap-2">
-                    <button class="bg-note-wine text-note-ink px-4 py-3 rounded-[3px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body border border-note-gold/25" onclick="sendTextNote('thinking-of-you')">Save</button>
-                    <button class="record-btn voice-mini-btn bg-note-paperDeep/50 border border-note-gold/20 px-4 py-3 rounded-[3px] flex-1 text-sm text-note-inkSoft flex justify-center items-center gap-2 font-body" data-type="thinking-of-you">
-                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                        <span class="pointer-events-none status-text">Hold (voice)</span>
-                    </button>
+                <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
+                    <div class="aspect-square bg-gradient-to-tr from-suv-olive/40 to-suv-card flex items-end p-4">
+                        <div class="relative z-10">
+                            <p class="font-mono text-[10px] uppercase tracking-widest text-suv-gold mb-1">Life</p>
+                            <p class="font-serif italic text-lg text-white">Our 30s</p>
+                        </div>
+                    </div>
                 </div>
-            </section>
+
+                <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
+                    <div class="aspect-square bg-gradient-to-bl from-suv-wine/30 to-suv-card flex items-end p-4">
+                        <div class="relative z-10">
+                            <p class="font-mono text-[10px] uppercase tracking-widest text-suv-gold mb-1">Career</p>
+                            <p class="font-serif italic text-lg text-white">The Foundation</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
-        <!-- ================= TAB 3: TIMELINE ================= -->
-        <div id="view-feed" class="tab-view hidden">
-            <p class="eyebrow">Our timeline</p>
-            <div id="voice-feed" class="empty:hidden pb-10"></div>
-        </div>
+        <div id="tab-remember" class="view-section hidden fade-in space-y-8">
+            <header class="mb-8">
+                <h2 class="font-serif italic text-3xl text-white mb-2">Memories</h2>
+                <p class="font-sans font-light text-sm text-suv-muted">The history of us.</p>
+            </header>
 
-        <!-- ================= TAB 4: SHARED ================= -->
-        <div id="view-shared" class="tab-view hidden space-y-5">
-
-            <!-- Appreciation Jar -->
-            <section class="note-card">
-                <span class="eyebrow">Appreciation jar</span>
-                <textarea id="appreciation-text" placeholder="Type something nice..." class="w-full text-sm p-3 bg-note-paperDeep/50 border border-note-gold/20 rounded-[3px] mb-3 focus:outline-none focus:border-note-gold resize-none h-20 font-body text-note-ink placeholder:text-note-ink/35"></textarea>
-                <div class="flex gap-2">
-                    <button class="bg-note-wine text-note-ink px-4 py-3 rounded-[3px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body border border-note-gold/25" onclick="sendTextNote('appreciation')">Save text</button>
-                    <button class="record-btn voice-mini-btn bg-note-paperDeep/50 border border-note-gold/20 px-4 py-3 rounded-[3px] flex-1 text-sm text-note-inkSoft flex justify-center items-center gap-2 font-body" data-type="appreciation">
-                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                        <span class="pointer-events-none status-text">Hold (voice)</span>
-                    </button>
+            <div class="space-y-6 relative before:absolute before:inset-y-0 before:left-[3px] before:w-[1px] before:bg-suv-gold/20 pl-4">
+                
+                <div class="relative">
+                    <div class="absolute -left-[20px] top-1.5 w-2 h-2 rounded-full bg-suv-gold"></div>
+                    <p class="font-mono text-[10px] text-suv-muted mb-1">AUGUST 27, 2026</p>
+                    <div class="bg-suv-card border border-white/5 p-4 rounded-lg">
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-suv-gold mb-2 flex items-center gap-2">🎙️ Voice Note</p>
+                        <p class="font-light text-sm">"I think we should start saving towards our first trip."</p>
+                    </div>
                 </div>
-            </section>
 
-            <!-- Prayer Wall -->
-            <section class="note-card">
-                <span class="eyebrow">Prayer wall</span>
-                <textarea id="prayer-text" placeholder="Add a prayer request..." class="w-full text-sm p-3 bg-note-paperDeep/50 border border-note-gold/20 rounded-[3px] mb-3 focus:outline-none focus:border-note-gold resize-none h-20 font-body text-note-ink placeholder:text-note-ink/35"></textarea>
-                <div class="flex gap-2">
-                    <button class="bg-note-wine text-note-ink px-4 py-3 rounded-[3px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body border border-note-gold/25" onclick="sendTextNote('prayer')">Save text</button>
-                    <button class="record-btn voice-mini-btn bg-note-paperDeep/50 border border-note-gold/20 px-4 py-3 rounded-[3px] flex-1 text-sm text-note-inkSoft flex justify-center items-center gap-2 font-body" data-type="prayer">
-                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                        <span class="pointer-events-none status-text">Hold (voice)</span>
-                    </button>
+                <div class="relative">
+                    <div class="absolute -left-[20px] top-1.5 w-2 h-2 rounded-full border border-suv-gold bg-suv-bg"></div>
+                    <p class="font-mono text-[10px] text-suv-muted mb-1">AUGUST 19, 2026</p>
+                    <div class="bg-suv-wine/20 border border-suv-wine/30 p-4 rounded-lg">
+                        <p class="font-serif italic text-lg text-white">We chose each other again.</p>
+                    </div>
                 </div>
-            </section>
+
+            </div>
         </div>
     </main>
 
-    <!-- Bottom Navigation Bar -->
-    <nav class="absolute bottom-0 w-full stub-nav px-5 py-3.5 flex justify-between items-center z-20 font-body">
-        <button onclick="switchTab('home')" id="tab-home" class="nav-btn active-nav flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Us</span>
-            <span class="nav-underline"></span>
+    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] glass-pill rounded-full px-6 py-4 flex justify-between items-center z-50">
+        
+        <button onclick="switchTab('us')" id="btn-us" class="nav-item active flex flex-col items-center gap-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <span class="text-[9px] font-mono uppercase tracking-widest">Us</span>
         </button>
-        <button onclick="switchTab('feel')" id="tab-feel" class="nav-btn flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Feel</span>
-            <span class="nav-underline"></span>
+
+        <button onclick="switchTab('feel')" id="btn-feel" class="nav-item flex flex-col items-center gap-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[9px] font-mono uppercase tracking-widest">Feel</span>
         </button>
-        <button onclick="switchTab('feed')" id="tab-feed" class="nav-btn flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Timeline</span>
-            <span class="nav-underline"></span>
+
+        <div class="relative -top-6">
+            <button class="w-14 h-14 rounded-full bg-suv-gold text-suv-bg shadow-[0_0_20px_rgba(197,162,90,0.4)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+        </div>
+
+        <button onclick="switchTab('plan')" id="btn-plan" class="nav-item flex flex-col items-center gap-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-[9px] font-mono uppercase tracking-widest">Plan</span>
         </button>
-        <button onclick="switchTab('shared')" id="tab-shared" class="nav-btn flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M9 12h6m-6 4h6M9 8h1m-4 12h12a2 2 0 002-2V6a2 2 0 00-2-2H8L4 8v10a2 2 0 002 2z"></path></svg>
-            <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Shared</span>
-            <span class="nav-underline"></span>
+
+        <button onclick="switchTab('dream')" id="btn-dream" class="nav-item flex flex-col items-center gap-1">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+            <span class="text-[9px] font-mono uppercase tracking-widest">Dream</span>
         </button>
+
     </nav>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+    <script>
+        // Set dynamic date
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', dateOptions);
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDRB-cRm-iX6nXP_5-hF5ACelpqtvx-Bgo",
-            authDomain: "project-us-15aa0.firebaseapp.com",
-            projectId: "project-us-15aa0",
-            storageBucket: "project-us-15aa0.firebasestorage.app",
-            messagingSenderId: "77217285858",
-            appId: "1:77217285858:web:428597d6ace8c2e55640bb",
-            measurementId: "G-YRE7RWQ48Q"
-        };
+        // Simple Tab Switching Logic
+        function switchTab(tabId) {
+            // Hide all sections
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.add('hidden');
+            });
+            // Show target section
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            
+            // Reset nav colors
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Highlight active nav
+            document.getElementById(`btn-${tabId}`).classList.add('active');
+            
+            // Scroll to top
+            document.getElementById('main-container').scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-
-        const MOODS = [
-            { emoji: '❤️', label: 'Loved' },
-            { emoji: '🥰', label: 'Happy' },
-            { emoji: '😔', label: 'Sad' },
-            { emoji: '😤', label: 'Frustrated' },
-            { emoji: '🫠', label: 'Overwhelmed' },
-            { emoji: '🥹', label: 'Missing you' },
-            { emoji: '😌', label: 'Peaceful' },
-            { emoji: '🔥', label: 'Excited' },
-            { emoji: '🤍', label: 'Grateful' }
-        ];
-
-        const TYPE_LABELS = {
-            prayer: 'prayer',
-            appreciation: 'appreciation',
-            capsule: 'capsule',
-            mood: 'mood',
-            'thinking-of-you': 'for you'
-        };
-
-        let selectedMood = null;
-
-        // --- TAB NAVIGATION ---
-        window.switchTab = (tabId) => {
-            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-nav'));
-            document.getElementById(`tab-${tabId}`).classList.add('active-nav');
-        };
-
-        // --- TODAY'S DATE ---
-        document.getElementById('today-date').innerText =
-            new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
-
-        // --- THEME (DARK / LIGHT) ---
-        const rootEl = document.documentElement;
-        const themeToggle = document.getElementById('theme-toggle');
-        const iconMoon = document.getElementById('icon-moon');
-        const iconSun = document.getElementById('icon-sun');
-        const themeMeta = document.querySelector('meta[name="theme-color"]');
-
-        const applyTheme = (mode) => {
-            rootEl.classList.toggle('light', mode === 'light');
-            iconMoon.classList.toggle('hidden', mode === 'light');
-            iconSun.classList.toggle('hidden', mode !== 'light');
-            localStorage.setItem('our_space_theme', mode);
-            if (themeMeta) {
-                const rgb = getComputedStyle(rootEl).getPropertyValue('--note-paper').trim().split(/\s+/);
-                if (rgb.length === 3) themeMeta.setAttribute('content', `rgb(${rgb.join(',')})`);
-            }
-        };
-
-        applyTheme(localStorage.getItem('our_space_theme') || 'dark');
-
-        themeToggle.addEventListener('click', () => {
-            applyTheme(rootEl.classList.contains('light') ? 'dark' : 'light');
-        });
-
-        // --- IDENTITY MANAGEMENT ---
-        const identitySelect = document.getElementById('user-identity');
-        let currentUser = localStorage.getItem('our_space_identity') || 'Motolani';
-        identitySelect.value = currentUser;
-
-        const greetingEl = document.getElementById('greeting');
-        const dreamyGreetings = ['Sealed with us', 'Still choosing you', 'Kept safe here'];
-        const recentFromLabel = document.getElementById('recent-from-label');
-
-        const updateIdentity = () => {
-            currentUser = identitySelect.value;
-            localStorage.setItem('our_space_identity', currentUser);
-            const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
-            const capsuleText = document.querySelector('#view-home .status-text');
-            if (capsuleText) capsuleText.innerText = `Hold to record for ${otherPerson}`;
-            if (greetingEl) greetingEl.innerText = dreamyGreetings[Math.floor(Math.random() * dreamyGreetings.length)];
-            if (recentFromLabel) recentFromLabel.innerText = `Recent from ${otherPerson}`;
-        };
-
-        identitySelect.addEventListener('change', updateIdentity);
-        updateIdentity();
-
-        // --- MOOD GRID (FEEL TAB) ---
-        const moodGrid = document.getElementById('mood-grid');
-        const moodDetail = document.getElementById('mood-detail');
-        const moodTextInput = document.getElementById('mood-text');
-        const moodSaveBtn = document.getElementById('mood-save-btn');
-
-        MOODS.forEach(m => {
-            const btn = document.createElement('button');
-            btn.className = 'mood-btn';
-            btn.innerHTML = `<span class="emoji">${m.emoji}</span><span class="label">${m.label}</span>`;
+        // Mood Selection Logic
+        document.querySelectorAll('.mood-pill').forEach(btn => {
             btn.addEventListener('click', () => {
-                selectedMood = m;
-                document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+                document.querySelectorAll('.mood-pill').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
-                moodDetail.classList.remove('hidden');
             });
-            moodGrid.appendChild(btn);
-        });
-
-        moodSaveBtn.addEventListener('click', async () => {
-            if (!selectedMood) return;
-            moodSaveBtn.disabled = true;
-            moodSaveBtn.innerText = 'Saving...';
-            try {
-                await addDoc(collection(db, "voice_notes"), {
-                    format: 'text',
-                    type: 'mood',
-                    mood: selectedMood.label,
-                    emoji: selectedMood.emoji,
-                    content: moodTextInput.value.trim(),
-                    sender: currentUser,
-                    timestamp: serverTimestamp()
-                });
-                moodTextInput.value = '';
-                document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
-                moodDetail.classList.add('hidden');
-                selectedMood = null;
-                switchTab('feed');
-            } catch (err) {
-                console.error('Mood save failed:', err);
-                alert('Could not save mood. Check your connection.');
-            }
-            moodSaveBtn.disabled = false;
-            moodSaveBtn.innerText = 'Save mood';
-        });
-
-        // --- FEATURE: TEXT NOTES (PRAYER / APPRECIATION / THINKING-OF-YOU) ---
-        window.sendTextNote = async (type) => {
-            const inputId = type === 'thinking-of-you' ? 'tender-text' : `${type}-text`;
-            const input = document.getElementById(inputId);
-            if (!input.value.trim()) return;
-
-            const textContent = input.value;
-            input.value = 'Saving...';
-            input.disabled = true;
-
-            try {
-                await addDoc(collection(db, "voice_notes"), {
-                    format: 'text',
-                    content: textContent,
-                    sender: currentUser,
-                    type: type,
-                    timestamp: serverTimestamp()
-                });
-                input.value = '';
-                switchTab('feed');
-            } catch (error) {
-                console.error("Text save failed:", error);
-                alert("Failed to save. Check internet or Firebase rules.");
-                input.value = textContent;
-            }
-            input.disabled = false;
-        };
-
-        // --- FEATURE 1: CHOOSE AGAIN ---
-        const chooseBtn = document.getElementById('choose-btn');
-        const statusArea = document.getElementById('status-area');
-        const timeDisplay = document.getElementById('last-clicked-time');
-
-        chooseBtn.addEventListener('click', async () => {
-            chooseBtn.disabled = true;
-            chooseBtn.innerText = "...";
-            try {
-                await addDoc(collection(db, "choose_events"), { timestamp: serverTimestamp(), user: currentUser });
-            } catch (error) {
-                console.error(error);
-                chooseBtn.innerText = "retry";
-                chooseBtn.disabled = false;
-            }
-        });
-
-        const qChoose = query(collection(db, "choose_events"), orderBy("timestamp", "desc"), limit(1));
-        onSnapshot(qChoose, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const data = change.doc.data();
-                    const date = data.timestamp ? data.timestamp.toDate() : new Date();
-                    chooseBtn.classList.add('hidden');
-                    statusArea.classList.remove('hidden');
-                    statusArea.classList.add('flex');
-                    timeDisplay.innerText = `Last sealed: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-                }
-            });
-        });
-
-        // --- FEATURE 2: UNIVERSAL VOICE RECORDING (VIA CLOUD STORAGE) ---
-        const recordBtns = document.querySelectorAll('.record-btn');
-        let mediaRecorder;
-        let audioChunks = [];
-        let stream;
-
-        recordBtns.forEach(btn => {
-            btn.addEventListener('pointerdown', async (e) => {
-                e.preventDefault();
-                const type = btn.getAttribute('data-type');
-                const statusText = btn.querySelector('.status-text');
-
-                if (type === 'mood' && !selectedMood) {
-                    alert('Pick a mood first, then hold to add a voice note.');
-                    return;
-                }
-
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-
-                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        audioChunks = [];
-                        stream.getTracks().forEach(track => track.stop());
-
-                        if (statusText) statusText.innerText = "Uploading...";
-                        btn.classList.remove('is-recording');
-
-                        try {
-                            const fileName = `voice_notes/${Date.now()}_${currentUser}.webm`;
-                            const storageRef = ref(storage, fileName);
-                            await uploadBytes(storageRef, audioBlob);
-
-                            const downloadUrl = await getDownloadURL(storageRef);
-
-                            const docPayload = {
-                                format: 'audio',
-                                url: downloadUrl,
-                                sender: currentUser,
-                                type: type,
-                                playedBy: [],
-                                timestamp: serverTimestamp()
-                            };
-
-                            if (type === 'mood' && selectedMood) {
-                                docPayload.mood = selectedMood.label;
-                                docPayload.emoji = selectedMood.emoji;
-                            }
-
-                            await addDoc(collection(db, "voice_notes"), docPayload);
-
-                            if (statusText) statusText.innerText = "Sent";
-                            setTimeout(() => {
-                                const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
-                                if (statusText && type === 'capsule') statusText.innerText = `Hold to record for ${otherPerson}`;
-                                else if (statusText) statusText.innerText = "Hold (voice)";
-                                if (type === 'mood') {
-                                    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
-                                    moodDetail.classList.add('hidden');
-                                    selectedMood = null;
-                                }
-                                if (type !== 'capsule') switchTab('feed');
-                            }, 1500);
-                        } catch (error) {
-                            console.error("Upload failed:", error);
-                            alert(`Upload failed: ${error.message}`);
-                            if (statusText) statusText.innerText = "Upload failed";
-                        }
-                    };
-
-                    mediaRecorder.start();
-                    btn.classList.add('is-recording');
-                    if (statusText) statusText.innerText = "Recording... release to send";
-
-                } catch (err) {
-                    alert("Microphone access needed.");
-                }
-            });
-
-            const stopRecording = () => {
-                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                }
-            };
-
-            btn.addEventListener('pointerup', stopRecording);
-            btn.addEventListener('pointercancel', stopRecording);
-            btn.addEventListener('pointerleave', stopRecording);
-        });
-
-        // --- FEATURE 3: UNIFIED TIMELINE (FEED) + US-TAB WIDGETS ---
-        const feed = document.getElementById('voice-feed');
-        const qTimeline = query(collection(db, "voice_notes"), orderBy("timestamp", "desc"), limit(50));
-
-        onSnapshot(qTimeline, (snapshot) => {
-            feed.innerHTML = '';
-            const allDocs = [];
-
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const docId = docSnap.id;
-                allDocs.push({ id: docId, ...data });
-
-                const isMine = data.sender === currentUser;
-                const hasBeenPlayed = data.playedBy && data.playedBy.length > 0;
-
-                const date = data.timestamp ? data.timestamp.toDate() : new Date();
-                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-                let statusHtml = '';
-                if (isMine && data.format === 'audio') {
-                    statusHtml = hasBeenPlayed
-                        ? `<span class="text-note-hunter font-bold ml-1">seen</span>`
-                        : `<span class="text-note-inkSoft/60 ml-1">sent</span>`;
-                }
-
-                let typeLabel = TYPE_LABELS[data.type] || data.type;
-                if (data.type === 'mood' && data.emoji) {
-                    typeLabel = `${data.emoji} ${data.mood}`;
-                }
-
-                let contentHtml = '';
-                if (data.format === 'text') {
-                    if (data.content) {
-                        contentHtml = `<div class="mt-2 text-sm text-note-ink font-body bg-note-paperDeep/50 p-3 rounded-[3px] border border-note-gold/12">${data.content}</div>`;
-                    }
-                } else {
-                    contentHtml = `<audio src="${data.url}" controls class="w-full mt-2" id="audio-${docId}"></audio>`;
-                }
-
-                const itemHtml = `
-                    <div class="note-postcard" data-entry="${data.type}">
-                        <div class="flex justify-between items-center mb-1.5">
-                            <span class="flex items-center gap-1.5">
-                                <span class="stamp-dot" aria-hidden="true"></span>
-                                <span class="text-[10px] font-mono uppercase tracking-wide text-note-ink/80">${typeLabel}</span>
-                            </span>
-                            <span class="text-[10px] font-mono text-note-inkSoft">${dateStr} &middot; ${timeStr} ${statusHtml}</span>
-                        </div>
-                        <div class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/80">${data.sender}</div>
-                        ${contentHtml}
-                    </div>
-                `;
-                feed.insertAdjacentHTML('beforeend', itemHtml);
-
-                if (data.format === 'audio') {
-                    const audioElement = document.getElementById(`audio-${docId}`);
-                    if (audioElement && !isMine) {
-                        audioElement.addEventListener('play', async () => {
-                            if (!data.playedBy.includes(currentUser)) {
-                                await updateDoc(doc(db, "voice_notes", docId), {
-                                    playedBy: arrayUnion(currentUser)
-                                });
-                            }
-                        }, { once: true });
-                    }
-                }
-            });
-
-            ['Motolani', 'Zusi'].forEach(person => {
-                const latestMood = allDocs.find(d => d.type === 'mood' && d.sender === person);
-                const el = document.getElementById(`mood-mini-${person}`);
-                if (!el) return;
-                if (latestMood) {
-                    el.innerHTML = `<span>${latestMood.emoji || '•'}</span><span class="text-note-ink">${latestMood.mood || ''}</span>`;
-                } else {
-                    el.innerHTML = `<span class="text-note-inkSoft/50">No mood yet</span>`;
-                }
-            });
-
-            const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
-            const recentFromOther = allDocs.find(d => d.sender === otherPerson);
-            const recentEl = document.getElementById('recent-from-partner');
-            if (recentFromOther) {
-                let label = TYPE_LABELS[recentFromOther.type] || recentFromOther.type;
-                if (recentFromOther.type === 'mood' && recentFromOther.emoji) {
-                    label = `${recentFromOther.emoji} ${recentFromOther.mood}`;
-                }
-                if (recentFromOther.format === 'audio') {
-                    recentEl.innerHTML = `
-                        <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-2">${label}</p>
-                        <audio src="${recentFromOther.url}" controls class="w-full"></audio>
-                    `;
-                } else {
-                    recentEl.innerHTML = `
-                        <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-2">${label}</p>
-                        <p class="text-note-ink">${recentFromOther.content || '(no note)'}</p>
-                    `;
-                }
-            } else {
-                recentEl.innerHTML = `Nothing yet — be the first to leave something.`;
-            }
         });
     </script>
 </body>
