@@ -8,11 +8,11 @@
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#F4ECDA">
+    <meta name="theme-color" content="#14110E">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&family=Karla:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&family=Jost:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -26,16 +26,16 @@
                             card: 'rgb(var(--note-card) / <alpha-value>)',
                             ink: 'rgb(var(--note-ink) / <alpha-value>)',
                             inkSoft: 'rgb(var(--note-inkSoft) / <alpha-value>)',
-                            rust: 'rgb(var(--note-rust) / <alpha-value>)',
-                            sage: 'rgb(var(--note-sage) / <alpha-value>)',
+                            wine: 'rgb(var(--note-wine) / <alpha-value>)',
                             gold: 'rgb(var(--note-gold) / <alpha-value>)',
-                            plum: 'rgb(var(--note-plum) / <alpha-value>)',
+                            hunter: 'rgb(var(--note-hunter) / <alpha-value>)',
+                            aubergine: 'rgb(var(--note-aubergine) / <alpha-value>)',
                             rose: 'rgb(var(--note-rose) / <alpha-value>)'
                         }
                     },
                     fontFamily: {
                         display: ['"Fraunces"', 'serif'],
-                        body: ['"Karla"', 'sans-serif'],
+                        body: ['"Jost"', 'sans-serif'],
                         mono: ['"Space Mono"', 'monospace']
                     }
                 }
@@ -47,42 +47,42 @@
         * { -webkit-tap-highlight-color: transparent; }
 
         :root {
-            --note-paper: 244 236 218;
-            --note-paperDeep: 231 219 189;
-            --note-card: 251 247 236;
-            --note-ink: 46 42 34;
-            --note-inkSoft: 110 98 82;
-            --note-rust: 162 62 44;
-            --note-sage: 92 122 94;
-            --note-gold: 185 134 47;
-            --note-plum: 108 91 123;
-            --note-rose: 179 90 100;
-            --c-rust: rgb(var(--note-rust));
-            --c-sage: rgb(var(--note-sage));
+            /* Dark — the primary identity, matches the reference */
+            --note-paper: 20 17 14;
+            --note-paperDeep: 14 12 10;
+            --note-card: 26 22 18;
+            --note-ink: 237 230 216;
+            --note-inkSoft: 168 156 139;
+            --note-wine: 128 34 42;
+            --note-gold: 197 162 90;
+            --note-hunter: 74 92 66;
+            --note-aubergine: 108 74 112;
+            --note-rose: 168 96 104;
+            --c-wine: rgb(var(--note-wine));
             --c-gold: rgb(var(--note-gold));
-            --c-plum: rgb(var(--note-plum));
+            --c-hunter: rgb(var(--note-hunter));
+            --c-aubergine: rgb(var(--note-aubergine));
             --c-rose: rgb(var(--note-rose));
-            --note-sheen: 0.5;
-            color-scheme: light;
-        }
-
-        html.dark {
-            --note-paper: 25 21 15;
-            --note-paperDeep: 34 28 20;
-            --note-card: 41 34 25;
-            --note-ink: 236 227 205;
-            --note-inkSoft: 173 161 137;
-            --note-rust: 224 110 84;
-            --note-sage: 143 176 143;
-            --note-gold: 222 178 96;
-            --note-plum: 176 156 194;
-            --note-rose: 214 140 148;
-            --note-sheen: 0.05;
             color-scheme: dark;
         }
 
+        html.light {
+            /* Light — warm ivory boutique alt, same accents */
+            --note-paper: 245 240 230;
+            --note-paperDeep: 234 224 205;
+            --note-card: 255 252 246;
+            --note-ink: 34 28 22;
+            --note-inkSoft: 122 107 90;
+            --note-wine: 110 27 34;
+            --note-gold: 156 118 52;
+            --note-hunter: 68 86 60;
+            --note-aubergine: 96 62 100;
+            --note-rose: 150 78 88;
+            color-scheme: light;
+        }
+
         html, body {
-            font-family: 'Karla', sans-serif;
+            font-family: 'Jost', sans-serif;
             height: 100%;
             background: rgb(var(--note-paper));
             transition: background 0.25s ease;
@@ -97,80 +97,84 @@
             inset: 0;
             z-index: 0;
             pointer-events: none;
-            opacity: 0.05;
+            opacity: 0.04;
             mix-blend-mode: overlay;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
         }
 
+        /* ---------- Editorial cards ---------- */
         .note-card {
             position: relative;
             background: rgb(var(--note-card));
-            border: 1px solid rgb(var(--note-ink) / 0.10);
-            border-radius: 14px;
-            padding: 26px 22px 22px;
-            box-shadow: 0 10px 24px -12px rgb(var(--note-ink) / 0.28), 0 1px 0 rgb(255 255 255 / var(--note-sheen)) inset;
-            transform: rotate(var(--rot, 0deg));
-            animation: settle 0.5s ease-out;
+            border: 1px solid rgb(var(--note-gold) / 0.18);
+            border-radius: 3px;
+            padding: 28px 24px 24px;
+            box-shadow: 0 18px 34px -20px rgb(0 0 0 / 0.55);
+            animation: rise 0.5s ease-out;
         }
-        @keyframes settle {
-            0% { opacity: 0; transform: rotate(var(--rot, 0deg)) translateY(8px); }
-            100% { opacity: 1; transform: rotate(var(--rot, 0deg)) translateY(0); }
-        }
-
-        .washi {
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            width: 56px;
-            height: 20px;
-            transform: translateX(-50%) rotate(-3deg);
-            background-color: color-mix(in srgb, var(--tape, #A23E2C) 78%, white);
-            background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.35) 0 4px, transparent 4px 9px);
-            opacity: 0.9;
-            border-radius: 2px;
-            box-shadow: 0 3px 5px -2px rgb(var(--note-ink) / 0.35);
+        @keyframes rise {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
 
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--c-gold);
+            margin-bottom: 14px;
+        }
+        .eyebrow::before {
+            content: '';
+            width: 16px;
+            height: 1px;
+            background: var(--c-gold);
+            opacity: 0.7;
+        }
+
+        /* ---------- Seal emblem (signature element) ---------- */
         .seal-btn {
             position: relative;
-            width: 108px;
-            height: 108px;
+            width: 116px;
+            height: 116px;
             border-radius: 50%;
-            background: radial-gradient(circle at 32% 28%, #C1543D, #A23E2C 55%, #7E2E20 100%);
-            box-shadow: 0 10px 20px -6px rgb(var(--note-rust) / 0.55), inset 0 2px 4px rgba(255,255,255,0.25), inset 0 -6px 10px rgba(0,0,0,0.25);
+            background: radial-gradient(circle at 34% 26%, rgb(var(--note-wine)) 0%, rgb(var(--note-wine) / 0.85) 45%, rgb(var(--note-paperDeep)) 130%);
+            border: 1px solid rgb(var(--note-gold) / 0.55);
+            box-shadow: 0 14px 28px -10px rgb(var(--note-wine) / 0.55), inset 0 0 0 1px rgb(0 0 0 / 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         .seal-btn:active {
-            transform: scale(0.94) translateY(2px);
-            box-shadow: 0 4px 10px -4px rgb(var(--note-rust) / 0.5), inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -3px 6px rgba(0,0,0,0.3);
+            transform: scale(0.95) translateY(1px);
         }
         .seal-rings {
             position: absolute;
-            inset: 10px;
+            inset: 9px;
             border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.28);
-            box-shadow: 0 0 0 6px rgba(255,255,255,0.08), 0 0 0 12px rgba(255,255,255,0.05);
+            border: 1px solid rgb(var(--note-gold) / 0.45);
         }
         .seal-mono {
-            color: #F6E3D3;
-            font-size: 15px;
-            letter-spacing: 0.02em;
-            text-shadow: 0 1px 1px rgba(0,0,0,0.35);
+            color: rgb(var(--note-gold));
+            font-size: 16px;
+            letter-spacing: 0.06em;
+            text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
         }
 
         .postmark {
             font-family: 'Space Mono', monospace;
-            font-size: 11px;
-            letter-spacing: 0.2em;
-            color: var(--c-rust);
-            border: 2px solid var(--c-rust);
+            font-size: 10px;
+            letter-spacing: 0.24em;
+            color: var(--c-gold);
+            border: 1px solid rgb(var(--note-gold) / 0.55);
             border-radius: 999px;
-            padding: 5px 16px;
-            transform: rotate(-4deg);
-            opacity: 0.9;
+            padding: 6px 18px;
+            text-transform: uppercase;
         }
         .chosen-heart { animation: rise-fade 0.5s ease-out; }
         @keyframes rise-fade {
@@ -178,71 +182,73 @@
             100% { opacity: 1; transform: translateY(0); }
         }
 
+        /* ---------- Record buttons ---------- */
         .capsule-btn {
             width: 100%;
-            border: 2px dashed rgb(var(--note-ink) / 0.22);
-            border-radius: 12px;
+            border: 1px solid rgb(var(--note-gold) / 0.3);
+            border-radius: 3px;
             padding: 30px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: rgb(var(--note-ink) / 0.55);
+            color: rgb(var(--note-inkSoft));
             touch-action: none;
             transition: border-color 0.2s ease, background 0.2s ease;
         }
         .record-btn.is-recording {
-            border-color: var(--c-rust);
-            background: rgb(var(--note-rust) / 0.08);
-            box-shadow: 0 0 0 6px rgb(var(--note-rust) / 0.1);
+            border-color: rgb(var(--note-wine));
+            background: rgb(var(--note-wine) / 0.12);
+            box-shadow: 0 0 0 4px rgb(var(--note-wine) / 0.12);
         }
         .voice-mini-btn.is-recording {
-            border-color: var(--c-rust);
-            background: rgb(var(--note-rust) / 0.1);
+            border-color: rgb(var(--note-wine));
+            background: rgb(var(--note-wine) / 0.14);
         }
 
-        textarea::placeholder { color: rgb(var(--note-ink) / 0.35); }
+        textarea::placeholder { color: rgb(var(--note-ink) / 0.32); }
 
+        /* ---------- Feed dossier cards ---------- */
         .note-postcard {
             background: rgb(var(--note-card));
-            border: 1px solid rgb(var(--note-ink) / 0.10);
-            border-left: 4px solid var(--c-rust);
-            border-radius: 10px;
-            padding: 14px 16px;
+            border: 1px solid rgb(var(--note-gold) / 0.14);
+            border-left: 3px solid var(--c-wine);
+            border-radius: 3px;
+            padding: 15px 17px;
             margin-bottom: 12px;
-            box-shadow: 0 6px 14px -10px rgb(var(--note-ink) / 0.3);
-            animation: settle 0.35s ease-out;
+            box-shadow: 0 10px 20px -16px rgb(0 0 0 / 0.6);
+            animation: rise 0.35s ease-out;
         }
-        .note-postcard[data-entry="prayer"] { border-left-color: var(--c-sage); }
+        .note-postcard[data-entry="prayer"] { border-left-color: var(--c-hunter); }
         .note-postcard[data-entry="appreciation"] { border-left-color: var(--c-gold); }
-        .note-postcard[data-entry="capsule"] { border-left-color: var(--c-rust); }
-        .note-postcard[data-entry="mood"] { border-left-color: var(--c-plum); }
+        .note-postcard[data-entry="capsule"] { border-left-color: var(--c-wine); }
+        .note-postcard[data-entry="mood"] { border-left-color: var(--c-aubergine); }
         .note-postcard[data-entry="thinking-of-you"] { border-left-color: var(--c-rose); }
 
         .stamp-dot {
-            width: 8px; height: 8px; border-radius: 50%;
+            width: 6px; height: 6px; border-radius: 50%;
             display: inline-block;
-            background: var(--c-rust);
+            background: var(--c-wine);
         }
-        .note-postcard[data-entry="prayer"] .stamp-dot { background: var(--c-sage); }
+        .note-postcard[data-entry="prayer"] .stamp-dot { background: var(--c-hunter); }
         .note-postcard[data-entry="appreciation"] .stamp-dot { background: var(--c-gold); }
-        .note-postcard[data-entry="capsule"] .stamp-dot { background: var(--c-rust); }
-        .note-postcard[data-entry="mood"] .stamp-dot { background: var(--c-plum); }
+        .note-postcard[data-entry="capsule"] .stamp-dot { background: var(--c-wine); }
+        .note-postcard[data-entry="mood"] .stamp-dot { background: var(--c-aubergine); }
         .note-postcard[data-entry="thinking-of-you"] .stamp-dot { background: var(--c-rose); }
 
+        /* ---------- Nav ---------- */
         .stub-nav {
-            background: rgb(var(--note-card));
-            border-top: 1px dashed rgb(var(--note-ink) / 0.25);
-            box-shadow: 0 -8px 20px -14px rgb(var(--note-ink) / 0.35);
+            background: rgb(var(--note-paperDeep));
+            border-top: 1px solid rgb(var(--note-gold) / 0.18);
         }
-        .nav-btn { color: rgb(var(--note-ink) / 0.4); }
-        .nav-btn.active-nav { color: rgb(var(--note-ink)); }
+        .nav-btn { color: rgb(var(--note-inkSoft)); }
+        .nav-btn.active-nav { color: rgb(var(--note-gold)); }
         .nav-underline {
             width: 0%;
-            height: 2px;
-            background: var(--c-rust);
+            height: 1px;
+            background: var(--c-gold);
             transition: width 0.2s ease;
-            margin-top: 4px;
+            margin-top: 5px;
         }
         .nav-btn.active-nav .nav-underline { width: 60%; }
 
@@ -254,29 +260,38 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            padding: 12px 4px;
-            border-radius: 10px;
-            border: 1.5px solid rgb(var(--note-ink) / 0.12);
-            background: rgb(var(--note-paperDeep) / 0.35);
+            gap: 5px;
+            padding: 13px 4px;
+            border-radius: 3px;
+            border: 1px solid rgb(var(--note-gold) / 0.2);
+            background: rgb(var(--note-paperDeep) / 0.5);
             transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
         }
-        .mood-btn span.emoji { font-size: 20px; line-height: 1; }
-        .mood-btn span.label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: rgb(var(--note-inkSoft)); font-family: 'Space Mono', monospace; }
+        .mood-btn span.emoji { font-size: 19px; line-height: 1; }
+        .mood-btn span.label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: rgb(var(--note-inkSoft)); font-family: 'Space Mono', monospace; }
         .mood-btn.selected {
-            border-color: var(--c-plum);
-            background: rgb(var(--note-plum) / 0.12);
-            transform: scale(1.04);
+            border-color: var(--c-gold);
+            background: rgb(var(--note-wine) / 0.16);
+            transform: scale(1.03);
         }
 
         .mini-mood-pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgb(var(--note-paperDeep) / 0.5);
-            border: 1px solid rgb(var(--note-ink) / 0.10);
+            background: rgb(var(--note-paperDeep) / 0.6);
+            border: 1px solid rgb(var(--note-gold) / 0.16);
             border-radius: 999px;
             padding: 6px 12px;
+        }
+
+        /* ---------- Header wordmark ---------- */
+        .brand-micro {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.3em;
+            color: rgb(var(--note-gold));
+            text-transform: uppercase;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -284,21 +299,22 @@
         }
     </style>
 </head>
-<body class="text-note-ink antialiased selection:bg-note-rust selection:text-white select-none h-screen flex flex-col overflow-hidden relative bg-note-paper">
+<body class="text-note-ink antialiased selection:bg-note-wine selection:text-white select-none h-screen flex flex-col overflow-hidden relative bg-note-paper">
 
     <!-- Top Bar -->
-    <header class="pt-6 pb-4 px-5 z-10 shrink-0 relative border-b border-note-ink/10">
+    <header class="pt-6 pb-4 px-5 z-10 shrink-0 relative border-b border-note-gold/15">
         <div class="flex justify-between items-end">
             <div>
-                <p class="font-display italic text-[26px] leading-none text-note-ink">Our Space</p>
+                <p class="brand-micro mb-1.5">M &#10022; Z</p>
+                <p class="font-display italic text-[28px] leading-none text-note-ink">Our Space</p>
                 <p class="text-[10px] text-note-inkSoft mt-1.5 font-mono uppercase tracking-[0.15em]" id="greeting">Sealed with us</p>
             </div>
             <div class="flex items-center gap-2">
-                <button id="theme-toggle" aria-label="Toggle dark mode" class="w-8 h-8 rounded-full bg-note-paperDeep/60 border border-note-ink/15 flex items-center justify-center text-note-ink/70 shrink-0">
-                    <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>
-                    <svg id="icon-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M12 3v1.5M12 19.5V21M4.22 4.22l1.06 1.06M18.72 18.72l1.06 1.06M3 12h1.5M19.5 12H21M4.22 19.78l1.06-1.06M18.72 5.28l1.06-1.06M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"></path></svg>
+                <button id="theme-toggle" aria-label="Toggle light mode" class="w-8 h-8 rounded-full bg-note-paperDeep/70 border border-note-gold/25 flex items-center justify-center text-note-gold shrink-0">
+                    <svg id="icon-moon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>
+                    <svg id="icon-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M12 3v1.5M12 19.5V21M4.22 4.22l1.06 1.06M18.72 18.72l1.06 1.06M3 12h1.5M19.5 12H21M4.22 19.78l1.06-1.06M18.72 5.28l1.06-1.06M12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"></path></svg>
                 </button>
-                <select id="user-identity" class="text-[11px] font-mono uppercase tracking-wide text-note-ink bg-note-paperDeep/60 border border-note-ink/15 rounded-full px-3 py-1.5 outline-none">
+                <select id="user-identity" class="text-[11px] font-mono uppercase tracking-wide text-note-ink bg-note-paperDeep/70 border border-note-gold/25 rounded-full px-3 py-1.5 outline-none">
                     <option value="Motolani">I am Motolani</option>
                     <option value="Zusi">I am Zusi</option>
                 </select>
@@ -310,33 +326,31 @@
     <main class="flex-1 overflow-y-auto px-5 pt-5 pb-28 z-10 relative" id="main-content">
 
         <!-- ================= TAB 1: US (home) ================= -->
-        <div id="view-home" class="tab-view block space-y-6">
+        <div id="view-home" class="tab-view block space-y-5">
 
-            <p id="today-date" class="text-center font-mono text-[11px] uppercase tracking-[0.15em] text-note-inkSoft"></p>
+            <p id="today-date" class="text-center font-mono text-[10px] uppercase tracking-[0.22em] text-note-inkSoft">&nbsp;</p>
 
             <!-- Choose Again -->
-            <section class="note-card text-center" style="--rot:-0.6deg; --tape:#A23E2C">
-                <span class="washi" aria-hidden="true"></span>
-                <p class="font-display italic text-[15px] text-note-inkSoft mb-5">Today</p>
+            <section class="note-card text-center">
+                <span class="eyebrow mx-auto">Today</span>
 
                 <div class="flex flex-col items-center">
                     <button id="choose-btn" class="seal-btn" aria-label="Press to choose each other today">
                         <span class="seal-rings"></span>
-                        <span class="seal-mono font-display italic">M &#9825; Z</span>
+                        <span class="seal-mono font-display italic">M &#10022; Z</span>
                     </button>
-                    <p class="mt-4 text-[13px] font-body text-note-inkSoft max-w-[220px] leading-snug">Press the seal to choose each other, again, today</p>
+                    <p class="mt-5 text-[13px] font-body text-note-inkSoft max-w-[220px] leading-snug">Press the seal to choose each other, again, today</p>
                 </div>
 
                 <div id="status-area" class="mt-5 hidden flex-col items-center chosen-heart">
-                    <span class="postmark">SEALED</span>
+                    <span class="postmark">Sealed</span>
                     <p id="last-clicked-time" class="text-[11px] text-note-inkSoft font-mono tracking-wide mt-3"></p>
                 </div>
             </section>
 
             <!-- How are we -->
-            <section class="note-card" style="--rot:0.4deg; --tape:#6C5B7B">
-                <span class="washi" aria-hidden="true"></span>
-                <p class="font-display italic text-[15px] text-note-ink mb-4">How are we?</p>
+            <section class="note-card">
+                <span class="eyebrow">How are we</span>
                 <div class="flex gap-3">
                     <div class="flex-1">
                         <p class="text-[10px] font-mono uppercase tracking-wide text-note-inkSoft/70 mb-1.5">Motolani</p>
@@ -354,44 +368,39 @@
             </section>
 
             <!-- Recent from partner -->
-            <section class="note-card" style="--rot:-0.3deg; --tape:#B35A64">
-                <span class="washi" aria-hidden="true"></span>
-                <p class="font-display italic text-[15px] text-note-ink mb-3"><span id="recent-from-label">Recent</span></p>
+            <section class="note-card">
+                <span class="eyebrow"><span id="recent-from-label">Recent</span></span>
                 <div id="recent-from-partner" class="text-sm text-note-inkSoft">
                     Nothing yet — be the first to leave something.
                 </div>
             </section>
 
             <!-- Quick Voice Capsule -->
-            <section class="note-card" style="--rot:0.5deg; --tape:#5C7A5E">
-                <span class="washi" aria-hidden="true"></span>
-                <p class="font-display italic text-[15px] text-note-ink mb-4">Voice capsule</p>
+            <section class="note-card">
+                <span class="eyebrow">Voice capsule</span>
                 <button class="record-btn capsule-btn" data-type="capsule">
-                    <svg class="w-6 h-6 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <svg class="w-6 h-6 mb-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                     <span class="pointer-events-none status-text font-mono text-[11px] uppercase tracking-wide">Hold to record for Zusi</span>
                 </button>
             </section>
         </div>
 
         <!-- ================= TAB 2: FEEL ================= -->
-        <div id="view-feel" class="tab-view hidden space-y-6">
+        <div id="view-feel" class="tab-view hidden space-y-5">
 
             <!-- Mood check-in -->
-            <section class="note-card" style="--rot:-0.4deg; --tape:#6C5B7B">
-                <span class="washi" aria-hidden="true"></span>
-                <p class="font-display italic text-[15px] text-note-ink mb-1">How are you feeling?</p>
-                <p class="text-[12px] text-note-inkSoft mb-4">Tap one — you can say more after</p>
+            <section class="note-card">
+                <span class="eyebrow">How are you feeling</span>
+                <p class="text-[12px] text-note-inkSoft mb-4 -mt-2">Tap one — you can say more after</p>
 
-                <div id="mood-grid" class="grid grid-cols-3 gap-2 mb-4">
-                    <!-- filled by JS -->
-                </div>
+                <div id="mood-grid" class="grid grid-cols-3 gap-2 mb-4"></div>
 
                 <div id="mood-detail" class="hidden">
-                    <textarea id="mood-text" placeholder="Want to say more? (optional)" class="w-full text-sm p-3 bg-note-paperDeep/40 border border-note-ink/15 rounded-[10px] mb-3 focus:outline-none focus:border-note-plum resize-none h-16 font-body text-note-ink placeholder:text-note-ink/40"></textarea>
+                    <textarea id="mood-text" placeholder="Want to say more? (optional)" class="w-full text-sm p-3 bg-note-paperDeep/50 border border-note-gold/20 rounded-[3px] mb-3 focus:outline-none focus:border-note-gold resize-none h-16 font-body text-note-ink placeholder:text-note-ink/35"></textarea>
                     <div class="flex gap-2">
-                        <button id="mood-save-btn" class="bg-note-ink text-note-paper px-4 py-3 rounded-[10px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body">Save mood</button>
-                        <button class="record-btn voice-mini-btn bg-note-paperDeep/40 border border-note-ink/15 px-4 py-3 rounded-[10px] flex-1 text-sm text-note-ink/70 flex justify-center items-center gap-2 font-body" data-type="mood">
-                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        <button id="mood-save-btn" class="bg-note-wine text-note-ink px-4 py-3 rounded-[3px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body border border-note-gold/25">Save mood</button>
+                        <button class="record-btn voice-mini-btn bg-note-paperDeep/50 border border-note-gold/20 px-4 py-3 rounded-[3px] flex-1 text-sm text-note-inkSoft flex justify-center items-center gap-2 font-body" data-type="mood">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                             <span class="pointer-events-none status-text">Hold (voice)</span>
                         </button>
                     </div>
@@ -399,15 +408,15 @@
             </section>
 
             <!-- Something I want you to know -->
-            <section class="note-card" style="--rot:0.3deg; --tape:#B35A64">
-                <span class="washi" aria-hidden="true"></span>
-                <p class="font-display italic text-[15px] text-note-ink mb-1">Something I want you to know</p>
+            <section class="note-card">
+                <span class="eyebrow">For you</span>
+                <p class="font-display italic text-[16px] text-note-ink mb-1">Something I want you to know</p>
                 <p class="text-[12px] text-note-inkSoft mb-3">For the things too small for a whole conversation</p>
-                <textarea id="tender-text" placeholder="Say it here..." class="w-full text-sm p-3 bg-note-paperDeep/40 border border-note-ink/15 rounded-[10px] mb-3 focus:outline-none focus:border-note-rose resize-none h-20 font-body text-note-ink placeholder:text-note-ink/40"></textarea>
+                <textarea id="tender-text" placeholder="Say it here..." class="w-full text-sm p-3 bg-note-paperDeep/50 border border-note-gold/20 rounded-[3px] mb-3 focus:outline-none focus:border-note-gold resize-none h-20 font-body text-note-ink placeholder:text-note-ink/35"></textarea>
                 <div class="flex gap-2">
-                    <button class="bg-note-ink text-note-paper px-4 py-3 rounded-[10px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body" onclick="sendTextNote('thinking-of-you')">Save</button>
-                    <button class="record-btn voice-mini-btn bg-note-paperDeep/40 border border-note-ink/15 px-4 py-3 rounded-[10px] flex-1 text-sm text-note-ink/70 flex justify-center items-center gap-2 font-body" data-type="thinking-of-you">
-                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <button class="bg-note-wine text-note-ink px-4 py-3 rounded-[3px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body border border-note-gold/25" onclick="sendTextNote('thinking-of-you')">Save</button>
+                    <button class="record-btn voice-mini-btn bg-note-paperDeep/50 border border-note-gold/20 px-4 py-3 rounded-[3px] flex-1 text-sm text-note-inkSoft flex justify-center items-center gap-2 font-body" data-type="thinking-of-you">
+                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                         <span class="pointer-events-none status-text">Hold (voice)</span>
                     </button>
                 </div>
@@ -416,36 +425,34 @@
 
         <!-- ================= TAB 3: TIMELINE ================= -->
         <div id="view-feed" class="tab-view hidden">
-            <p class="font-display italic text-[20px] text-note-ink mb-4">Our timeline</p>
+            <p class="eyebrow">Our timeline</p>
             <div id="voice-feed" class="empty:hidden pb-10"></div>
         </div>
 
         <!-- ================= TAB 4: SHARED ================= -->
-        <div id="view-shared" class="tab-view hidden space-y-6">
+        <div id="view-shared" class="tab-view hidden space-y-5">
 
             <!-- Appreciation Jar -->
-            <section class="note-card" style="--rot:-0.4deg; --tape:#B9862F">
-                <span class="washi" aria-hidden="true"></span>
-                <p class="font-display italic text-[15px] text-note-ink mb-3">Appreciation jar</p>
-                <textarea id="appreciation-text" placeholder="Type something nice..." class="w-full text-sm p-3 bg-note-paperDeep/40 border border-note-ink/15 rounded-[10px] mb-3 focus:outline-none focus:border-note-gold resize-none h-20 font-body text-note-ink placeholder:text-note-ink/40"></textarea>
+            <section class="note-card">
+                <span class="eyebrow">Appreciation jar</span>
+                <textarea id="appreciation-text" placeholder="Type something nice..." class="w-full text-sm p-3 bg-note-paperDeep/50 border border-note-gold/20 rounded-[3px] mb-3 focus:outline-none focus:border-note-gold resize-none h-20 font-body text-note-ink placeholder:text-note-ink/35"></textarea>
                 <div class="flex gap-2">
-                    <button class="bg-note-ink text-note-paper px-4 py-3 rounded-[10px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body" onclick="sendTextNote('appreciation')">Save text</button>
-                    <button class="record-btn voice-mini-btn bg-note-paperDeep/40 border border-note-ink/15 px-4 py-3 rounded-[10px] flex-1 text-sm text-note-ink/70 flex justify-center items-center gap-2 font-body" data-type="appreciation">
-                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <button class="bg-note-wine text-note-ink px-4 py-3 rounded-[3px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body border border-note-gold/25" onclick="sendTextNote('appreciation')">Save text</button>
+                    <button class="record-btn voice-mini-btn bg-note-paperDeep/50 border border-note-gold/20 px-4 py-3 rounded-[3px] flex-1 text-sm text-note-inkSoft flex justify-center items-center gap-2 font-body" data-type="appreciation">
+                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                         <span class="pointer-events-none status-text">Hold (voice)</span>
                     </button>
                 </div>
             </section>
 
             <!-- Prayer Wall -->
-            <section class="note-card" style="--rot:0.4deg; --tape:#5C7A5E">
-                <span class="washi" aria-hidden="true"></span>
-                <p class="font-display italic text-[15px] text-note-ink mb-3">Prayer wall</p>
-                <textarea id="prayer-text" placeholder="Add a prayer request..." class="w-full text-sm p-3 bg-note-paperDeep/40 border border-note-ink/15 rounded-[10px] mb-3 focus:outline-none focus:border-note-sage resize-none h-20 font-body text-note-ink placeholder:text-note-ink/40"></textarea>
+            <section class="note-card">
+                <span class="eyebrow">Prayer wall</span>
+                <textarea id="prayer-text" placeholder="Add a prayer request..." class="w-full text-sm p-3 bg-note-paperDeep/50 border border-note-gold/20 rounded-[3px] mb-3 focus:outline-none focus:border-note-gold resize-none h-20 font-body text-note-ink placeholder:text-note-ink/35"></textarea>
                 <div class="flex gap-2">
-                    <button class="bg-note-ink text-note-paper px-4 py-3 rounded-[10px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body" onclick="sendTextNote('prayer')">Save text</button>
-                    <button class="record-btn voice-mini-btn bg-note-paperDeep/40 border border-note-ink/15 px-4 py-3 rounded-[10px] flex-1 text-sm text-note-ink/70 flex justify-center items-center gap-2 font-body" data-type="prayer">
-                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <button class="bg-note-wine text-note-ink px-4 py-3 rounded-[3px] text-sm font-medium flex-1 active:scale-95 transition-transform font-body border border-note-gold/25" onclick="sendTextNote('prayer')">Save text</button>
+                    <button class="record-btn voice-mini-btn bg-note-paperDeep/50 border border-note-gold/20 px-4 py-3 rounded-[3px] flex-1 text-sm text-note-inkSoft flex justify-center items-center gap-2 font-body" data-type="prayer">
+                        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.3" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                         <span class="pointer-events-none status-text">Hold (voice)</span>
                     </button>
                 </div>
@@ -456,22 +463,22 @@
     <!-- Bottom Navigation Bar -->
     <nav class="absolute bottom-0 w-full stub-nav px-5 py-3.5 flex justify-between items-center z-20 font-body">
         <button onclick="switchTab('home')" id="tab-home" class="nav-btn active-nav flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
             <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Us</span>
             <span class="nav-underline"></span>
         </button>
         <button onclick="switchTab('feel')" id="tab-feel" class="nav-btn flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
             <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Feel</span>
             <span class="nav-underline"></span>
         </button>
         <button onclick="switchTab('feed')" id="tab-feed" class="nav-btn flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
             <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Timeline</span>
             <span class="nav-underline"></span>
         </button>
         <button onclick="switchTab('shared')" id="tab-shared" class="nav-btn flex flex-col items-center">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M9 12h6m-6 4h6M9 8h1m-4 12h12a2 2 0 002-2V6a2 2 0 00-2-2H8L4 8v10a2 2 0 002 2z"></path></svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M9 12h6m-6 4h6M9 8h1m-4 12h12a2 2 0 002-2V6a2 2 0 00-2-2H8L4 8v10a2 2 0 002 2z"></path></svg>
             <span class="text-[10px] font-mono uppercase tracking-wide mt-1">Shared</span>
             <span class="nav-underline"></span>
         </button>
@@ -517,16 +524,13 @@
             'thinking-of-you': 'for you'
         };
 
-        let selectedMood = null; // { emoji, label }
+        let selectedMood = null;
 
         // --- TAB NAVIGATION ---
         window.switchTab = (tabId) => {
             document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
             document.getElementById(`view-${tabId}`).classList.remove('hidden');
-
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active-nav');
-            });
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-nav'));
             document.getElementById(`tab-${tabId}`).classList.add('active-nav');
         };
 
@@ -534,7 +538,7 @@
         document.getElementById('today-date').innerText =
             new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
 
-        // --- THEME (LIGHT / DARK) ---
+        // --- THEME (DARK / LIGHT) ---
         const rootEl = document.documentElement;
         const themeToggle = document.getElementById('theme-toggle');
         const iconMoon = document.getElementById('icon-moon');
@@ -542,9 +546,9 @@
         const themeMeta = document.querySelector('meta[name="theme-color"]');
 
         const applyTheme = (mode) => {
-            rootEl.classList.toggle('dark', mode === 'dark');
-            iconMoon.classList.toggle('hidden', mode === 'dark');
-            iconSun.classList.toggle('hidden', mode !== 'dark');
+            rootEl.classList.toggle('light', mode === 'light');
+            iconMoon.classList.toggle('hidden', mode === 'light');
+            iconSun.classList.toggle('hidden', mode !== 'light');
             localStorage.setItem('our_space_theme', mode);
             if (themeMeta) {
                 const rgb = getComputedStyle(rootEl).getPropertyValue('--note-paper').trim().split(/\s+/);
@@ -552,12 +556,10 @@
             }
         };
 
-        const storedTheme = localStorage.getItem('our_space_theme');
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        applyTheme(storedTheme || (prefersDark ? 'dark' : 'light'));
+        applyTheme(localStorage.getItem('our_space_theme') || 'dark');
 
         themeToggle.addEventListener('click', () => {
-            applyTheme(rootEl.classList.contains('dark') ? 'light' : 'dark');
+            applyTheme(rootEl.classList.contains('light') ? 'dark' : 'light');
         });
 
         // --- IDENTITY MANAGEMENT ---
@@ -699,7 +701,6 @@
                 const type = btn.getAttribute('data-type');
                 const statusText = btn.querySelector('.status-text');
 
-                // For mood voice notes, require a mood to be selected first
                 if (type === 'mood' && !selectedMood) {
                     alert('Pick a mood first, then hold to add a voice note.');
                     return;
@@ -804,12 +805,11 @@
                 let statusHtml = '';
                 if (isMine && data.format === 'audio') {
                     statusHtml = hasBeenPlayed
-                        ? `<span class="text-note-sage font-bold ml-1">seen</span>`
+                        ? `<span class="text-note-hunter font-bold ml-1">seen</span>`
                         : `<span class="text-note-inkSoft/60 ml-1">sent</span>`;
                 }
 
                 let typeLabel = TYPE_LABELS[data.type] || data.type;
-                let moodHeaderHtml = '';
                 if (data.type === 'mood' && data.emoji) {
                     typeLabel = `${data.emoji} ${data.mood}`;
                 }
@@ -817,7 +817,7 @@
                 let contentHtml = '';
                 if (data.format === 'text') {
                     if (data.content) {
-                        contentHtml = `<div class="mt-2 text-sm text-note-ink font-body bg-note-paperDeep/40 p-3 rounded-[8px] border border-note-ink/10">${data.content}</div>`;
+                        contentHtml = `<div class="mt-2 text-sm text-note-ink font-body bg-note-paperDeep/50 p-3 rounded-[3px] border border-note-gold/12">${data.content}</div>`;
                     }
                 } else {
                     contentHtml = `<audio src="${data.url}" controls class="w-full mt-2" id="audio-${docId}"></audio>`;
@@ -852,7 +852,6 @@
                 }
             });
 
-            // --- "How are we" mini widgets ---
             ['Motolani', 'Zusi'].forEach(person => {
                 const latestMood = allDocs.find(d => d.type === 'mood' && d.sender === person);
                 const el = document.getElementById(`mood-mini-${person}`);
@@ -864,7 +863,6 @@
                 }
             });
 
-            // --- "Recent from partner" widget ---
             const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
             const recentFromOther = allDocs.find(d => d.sender === otherPerson);
             const recentEl = document.getElementById('recent-from-partner');
