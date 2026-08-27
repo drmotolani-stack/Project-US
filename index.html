@@ -68,6 +68,7 @@
             border: 1px solid rgba(197, 162, 90, 0.3);
             box-shadow: 0 10px 30px -10px theme('colors.suv.wine');
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            z-index: 20;
         }
         .seal-btn:active { transform: scale(0.95); }
         .seal-btn:disabled { opacity: 0.7; transform: none; }
@@ -93,25 +94,34 @@
             to { opacity: 1; }
         }
 
-        .recording-pulse {
-            box-shadow: 0 0 0 0 rgba(197, 162, 90, 0.7);
-        }
+        .recording-pulse { box-shadow: 0 0 0 0 rgba(197, 162, 90, 0.7); }
         .recording-pulse.active {
             animation: pulse 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
             background-color: theme('colors.suv.wine');
         }
-        @keyframes pulse {
-            to { box-shadow: 0 0 0 30px rgba(197, 162, 90, 0); }
-        }
+        @keyframes pulse { to { box-shadow: 0 0 0 30px rgba(197, 162, 90, 0); } }
 
-        .mood-pill {
-            transition: all 0.2s ease;
-        }
+        .mood-pill { transition: all 0.2s ease; }
         .mood-pill.selected {
             background: rgba(197, 162, 90, 0.1);
             border-color: theme('colors.suv.gold');
             color: theme('colors.suv.gold');
         }
+        
+        /* Custom file input styling */
+        input[type="file"]::file-selector-button {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-right: 12px;
+            font-family: 'Jost', sans-serif;
+            font-size: 12px;
+            transition: background-color 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover { background-color: rgba(255, 255, 255, 0.2); }
     </style>
 </head>
 <body class="bg-suv-bg text-suv-text font-sans antialiased h-screen flex flex-col overflow-hidden relative selection:bg-suv-gold selection:text-suv-bg">
@@ -131,7 +141,7 @@
                 <p id="current-date" class="font-mono text-[11px] uppercase tracking-widest text-suv-muted pt-2"></p>
             </div>
 
-            <section class="flex flex-col items-center justify-center py-6">
+            <section class="flex flex-col items-center justify-center py-6 relative z-20">
                 <p class="font-serif italic text-xl text-suv-text mb-6">Today, I choose you.</p>
                 <button id="choose-btn" class="seal-btn flex items-center justify-center">
                     <span class="absolute inset-2 rounded-full border border-suv-gold/30"></span>
@@ -283,9 +293,9 @@
         </button>
     </nav>
 
-    <div id="action-drawer-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden backdrop-fade" onclick="closeActionDrawer()"></div>
+    <div id="action-drawer-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[50] hidden backdrop-fade" onclick="closeActionDrawer()"></div>
     
-    <div id="action-drawer" class="fixed bottom-0 left-0 w-full bg-suv-card rounded-t-3xl border-t border-white/10 z-[70] hidden drawer-slide-up pb-10 pt-6 px-6">
+    <div id="action-drawer" class="fixed bottom-0 left-0 w-full bg-suv-card rounded-t-3xl border-t border-white/10 z-[60] hidden drawer-slide-up pb-10 pt-6 px-6">
         <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6"></div>
         
         <div id="drawer-menu" class="fade-in">
@@ -302,6 +312,18 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     </div>
                     <span class="font-sans text-sm font-light">Note</span>
+                </button>
+                <button onclick="switchDrawerState('memory')" class="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col items-center gap-3 active:bg-white/10 transition-colors">
+                    <div class="w-10 h-10 rounded-full bg-suv-olive/20 text-[#8B9D77] flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <span class="font-sans text-sm font-light">Memory</span>
+                </button>
+                <button class="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col items-center gap-3 active:bg-white/10 transition-colors opacity-50">
+                    <div class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    </div>
+                    <span class="font-sans text-sm font-light">Plan</span>
                 </button>
             </div>
         </div>
@@ -325,6 +347,23 @@
                 <svg class="w-10 h-10 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
             </button>
             <p id="record-status-text" class="font-light text-sm text-suv-muted">Hold to record</p>
+        </div>
+
+        <div id="drawer-memory" class="hidden fade-in space-y-4">
+            <div class="flex justify-between items-center mb-2">
+                <p class="font-serif italic text-xl text-white">Save a memory</p>
+                <button onclick="switchDrawerState('menu')" class="text-suv-muted"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            
+            <div class="w-full bg-suv-bg/50 border border-white/10 rounded-lg p-4 flex flex-col gap-3">
+                <input type="file" id="memory-image-input" accept="image/*" class="text-sm text-suv-muted w-full focus:outline-none">
+            </div>
+
+            <textarea id="memory-text-input" placeholder="Add a caption..." class="w-full bg-suv-bg/50 border border-white/10 rounded-lg p-4 font-sans font-light text-sm text-white focus:outline-none focus:border-suv-olive/50 resize-none h-20 placeholder:text-suv-muted/50"></textarea>
+            
+            <button id="submit-memory" class="w-full bg-suv-olive/80 text-white py-3.5 rounded-lg text-sm active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <span id="memory-btn-text">Save Memory</span>
+            </button>
         </div>
     </div>
 
@@ -373,21 +412,66 @@
             
             if (recentFromOther) {
                 const isAudio = recentFromOther.format === 'audio';
+                const isImage = recentFromOther.format === 'image';
                 const date = recentFromOther.timestamp ? recentFromOther.timestamp.toDate() : new Date();
                 const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 
+                let contentHtml = `<p class="font-serif italic text-lg text-white mb-3">"${recentFromOther.content}"</p>`;
+                if (isAudio) {
+                    contentHtml = `<audio src="${recentFromOther.url}" controls class="w-full mt-2"></audio>`;
+                } else if (isImage) {
+                    contentHtml = `
+                        <div class="mt-2 space-y-2">
+                            <img src="${recentFromOther.imageUrl}" class="w-full h-auto rounded-md border border-white/10" alt="Memory">
+                            ${recentFromOther.content ? `<p class="font-serif italic text-sm text-white">"${recentFromOther.content}"</p>` : ''}
+                        </div>
+                    `;
+                }
+
                 recentContainer.innerHTML = `
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-suv-wine"></div>
                     <div class="flex justify-between items-start mb-2">
                         <span class="text-xs font-mono uppercase tracking-widest text-suv-muted">${recentFromOther.type || 'Moment'}</span>
                         <span class="text-[10px] font-mono text-suv-muted">${timeStr}</span>
                     </div>
-                    ${isAudio ? 
-                        `<audio src="${recentFromOther.url}" controls class="w-full mt-2"></audio>` : 
-                        `<p class="font-serif italic text-lg text-white mb-3">"${recentFromOther.content}"</p>`
-                    }
+                    ${contentHtml}
                 `;
             }
+        });
+
+        // Choose Again Logic
+        const chooseBtn = document.getElementById('choose-btn');
+        const chooseText = document.getElementById('choose-text');
+        const statusArea = document.getElementById('status-area');
+        const timeDisplay = document.getElementById('last-clicked-time');
+
+        chooseBtn.addEventListener('click', async () => {
+            chooseBtn.disabled = true;
+            chooseText.innerText = "Sealing...";
+            try {
+                await addDoc(collection(db, "choose_events"), { 
+                    timestamp: serverTimestamp(), 
+                    user: currentUser 
+                });
+            } catch (error) {
+                console.error("Error saving seal:", error);
+                chooseText.innerText = "Retry";
+                chooseBtn.disabled = false;
+            }
+        });
+
+        const qChoose = query(collection(db, "choose_events"), orderBy("timestamp", "desc"), limit(1));
+        onSnapshot(qChoose, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const data = change.doc.data();
+                    const date = data.timestamp ? data.timestamp.toDate() : new Date();
+                    chooseBtn.classList.add('hidden');
+                    statusArea.classList.remove('hidden');
+                    statusArea.classList.add('flex');
+                    timeDisplay.innerText = `Last sealed: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                }
+            });
         });
 
         // Submit Text Note Logic
@@ -414,10 +498,56 @@
                 closeActionDrawer();
             } catch (error) {
                 console.error("Error saving note:", error);
-                alert("Failed to save note.");
+                alert("Failed to save note. Check your Firebase Rules.");
             } finally {
                 submitNoteBtn.disabled = false;
                 submitNoteBtn.innerHTML = "Leave Note";
+            }
+        });
+
+        // Memory (Image + Text) Logic
+        const submitMemoryBtn = document.getElementById('submit-memory');
+        const memoryImageInput = document.getElementById('memory-image-input');
+        const memoryTextInput = document.getElementById('memory-text-input');
+        const memoryBtnText = document.getElementById('memory-btn-text');
+
+        submitMemoryBtn.addEventListener('click', async () => {
+            const file = memoryImageInput.files[0];
+            const caption = memoryTextInput.value.trim();
+            
+            if (!file && !caption) return;
+
+            submitMemoryBtn.disabled = true;
+            memoryBtnText.innerText = "Saving...";
+
+            try {
+                let downloadUrl = null;
+                
+                if (file) {
+                    const fileName = `memories/${Date.now()}_${file.name}`;
+                    const storageRef = ref(storage, fileName);
+                    await uploadBytes(storageRef, file);
+                    downloadUrl = await getDownloadURL(storageRef);
+                }
+
+                await addDoc(collection(db, "voice_notes"), {
+                    format: file ? 'image' : 'text',
+                    type: 'Memory',
+                    content: caption,
+                    imageUrl: downloadUrl,
+                    sender: currentUser,
+                    timestamp: serverTimestamp()
+                });
+                
+                memoryImageInput.value = '';
+                memoryTextInput.value = '';
+                closeActionDrawer();
+            } catch (error) {
+                console.error("Memory upload failed:", error);
+                alert("Failed to upload. Ensure Firebase Rules are updated.");
+            } finally {
+                submitMemoryBtn.disabled = false;
+                memoryBtnText.innerText = "Save Memory";
             }
         });
 
@@ -467,7 +597,7 @@
                         
                     } catch (error) {
                         console.error("Upload failed:", error);
-                        statusText.innerText = "Upload failed";
+                        statusText.innerText = "Upload failed (Check Firebase Rules)";
                     }
                 };
 
@@ -553,6 +683,7 @@
         const stateMenu = document.getElementById('drawer-menu');
         const stateNote = document.getElementById('drawer-note');
         const stateVoice = document.getElementById('drawer-voice');
+        const stateMemory = document.getElementById('drawer-memory');
         const noteInputDOM = document.getElementById('note-input');
 
         window.toggleActionDrawer = function() {
@@ -574,6 +705,7 @@
             stateMenu.classList.add('hidden');
             stateNote.classList.add('hidden');
             stateVoice.classList.add('hidden');
+            stateMemory.classList.add('hidden');
 
             if (state === 'menu') {
                 stateMenu.classList.remove('hidden');
@@ -582,6 +714,8 @@
                 setTimeout(() => noteInputDOM.focus(), 100); 
             } else if (state === 'voice') {
                 stateVoice.classList.remove('hidden');
+            } else if (state === 'memory') {
+                stateMemory.classList.remove('hidden');
             }
         }
     </script>
