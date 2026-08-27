@@ -35,14 +35,9 @@
         }
     </script>
 
-    <style>
+    <style type="text/tailwindcss">
         * { -webkit-tap-highlight-color: transparent; }
         
-        body {
-            background-color: theme('colors.suv.bg');
-            color: theme('colors.suv.text');
-        }
-
         /* Subtle noise texture for editorial print feel */
         body::before {
             content: '';
@@ -104,10 +99,12 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased h-screen flex flex-col overflow-hidden relative selection:bg-suv-gold selection:text-suv-bg">
+<body class="bg-suv-bg text-suv-text font-sans antialiased h-screen flex flex-col overflow-hidden relative selection:bg-suv-gold selection:text-suv-bg">
 
+    <!-- Scrollable Content -->
     <main class="flex-1 overflow-y-auto px-6 pt-12 pb-32 z-10 relative" id="main-container">
         
+        <!-- ================= TAB 1: US (HOME) ================= -->
         <div id="tab-us" class="view-section fade-in space-y-10">
             
             <header class="text-center space-y-2">
@@ -116,6 +113,7 @@
                 <p id="current-date" class="font-mono text-[11px] uppercase tracking-widest text-suv-muted pt-2"></p>
             </header>
 
+            <!-- Choose Again -->
             <section class="flex flex-col items-center justify-center py-6">
                 <p class="font-serif italic text-xl text-suv-text mb-6">Today, I choose you.</p>
                 <button class="seal-btn flex items-center justify-center">
@@ -124,6 +122,7 @@
                 </button>
             </section>
 
+            <!-- How are we -->
             <section class="space-y-4">
                 <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">How are we</p>
                 <div class="flex gap-4">
@@ -138,6 +137,7 @@
                 </div>
             </section>
 
+            <!-- Recent -->
             <section class="space-y-4">
                 <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">Recent from Zusi</p>
                 <div class="bg-suv-card p-5 rounded-lg border border-suv-wine/30 relative overflow-hidden">
@@ -155,6 +155,7 @@
             </section>
         </div>
 
+        <!-- ================= TAB 2: FEEL ================= -->
         <div id="tab-feel" class="view-section hidden fade-in space-y-8">
             <header class="mb-8">
                 <h2 class="font-serif italic text-3xl text-white mb-2">Inside</h2>
@@ -183,6 +184,7 @@
             </section>
         </div>
 
+        <!-- ================= TAB 3: PLAN ================= -->
         <div id="tab-plan" class="view-section hidden fade-in space-y-8">
             <header class="mb-8">
                 <h2 class="font-serif italic text-3xl text-white mb-2">Our Life</h2>
@@ -236,6 +238,7 @@
             </section>
         </div>
 
+        <!-- ================= TAB 4: DREAM ================= -->
         <div id="tab-dream" class="view-section hidden fade-in space-y-8">
             <header class="mb-6">
                 <h2 class="font-serif italic text-3xl text-white mb-2">Our Future</h2>
@@ -244,6 +247,7 @@
 
             <div class="columns-2 gap-4 space-y-4">
                 
+                <!-- Vision Item 1 -->
                 <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
                     <div class="aspect-[3/4] bg-gradient-to-br from-suv-card to-[#2A2825] flex items-end p-4">
                         <div class="absolute inset-0 bg-black/20"></div>
@@ -254,6 +258,7 @@
                     </div>
                 </div>
 
+                <!-- Vision Item 2 -->
                 <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
                     <div class="aspect-square bg-gradient-to-tr from-suv-olive/40 to-suv-card flex items-end p-4">
                         <div class="relative z-10">
@@ -263,6 +268,7 @@
                     </div>
                 </div>
 
+                <!-- Vision Item 3 -->
                 <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
                     <div class="aspect-square bg-gradient-to-bl from-suv-wine/30 to-suv-card flex items-end p-4">
                         <div class="relative z-10">
@@ -275,6 +281,7 @@
             </div>
         </div>
 
+        <!-- ================= TAB 5: REMEMBER ================= -->
         <div id="tab-remember" class="view-section hidden fade-in space-y-8">
             <header class="mb-8">
                 <h2 class="font-serif italic text-3xl text-white mb-2">Memories</h2>
@@ -304,6 +311,7 @@
         </div>
     </main>
 
+    <!-- Floating Glassmorphism Pill Navigation -->
     <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] glass-pill rounded-full px-6 py-4 flex justify-between items-center z-50">
         
         <button onclick="switchTab('us')" id="btn-us" class="nav-item active flex flex-col items-center gap-1">
@@ -316,6 +324,7 @@
             <span class="text-[9px] font-mono uppercase tracking-widest">Feel</span>
         </button>
 
+        <!-- Floating Action Button (Center) -->
         <div class="relative -top-6">
             <button class="w-14 h-14 rounded-full bg-suv-gold text-suv-bg shadow-[0_0_20px_rgba(197,162,90,0.4)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
