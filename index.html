@@ -38,7 +38,6 @@
     <style type="text/tailwindcss">
         * { -webkit-tap-highlight-color: transparent; }
         
-        /* Subtle noise texture for editorial print feel */
         body::before {
             content: '';
             position: fixed;
@@ -50,7 +49,6 @@
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
         }
 
-        /* Hide scrollbar */
         ::-webkit-scrollbar { width: 0px; display: none; }
         
         .glass-pill {
@@ -71,17 +69,14 @@
             box-shadow: 0 10px 30px -10px theme('colors.suv.wine');
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .seal-btn:active {
-            transform: scale(0.95);
-        }
+        .seal-btn:active { transform: scale(0.95); }
+        .seal-btn:disabled { opacity: 0.7; transform: none; }
 
         .nav-item {
             color: theme('colors.suv.muted');
             transition: color 0.3s ease;
         }
-        .nav-item.active {
-            color: theme('colors.suv.gold');
-        }
+        .nav-item.active { color: theme('colors.suv.gold'); }
 
         .fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn {
@@ -89,244 +84,96 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .mood-pill {
-            transition: all 0.2s ease;
+        .drawer-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
         }
-        .mood-pill.selected {
-            background: rgba(197, 162, 90, 0.1);
-            border-color: theme('colors.suv.gold');
-            color: theme('colors.suv.gold');
+        
+        .backdrop-fade { animation: fadeBg 0.3s ease forwards; }
+        @keyframes fadeBg {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     </style>
 </head>
 <body class="bg-suv-bg text-suv-text font-sans antialiased h-screen flex flex-col overflow-hidden relative selection:bg-suv-gold selection:text-suv-bg">
 
+    <!-- Top Identity Header -->
+    <header class="absolute top-0 w-full z-20 px-6 pt-6 flex justify-end">
+        <select id="user-identity" class="bg-transparent text-[10px] font-mono uppercase tracking-widest text-suv-muted outline-none border-b border-suv-gold/30 pb-1 appearance-none text-right cursor-pointer">
+            <option value="Motolani" class="bg-suv-bg text-suv-text">Motolani</option>
+            <option value="Zusi" class="bg-suv-bg text-suv-text">Zusi</option>
+        </select>
+    </header>
+
     <!-- Scrollable Content -->
-    <main class="flex-1 overflow-y-auto px-6 pt-12 pb-32 z-10 relative" id="main-container">
+    <main class="flex-1 overflow-y-auto px-6 pt-16 pb-32 z-10 relative" id="main-container">
         
         <!-- ================= TAB 1: US (HOME) ================= -->
         <div id="tab-us" class="view-section fade-in space-y-10">
             
-            <header class="text-center space-y-2">
-                <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-suv-gold">Motolani & Zusi</p>
+            <div class="text-center space-y-2">
                 <h1 class="font-serif italic text-4xl text-white">Our Space</h1>
                 <p id="current-date" class="font-mono text-[11px] uppercase tracking-widest text-suv-muted pt-2"></p>
-            </header>
+            </div>
 
             <!-- Choose Again -->
             <section class="flex flex-col items-center justify-center py-6">
                 <p class="font-serif italic text-xl text-suv-text mb-6">Today, I choose you.</p>
-                <button class="seal-btn flex items-center justify-center">
+                <button id="choose-btn" class="seal-btn flex items-center justify-center">
                     <span class="absolute inset-2 rounded-full border border-suv-gold/30"></span>
-                    <span class="font-serif italic text-suv-gold text-lg">Seal it</span>
+                    <span id="choose-text" class="font-serif italic text-suv-gold text-lg">Seal it</span>
                 </button>
-            </section>
-
-            <!-- How are we -->
-            <section class="space-y-4">
-                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">How are we</p>
-                <div class="flex gap-4">
-                    <div class="flex-1 bg-suv-card/50 p-4 rounded-lg border border-white/5">
-                        <p class="text-[10px] font-mono uppercase tracking-wide text-suv-muted mb-2">Motolani</p>
-                        <p class="text-sm">🙂 <span class="ml-2 font-light">Good</span></p>
-                    </div>
-                    <div class="flex-1 bg-suv-card/50 p-4 rounded-lg border border-white/5">
-                        <p class="text-[10px] font-mono uppercase tracking-wide text-suv-muted mb-2">Zusi</p>
-                        <p class="text-sm">🥹 <span class="ml-2 font-light text-suv-gold">Missing you</span></p>
-                    </div>
+                <div id="status-area" class="mt-4 hidden flex-col items-center fade-in">
+                    <span class="font-mono text-[10px] uppercase tracking-widest text-suv-gold border border-suv-gold/50 rounded-full px-4 py-1">Sealed</span>
+                    <p id="last-clicked-time" class="text-[10px] text-suv-muted font-mono mt-2"></p>
                 </div>
             </section>
 
             <!-- Recent -->
             <section class="space-y-4">
-                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">Recent from Zusi</p>
-                <div class="bg-suv-card p-5 rounded-lg border border-suv-wine/30 relative overflow-hidden">
+                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2"><span id="recent-label">Recent</span></p>
+                <div id="recent-container" class="bg-suv-card p-5 rounded-lg border border-suv-wine/30 relative overflow-hidden">
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-suv-wine"></div>
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-xs font-mono uppercase tracking-widest text-suv-muted">Voice Capsule</span>
-                        <span class="text-[10px] font-mono text-suv-muted">8:42 PM</span>
-                    </div>
-                    <p class="font-serif italic text-lg text-white mb-3">"I was thinking about you today..."</p>
-                    <div class="w-full h-8 bg-white/5 rounded flex items-center px-3 gap-2">
-                        <svg class="w-4 h-4 text-suv-gold" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <div class="flex-1 h-0.5 bg-suv-gold/20 rounded"><div class="w-1/3 h-full bg-suv-gold rounded"></div></div>
-                    </div>
+                    <p class="text-sm font-light text-suv-muted">Waiting for the next moment...</p>
                 </div>
             </section>
         </div>
 
         <!-- ================= TAB 2: FEEL ================= -->
         <div id="tab-feel" class="view-section hidden fade-in space-y-8">
-            <header class="mb-8">
-                <h2 class="font-serif italic text-3xl text-white mb-2">Inside</h2>
-                <p class="font-sans font-light text-sm text-suv-muted">The emotional heartbeat of us.</p>
-            </header>
-
-            <section class="space-y-4">
-                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold">How are you feeling?</p>
-                <div class="flex flex-wrap gap-3">
-                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2"><span>❤️</span> Loved</button>
-                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2"><span>🥰</span> Happy</button>
-                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2"><span>🫠</span> Overwhelmed</button>
-                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2 selected"><span>😌</span> Peaceful</button>
-                    <button class="mood-pill bg-suv-card border border-white/10 px-4 py-2 rounded-full text-sm font-light flex items-center gap-2"><span>🤍</span> Grateful</button>
-                </div>
-            </section>
-
-            <section class="space-y-4 pt-4">
-                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">For You</p>
-                <p class="text-xs font-light text-suv-muted">Something I want you to know.</p>
-                <textarea placeholder="Type a thought..." class="w-full bg-suv-card/50 border border-white/10 rounded-lg p-4 font-sans font-light text-sm text-white focus:outline-none focus:border-suv-gold/50 resize-none h-24 placeholder:text-suv-muted/50"></textarea>
-                <div class="flex gap-3">
-                    <button class="flex-1 bg-white/5 border border-white/10 py-3 rounded-lg text-sm flex items-center justify-center gap-2 text-suv-text active:scale-95 transition-transform"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg> Voice</button>
-                    <button class="flex-1 bg-suv-wine border border-suv-wine text-white py-3 rounded-lg text-sm active:scale-95 transition-transform">Leave Note</button>
-                </div>
-            </section>
+            <h2 class="font-serif italic text-3xl text-white">Inside</h2>
+            <p class="font-light text-sm text-suv-muted">The emotional heartbeat of us.</p>
         </div>
 
         <!-- ================= TAB 3: PLAN ================= -->
         <div id="tab-plan" class="view-section hidden fade-in space-y-8">
-            <header class="mb-8">
-                <h2 class="font-serif italic text-3xl text-white mb-2">Our Life</h2>
-                <p class="font-sans font-light text-sm text-suv-muted">Building the foundation.</p>
-            </header>
-
-            <section class="space-y-4">
-                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">This Week</p>
-                
-                <div class="space-y-4">
-                    <div>
-                        <p class="font-mono text-[10px] text-suv-muted mb-2">WED 26</p>
-                        <div class="flex items-center gap-3 mb-2 opacity-50 line-through">
-                            <div class="w-4 h-4 rounded-sm border border-suv-gold bg-suv-gold/20 flex items-center justify-center"><svg class="w-3 h-3 text-suv-gold" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>
-                            <p class="font-light text-sm">Finance discussion</p>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <p class="font-mono text-[10px] text-suv-muted mb-2">SAT 29</p>
-                        <div class="flex items-center gap-3 mb-2">
-                            <div class="w-4 h-4 rounded-sm border border-white/30"></div>
-                            <p class="font-light text-sm">❤️ Date night</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="w-4 h-4 rounded-sm border border-white/30"></div>
-                            <p class="font-light text-sm">Decide restaurant</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="space-y-4 pt-4">
-                <p class="font-mono text-[10px] uppercase tracking-[0.15em] text-suv-gold border-b border-suv-gold/20 pb-2">Active Project</p>
-                <div class="bg-suv-card border border-white/10 rounded-lg p-5">
-                    <div class="flex justify-between items-end mb-4">
-                        <div>
-                            <p class="font-serif italic text-lg text-white">💰 Understanding Money</p>
-                            <p class="font-mono text-[10px] text-suv-muted mt-1">AUGUST FOCUS</p>
-                        </div>
-                        <span class="font-mono text-xs text-suv-gold">70%</span>
-                    </div>
-                    <div class="w-full h-1 bg-white/10 rounded-full mb-4">
-                        <div class="w-[70%] h-full bg-suv-gold rounded-full"></div>
-                    </div>
-                    <ul class="space-y-2 font-light text-sm text-suv-text">
-                        <li class="flex items-center gap-2"><span class="text-suv-gold text-[10px]">■</span> Psychology of Money</li>
-                        <li class="flex items-center gap-2"><span class="text-suv-muted text-[10px]">□</span> Joint financial plan</li>
-                    </ul>
-                </div>
-            </section>
+            <h2 class="font-serif italic text-3xl text-white">Our Life</h2>
+            <p class="font-light text-sm text-suv-muted">Building the foundation.</p>
         </div>
 
         <!-- ================= TAB 4: DREAM ================= -->
         <div id="tab-dream" class="view-section hidden fade-in space-y-8">
-            <header class="mb-6">
-                <h2 class="font-serif italic text-3xl text-white mb-2">Our Future</h2>
-                <p class="font-sans font-light text-sm text-suv-muted">Where we are going.</p>
-            </header>
-
-            <div class="columns-2 gap-4 space-y-4">
-                
-                <!-- Vision Item 1 -->
-                <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
-                    <div class="aspect-[3/4] bg-gradient-to-br from-suv-card to-[#2A2825] flex items-end p-4">
-                        <div class="absolute inset-0 bg-black/20"></div>
-                        <div class="relative z-10">
-                            <p class="font-mono text-[10px] uppercase tracking-widest text-suv-gold mb-1">Travel</p>
-                            <p class="font-serif italic text-lg text-white">Santorini, Greece</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Vision Item 2 -->
-                <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
-                    <div class="aspect-square bg-gradient-to-tr from-suv-olive/40 to-suv-card flex items-end p-4">
-                        <div class="relative z-10">
-                            <p class="font-mono text-[10px] uppercase tracking-widest text-suv-gold mb-1">Life</p>
-                            <p class="font-serif italic text-lg text-white">Our 30s</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Vision Item 3 -->
-                <div class="relative rounded-lg overflow-hidden border border-white/10 group break-inside-avoid">
-                    <div class="aspect-square bg-gradient-to-bl from-suv-wine/30 to-suv-card flex items-end p-4">
-                        <div class="relative z-10">
-                            <p class="font-mono text-[10px] uppercase tracking-widest text-suv-gold mb-1">Career</p>
-                            <p class="font-serif italic text-lg text-white">The Foundation</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- ================= TAB 5: REMEMBER ================= -->
-        <div id="tab-remember" class="view-section hidden fade-in space-y-8">
-            <header class="mb-8">
-                <h2 class="font-serif italic text-3xl text-white mb-2">Memories</h2>
-                <p class="font-sans font-light text-sm text-suv-muted">The history of us.</p>
-            </header>
-
-            <div class="space-y-6 relative before:absolute before:inset-y-0 before:left-[3px] before:w-[1px] before:bg-suv-gold/20 pl-4">
-                
-                <div class="relative">
-                    <div class="absolute -left-[20px] top-1.5 w-2 h-2 rounded-full bg-suv-gold"></div>
-                    <p class="font-mono text-[10px] text-suv-muted mb-1">AUGUST 27, 2026</p>
-                    <div class="bg-suv-card border border-white/5 p-4 rounded-lg">
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-suv-gold mb-2 flex items-center gap-2">🎙️ Voice Note</p>
-                        <p class="font-light text-sm">"I think we should start saving towards our first trip."</p>
-                    </div>
-                </div>
-
-                <div class="relative">
-                    <div class="absolute -left-[20px] top-1.5 w-2 h-2 rounded-full border border-suv-gold bg-suv-bg"></div>
-                    <p class="font-mono text-[10px] text-suv-muted mb-1">AUGUST 19, 2026</p>
-                    <div class="bg-suv-wine/20 border border-suv-wine/30 p-4 rounded-lg">
-                        <p class="font-serif italic text-lg text-white">We chose each other again.</p>
-                    </div>
-                </div>
-
-            </div>
+            <h2 class="font-serif italic text-3xl text-white">Our Future</h2>
+            <p class="font-light text-sm text-suv-muted">Where we are going.</p>
         </div>
     </main>
 
     <!-- Floating Glassmorphism Pill Navigation -->
-    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] glass-pill rounded-full px-6 py-4 flex justify-between items-center z-50">
-        
+    <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[92%] max-w-[420px] glass-pill rounded-full px-6 py-4 flex justify-between items-center z-40">
         <button onclick="switchTab('us')" id="btn-us" class="nav-item active flex flex-col items-center gap-1">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
             <span class="text-[9px] font-mono uppercase tracking-widest">Us</span>
         </button>
-
         <button onclick="switchTab('feel')" id="btn-feel" class="nav-item flex flex-col items-center gap-1">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span class="text-[9px] font-mono uppercase tracking-widest">Feel</span>
         </button>
 
-        <!-- Floating Action Button (Center) -->
+        <!-- Main Action Button -->
         <div class="relative -top-6">
-            <button class="w-14 h-14 rounded-full bg-suv-gold text-suv-bg shadow-[0_0_20px_rgba(197,162,90,0.4)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+            <button onclick="toggleActionDrawer()" class="w-14 h-14 rounded-full bg-suv-gold text-suv-bg shadow-[0_0_20px_rgba(197,162,90,0.4)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
         </div>
@@ -335,46 +182,177 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             <span class="text-[9px] font-mono uppercase tracking-widest">Plan</span>
         </button>
-
         <button onclick="switchTab('dream')" id="btn-dream" class="nav-item flex flex-col items-center gap-1">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
             <span class="text-[9px] font-mono uppercase tracking-widest">Dream</span>
         </button>
-
     </nav>
+
+    <!-- ACTION DRAWER -->
+    <div id="action-drawer-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden backdrop-fade" onclick="toggleActionDrawer()"></div>
+    <div id="action-drawer" class="fixed bottom-0 left-0 w-full bg-suv-card rounded-t-3xl border-t border-white/10 z-[70] hidden drawer-slide-up pb-10 pt-6 px-6">
+        <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-8"></div>
+        
+        <p class="font-serif italic text-2xl text-white text-center mb-6">Capture a moment</p>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <button class="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col items-center gap-3 active:bg-white/10 transition-colors">
+                <div class="w-10 h-10 rounded-full bg-suv-gold/20 text-suv-gold flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                </div>
+                <span class="font-sans text-sm font-light">Voice</span>
+            </button>
+            
+            <button class="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col items-center gap-3 active:bg-white/10 transition-colors">
+                <div class="w-10 h-10 rounded-full bg-suv-wine/20 text-suv-wine flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                </div>
+                <span class="font-sans text-sm font-light">Note</span>
+            </button>
+            
+            <button class="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col items-center gap-3 active:bg-white/10 transition-colors">
+                <div class="w-10 h-10 rounded-full bg-suv-olive/20 text-[#8B9D77] flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                <span class="font-sans text-sm font-light">Memory</span>
+            </button>
+
+            <button class="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col items-center gap-3 active:bg-white/10 transition-colors">
+                <div class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                </div>
+                <span class="font-sans text-sm font-light">Plan</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRB-cRm-iX6nXP_5-hF5ACelpqtvx-Bgo",
+            authDomain: "project-us-15aa0.firebaseapp.com",
+            projectId: "project-us-15aa0",
+            storageBucket: "project-us-15aa0.firebasestorage.app",
+            messagingSenderId: "77217285858",
+            appId: "1:77217285858:web:428597d6ace8c2e55640bb"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // State Management
+        let currentUser = localStorage.getItem('our_space_identity') || 'Motolani';
+        document.getElementById('user-identity').value = currentUser;
+
+        const updateIdentity = () => {
+            currentUser = document.getElementById('user-identity').value;
+            localStorage.setItem('our_space_identity', currentUser);
+            const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
+            document.getElementById('recent-label').innerText = `Recent from ${otherPerson}`;
+        };
+
+        document.getElementById('user-identity').addEventListener('change', updateIdentity);
+        updateIdentity(); // Run on load
+
+        // Feature 1: Choose Again (Seal it)
+        const chooseBtn = document.getElementById('choose-btn');
+        const chooseText = document.getElementById('choose-text');
+        const statusArea = document.getElementById('status-area');
+        const timeDisplay = document.getElementById('last-clicked-time');
+
+        chooseBtn.addEventListener('click', async () => {
+            chooseBtn.disabled = true;
+            chooseText.innerText = "Sealing...";
+            try {
+                await addDoc(collection(db, "choose_events"), { 
+                    timestamp: serverTimestamp(), 
+                    user: currentUser 
+                });
+            } catch (error) {
+                console.error("Error saving seal:", error);
+                chooseText.innerText = "Retry";
+                chooseBtn.disabled = false;
+            }
+        });
+
+        // Listen for latest seal
+        const qChoose = query(collection(db, "choose_events"), orderBy("timestamp", "desc"), limit(1));
+        onSnapshot(qChoose, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const data = change.doc.data();
+                    const date = data.timestamp ? data.timestamp.toDate() : new Date();
+                    chooseBtn.classList.add('hidden');
+                    statusArea.classList.remove('hidden');
+                    statusArea.classList.add('flex');
+                    timeDisplay.innerText = `Last sealed: ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                }
+            });
+        });
+
+        // Feature 2: Feed Listener for "Recent"
+        const recentContainer = document.getElementById('recent-container');
+        const qTimeline = query(collection(db, "voice_notes"), orderBy("timestamp", "desc"), limit(10));
+        
+        onSnapshot(qTimeline, (snapshot) => {
+            const allDocs = [];
+            snapshot.forEach((docSnap) => allDocs.push({ id: docSnap.id, ...docSnap.data() }));
+            
+            const otherPerson = currentUser === 'Motolani' ? 'Zusi' : 'Motolani';
+            const recentFromOther = allDocs.find(d => d.sender === otherPerson);
+            
+            if (recentFromOther) {
+                const isAudio = recentFromOther.format === 'audio';
+                const date = recentFromOther.timestamp ? recentFromOther.timestamp.toDate() : new Date();
+                const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                recentContainer.innerHTML = `
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-suv-wine"></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-mono uppercase tracking-widest text-suv-muted">${recentFromOther.type || 'Note'}</span>
+                        <span class="text-[10px] font-mono text-suv-muted">${timeStr}</span>
+                    </div>
+                    ${isAudio ? 
+                        `<audio src="${recentFromOther.url}" controls class="w-full mt-2"></audio>` : 
+                        `<p class="font-serif italic text-lg text-white mb-3">"${recentFromOther.content}"</p>`
+                    }
+                `;
+            }
+        });
+    </script>
 
     <script>
         // Set dynamic date
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', dateOptions);
 
-        // Simple Tab Switching Logic
+        // Tab Switching
         function switchTab(tabId) {
-            // Hide all sections
-            document.querySelectorAll('.view-section').forEach(el => {
-                el.classList.add('hidden');
-            });
-            // Show target section
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            
-            // Reset nav colors
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('active');
-            });
-            // Highlight active nav
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById(`btn-${tabId}`).classList.add('active');
-            
-            // Scroll to top
             document.getElementById('main-container').scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Mood Selection Logic
-        document.querySelectorAll('.mood-pill').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.mood-pill').forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-            });
-        });
+        // Action Drawer Toggle
+        function toggleActionDrawer() {
+            const drawer = document.getElementById('action-drawer');
+            const overlay = document.getElementById('action-drawer-overlay');
+            
+            if (drawer.classList.contains('hidden')) {
+                drawer.classList.remove('hidden');
+                overlay.classList.remove('hidden');
+            } else {
+                drawer.classList.add('hidden');
+                overlay.classList.add('hidden');
+            }
+        }
     </script>
 </body>
 </html>
