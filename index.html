@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#241318" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Our Space — Motolani & Zusi</title>
+  <title>Our Space - Motolani & Zusi</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -131,7 +131,6 @@
       width: 48px; height: 48px; border-radius: 50%; background: var(--wine);
       display: grid; place-items: center; flex: 0 0 auto;
     }
-    .voice-btn.small { width: 40px; height: 40px; }
     .empty { border: 1px dashed rgba(255,255,255,.14); border-radius: 18px; }
     .chip {
       border: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.035);
@@ -166,17 +165,22 @@
 
   <div class="app-shell min-h-screen px-4 sm:px-6">
     <!-- HEADER -->
-    <header class="pt-5 pb-4 flex items-center justify-between gap-3">
-      <div>
-        <div class="tiny-label">Our Space</div>
-        <h1 class="serif text-2xl sm:text-3xl mt-1">Motolani <span class="subtle">&</span> Zusi</h1>
+    <header class="pt-5 pb-4 border-b border-white/10 mb-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <div class="tiny-label">Our Space</div>
+          <h1 class="serif text-2xl sm:text-3xl mt-1">Motolani <span class="subtle">&</span> Zusi</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="identity" class="bg-transparent border border-white/10 rounded-full px-3 py-2 text-xs outline-none">
+            <option value="Motolani">Motolani</option>
+            <option value="Zusi">Zusi</option>
+          </select>
+          <button onclick="openSheet('settings')" class="w-10 h-10 rounded-full border border-white/10 grid place-items-center text-sm">⚙</button>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <select id="identity" class="bg-transparent border border-white/10 rounded-full px-3 py-2 text-xs outline-none">
-          <option value="Motolani">Motolani</option>
-          <option value="Zusi">Zusi</option>
-        </select>
-        <button onclick="openSheet('settings')" class="w-10 h-10 rounded-full border border-white/10 grid place-items-center text-sm">⚙</button>
+      <div class="mt-4 text-center">
+        <p class="serif italic text-cream/90 text-sm">"Our shared mantra - guiding our vision every day."</p>
       </div>
     </header>
 
@@ -265,6 +269,7 @@ let sharedItems = [];
 let lifeItems = [];
 let memories = [];
 let recentEntries = [];
+let todos = [];
 let unsubscribers = [];
 
 const starterRoutines = {
@@ -275,9 +280,9 @@ const starterRoutines = {
     ["Thank You Father / altar of thanksgiving", "daily", "Spiritual", true],
     ["Leverage devotional", "daily", "Spiritual", true],
     ["Confession / declaration", "daily", "Spiritual", true],
-    ["LinkedIn — 3 posts / 15 invites / 15 FTs", "daily", "Career", false],
+    ["LinkedIn - 3 posts / 15 invites / 15 FTs", "daily", "Career", false],
     ["100 headlines", "daily", "Career", false],
-    ["WSJ / FT — 3 headlines + 3 deep dives", "daily", "Career", false],
+    ["WSJ / FT - 3 headlines + 3 deep dives", "daily", "Career", false],
     ["2 cards readings", "daily", "Finance", false],
     ["100 times daily", "daily", "Discipline", false],
     ["100 financial models", "project", "Finance", false]
@@ -290,11 +295,11 @@ const starterRoutines = {
     ["One message", "weekly", "Spiritual", false],
     ["11pm prayer", "daily", "Spiritual", true],
     ["Bible in 3 months", "daily", "Spiritual", false],
-    ["Read book — 10 mins", "daily", "Growth", false],
+    ["Read book - 10 mins", "daily", "Growth", false],
     ["Family prayer time", "daily", "Family", false],
-    ["15 mins — pray for wisdom, light & strength", "daily", "Spiritual", false],
+    ["15 mins - pray for wisdom, light & strength", "daily", "Spiritual", false],
     ["Plan tomorrow / paint in the future", "daily", "Growth", false],
-    ["News / industry trends — 10 mins", "daily", "Career", false]
+    ["News / industry trends - 10 mins", "daily", "Career", false]
   ]
 };
 
@@ -306,6 +311,7 @@ function fmtDate(d = new Date()) {
   return d.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
 }
 function otherPerson() { return currentUser === "Motolani" ? "Zusi" : "Motolani"; }
+function getPronoun(person) { return person === "Motolani" ? "His" : "Her"; }
 function esc(v="") {
   return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
@@ -346,10 +352,9 @@ window.openSheet = function(type, payload={}) {
   else if (type === "note") renderNoteComposer(payload);
   else if (type === "memory") renderMemoryComposer();
   else if (type === "appreciation") renderAppreciationComposer();
-  else if (type === "dream") renderDreamComposer();
-  else if (type === "plan") renderPlanComposer();
   else if (type === "shared") renderSharedComposer(payload);
   else if (type === "entry") renderEntryComposer(payload);
+  else if (type === "lifeItem") renderLifeItemComposer(payload);
   document.getElementById("composer").classList.add("open");
   document.getElementById("scrim").classList.add("open");
 };
@@ -366,6 +371,31 @@ function setComposer(title, kicker, body) {
   document.getElementById("composer-kicker").textContent = kicker;
   document.getElementById("composer-title").textContent = title;
   document.getElementById("composer-body").innerHTML = body;
+}
+
+window.startDictation = function(inputId) {
+  if (!('webkitSpeechRecognition' in window)) {
+    showToast("Speech to text is not supported in this browser.");
+    return;
+  }
+  const recognition = new webkitSpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.onstart = function() { showToast("Listening... Speak now."); };
+  recognition.onresult = function(event) {
+    let transcript = '';
+    for (let i = 0; i < event.results.length; ++i) {
+      transcript += event.results[i][0].transcript;
+    }
+    const inputEl = document.getElementById(inputId);
+    inputEl.value = transcript;
+  };
+  recognition.onerror = function() { showToast("Microphone error."); };
+  recognition.start();
+};
+
+function speechToTextBtn(inputId) {
+  return `<button type="button" onclick="startDictation('${inputId}')" class="secondary text-xs flex items-center gap-2 py-1 px-2 mt-2 w-fit"><span class="text-base">🎙️</span> Dictate</button>`;
 }
 
 function voiceRecorderHtml(id="voice-record") {
@@ -407,7 +437,7 @@ function attachVoiceRecorder(buttonId, previewId, statusId) {
       recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
       recorder.onstart = () => {
         btn.classList.add("recording");
-        status.textContent = "Recording… tap to stop.";
+        status.textContent = "Recording... tap to stop.";
       };
       recorder.onstop = () => {
         blob = new Blob(chunks, {type: recorder.mimeType || "audio/webm"});
@@ -468,6 +498,9 @@ function renderToday() {
   const weekly = mine.filter(r => r.frequency === "weekly");
   const project = mine.filter(r => r.frequency === "project");
 
+  const myTodos = todos.filter(t => t.owner === currentUser && !t.completed);
+  const myCompletedTodos = todos.filter(t => t.owner === currentUser && t.completed);
+
   const recent = recentEntries.slice(0,4);
   document.getElementById("app").innerHTML = `
     <section class="fade">
@@ -494,12 +527,24 @@ function renderToday() {
                 <div class="tiny-label">My day</div>
                 <h3 class="serif text-xl mt-1">${esc(currentUser)}'s non-negotiables</h3>
               </div>
-              <button onclick="openRoutineEditor()" class="chip">Edit routines</button>
             </div>
-            ${routineSection("DAILY", daily)}
-            ${weekly.length ? `<div class="mt-5">${routineSection("RECURRING", weekly)}</div>` : ""}
-            ${project.length ? `<div class="mt-5">${routineSection("PROJECTS", project)}</div>` : ""}
+            ${routineSection("DAILY", daily, false)}
+            ${weekly.length ? `<div class="mt-5">${routineSection("RECURRING", weekly, false)}</div>` : ""}
+            ${project.length ? `<div class="mt-5">${routineSection("PROJECTS", project, false)}</div>` : ""}
             <button onclick="openRoutineEditor()" class="w-full secondary mt-4">+ Add a routine</button>
+          </div>
+
+          <div class="card p-5">
+            <div class="tiny-label">Personal To-Do</div>
+            <h3 class="serif text-xl mt-1">One-off tasks</h3>
+            <form onsubmit="addTodo(event)" class="flex gap-2 mt-3">
+              <input id="new-todo-input" class="input flex-1 py-2 text-sm" placeholder="Add a task..." required>
+              <button type="submit" class="primary py-2 px-4 text-sm">+</button>
+            </form>
+            <div class="mt-4 space-y-2">
+              ${myTodos.map(t => renderTodo(t)).join("")}
+              ${myCompletedTodos.map(t => renderTodo(t, true)).join("")}
+            </div>
           </div>
 
           <div class="card p-5">
@@ -516,13 +561,12 @@ function renderToday() {
 
         <div class="space-y-4">
           <div class="card p-5">
-            <div class="tiny-label">Her day</div>
-            <div class="flex items-center justify-between mt-2">
+            <div class="tiny-label">${getPronoun(otherPerson())} day</div>
+            <div class="flex items-center justify-between mt-2 mb-4">
               <h3 class="serif text-xl">${esc(otherPerson())}</h3>
               <span class="mono text-xs">${theirDone}/${theirs.length}</span>
             </div>
-            <div class="progress-bar mt-4"><div class="progress-fill" style="width:${theirs.length ? theirDone/theirs.length*100 : 0}%"></div></div>
-            <p class="subtle text-xs mt-3">${theirDone === theirs.length && theirs.length ? "Everything done." : "Their checklist updates in real time."}</p>
+            ${routineSection("THEIR ROUTINES", theirs, true)}
           </div>
 
           <div class="card p-5">
@@ -537,7 +581,6 @@ function renderToday() {
               <button onclick="openSheet('note')" class="secondary text-left"><span class="text-lg">✎</span><br><span class="text-xs">Note / voice</span></button>
               <button onclick="openSheet('appreciation')" class="secondary text-left"><span class="text-lg">♡</span><br><span class="text-xs">Appreciation</span></button>
               <button onclick="openSheet('memory')" class="secondary text-left"><span class="text-lg">✦</span><br><span class="text-xs">Memory</span></button>
-              <button onclick="openSheet('dream')" class="secondary text-left"><span class="text-lg">☾</span><br><span class="text-xs">Dream / thought</span></button>
             </div>
           </div>
 
@@ -553,29 +596,64 @@ function renderToday() {
   refreshNav();
 }
 
-function routineSection(label, list) {
+function routineSection(label, list, isTheirs) {
   if (!list.length) return `<div class="empty p-4 subtle text-sm">No ${label.toLowerCase()} routines yet.</div>`;
   return `
     <div>
       <div class="tiny-label mb-2">${label}</div>
       <div class="space-y-2">
         ${list.map(r => `
-          <button onclick="toggleRoutine('${r.id}')" class="w-full text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] hover:bg-white/[.05] transition">
-            <span class="check ${completions[`${todayKey()}_${r.id}`] ? "done" : ""}"></span>
-            <span class="min-w-0 flex-1">
-              <span class="block text-sm ${completions[`${todayKey()}_${r.id}`] ? "line-through opacity-50" : ""}">${esc(r.name)}</span>
-              <span class="block subtle text-[11px] mt-0.5">${iconFor(r.category)} ${esc(r.category || "Routine")}${r.nonNegotiable ? " · non-negotiable" : ""}</span>
-            </span>
-          </button>`).join("")}
+          <div class="flex items-center gap-2">
+            <button ${!isTheirs ? `onclick="toggleRoutine('${r.id}')"` : "disabled"} class="flex-1 text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] ${!isTheirs ? 'hover:bg-white/[.05] cursor-pointer' : 'cursor-default'} transition">
+              <span class="check ${completions[`${todayKey()}_${r.id}`] ? "done" : ""}"></span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm ${completions[`${todayKey()}_${r.id}`] ? "line-through opacity-50" : ""}">${esc(r.name)}</span>
+                <span class="block subtle text-[11px] mt-0.5">${iconFor(r.category)} ${esc(r.category || "Routine")}${r.nonNegotiable ? " · non-negotiable" : ""}</span>
+              </span>
+            </button>
+            ${!isTheirs ? `<button onclick="openRoutineEditor('${r.id}')" class="p-3 text-xs subtle hover:text-white transition">Edit</button>` : ""}
+          </div>`).join("")}
       </div>
     </div>`;
+}
+
+function renderTodo(t, isCompleted=false) {
+  return `
+    <div class="flex items-center gap-3 p-2 border-b border-white/5 last:border-0">
+      <button onclick="toggleTodo('${t.id}', ${!isCompleted})" class="check ${isCompleted ? 'done' : ''} w-5 h-5"></button>
+      <span class="flex-1 text-sm ${isCompleted ? 'line-through opacity-50' : ''}">${esc(t.text)}</span>
+      <button onclick="deleteTodo('${t.id}')" class="text-xs text-muted hover:text-red-400 p-1">✕</button>
+    </div>
+  `;
+}
+
+window.addTodo = async function(e) {
+  e.preventDefault();
+  const input = document.getElementById("new-todo-input");
+  const text = input.value.trim();
+  if(!text) return;
+  try {
+    await addDoc(collection(db, "todos"), {
+      text, owner: currentUser, completed: false, createdAt: serverTimestamp()
+    });
+    input.value = "";
+  } catch(err) { console.error(err); showToast("Failed to add task."); }
+}
+
+window.toggleTodo = async function(id, status) {
+  try { await updateDoc(doc(db, "todos", id), {completed: status, updatedAt: serverTimestamp()}); }
+  catch(e) { console.error(e); showToast("Couldn't update task."); }
+}
+window.deleteTodo = async function(id) {
+  try { await deleteDoc(doc(db, "todos", id)); }
+  catch(e) { console.error(e); showToast("Couldn't delete task."); }
 }
 
 function renderTodayTogether() {
   const active = sharedItems.filter(x => x.active !== false).slice(0,4);
   if (!active.length) return `<div class="empty p-4 subtle text-sm">Set up your first shared activity in Together.</div>`;
   return active.map(x => `
-    <button onclick="openSheet('entry',{sharedId:'${x.id}'})" class="w-full text-left flex gap-3 py-3 border-b border-white/5 last:border-0">
+    <button onclick="openSheet('entry',{sharedId:'${x.id}'})" class="w-full text-left flex gap-3 py-3 border-b border-white/5 last:border-0 hover:bg-white/[.02] transition rounded-lg px-2">
       <div class="w-9 h-9 rounded-xl bg-olive/15 grid place-items-center">${x.icon || "♡"}</div>
       <div class="min-w-0 flex-1">
         <div class="text-sm">${esc(x.title)}</div>
@@ -650,24 +728,42 @@ function renderTogether() {
 }
 
 function sharedCard(x) {
-  return `<button onclick="openSheet('entry',{sharedId:'${x.id}'})" class="text-left rounded-2xl p-4 bg-white/[.025] border border-white/5 hover:border-white/10 transition">
-    <div class="flex justify-between gap-3">
-      <span class="text-lg">${x.icon || "♡"}</span>
-      <span class="tiny-label">${esc(x.type || "Shared")}</span>
+  return `<div class="relative rounded-2xl p-4 bg-white/[.025] border border-white/5 hover:border-white/10 transition flex flex-col group">
+    <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+       <button onclick="openSheet('shared', {editId:'${x.id}'})" class="text-xs bg-white/10 rounded px-2 py-1 hover:bg-white/20">Edit</button>
+       <button onclick="deleteShared('${x.id}')" class="text-xs bg-red-500/20 text-red-300 rounded px-2 py-1 hover:bg-red-500/40">Del</button>
     </div>
-    <h4 class="serif text-lg mt-3">${esc(x.title)}</h4>
-    <p class="subtle text-xs mt-1">${esc(x.subtitle || "")}</p>
+    <div class="flex justify-between gap-3" onclick="openSheet('entry',{sharedId:'${x.id}'})" class="cursor-pointer">
+      <span class="text-lg">${x.icon || "♡"}</span>
+      <span class="tiny-label mt-1">${esc(x.type || "Shared")}</span>
+    </div>
+    <div class="cursor-pointer flex-1" onclick="openSheet('entry',{sharedId:'${x.id}'})">
+      <h4 class="serif text-lg mt-3">${esc(x.title)}</h4>
+      <p class="subtle text-xs mt-1">${esc(x.subtitle || "")}</p>
+      ${x.link ? `<a href="${x.link.startsWith('http') ? x.link : 'https://'+x.link}" target="_blank" onclick="event.stopPropagation()" class="text-[11px] text-olive mt-2 block break-all hover:underline">🔗 ${esc(x.link)}</a>` : ""}
+      ${x.where ? `<p class="text-[11px] text-muted mt-1">📍 ${esc(x.where)}</p>` : ""}
+    </div>
     ${x.status ? `<div class="mt-3"><span class="chip">${esc(x.status)}</span></div>` : ""}
-  </button>`;
+  </div>`;
+}
+
+window.deleteShared = async function(id) {
+  if(!confirm("Delete this shared item?")) return;
+  try { await deleteDoc(doc(db,"shared_items",id)); }
+  catch(e) { showToast("Couldn't delete."); }
 }
 
 function renderLife() {
-  const sections = [
-    ["Dreams", "☾", "The life you can see before it exists.", "dream"],
-    ["Plans", "⌁", "Things you're deliberately moving toward.", "plan"],
-    ["Aspirations", "↗", "Long-range ambitions, individually and together.", "plan"],
-    ["Prayers", "✦", "Prayers, prophetic words and things you're trusting God for.", "note"]
+  const boards = [
+    { title: "Prophecies", type: "Prophecy", icon: "✧" },
+    { title: "Confessions", type: "Confession", icon: "💬" },
+    { title: "Faith Projects", type: "Faith Project", icon: "🏗️" },
+    { title: "Testimonies", type: "Testimony", icon: "🙌" }
   ];
+
+  const intercessory = lifeItems.filter(i => i.type === "Intercessory Focus");
+  const visionBoard = lifeItems.filter(i => i.type === "Vision Board");
+
   document.getElementById("app").innerHTML = `
     <section class="fade pt-3">
       <div class="pb-5">
@@ -675,29 +771,68 @@ function renderLife() {
         <h2 class="serif text-4xl mt-2">Our Life.</h2>
         <p class="subtle text-sm mt-2 max-w-xl">The things that matter beyond today's checklist.</p>
       </div>
-      <div class="grid sm:grid-cols-2 gap-4">
-        ${sections.map(([title,icon,desc,type])=>`
-          <div class="card p-5 min-h-48 flex flex-col">
-            <div class="flex items-start justify-between"><span class="text-2xl">${icon}</span><span class="tiny-label">${title}</span></div>
-            <h3 class="serif text-2xl mt-5">${title}</h3>
-            <p class="subtle text-sm mt-2">${desc}</p>
-            <button onclick="openSheet('${type}')" class="secondary mt-auto self-start">+ Add</button>
-          </div>`).join("")}
+
+      <div class="card p-5 mb-5 border border-olive/30 bg-olive/5">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="serif text-2xl">Vision Board</h3>
+            <p class="subtle text-xs mt-1">Your structured visual future.</p>
+          </div>
+          <button onclick="openSheet('lifeItem', {type: 'Vision Board', icon: '🖼️'})" class="secondary text-xs">+ Pin to Board</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+           ${visionBoard.length ? visionBoard.map(v => `
+             <div class="bg-white/5 rounded-xl p-3 relative group">
+                <button onclick="deleteLifeItem('${v.id}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/50 text-white rounded text-[10px] px-1">✕</button>
+                <div class="text-xs font-bold mb-1">${esc(v.title)}</div>
+                <div class="text-[10px] subtle line-clamp-3">${esc(v.text)}</div>
+             </div>
+           `).join("") : `<div class="empty p-4 text-xs subtle col-span-full">Pin your first vision board item.</div>`}
+        </div>
       </div>
-      <div class="card p-5 mt-4">
-        <div class="tiny-label">Captured so far</div>
-        <div class="mt-4 space-y-3">
-          ${lifeItems.length ? lifeItems.slice(0,10).map(renderLifeItem).join("") : `<div class="empty p-5 subtle text-sm">Your future is still a blank page here. Start adding the things you want to remember and build toward.</div>`}
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        ${boards.map(b => {
+          const items = lifeItems.filter(i => i.type === b.type);
+          return `
+          <div class="card p-5 flex flex-col">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2"><span class="text-xl">${b.icon}</span><h3 class="serif text-xl">${b.title}</h3></div>
+              <button onclick="openSheet('lifeItem', {type: '${b.type}', icon: '${b.icon}'})" class="text-xs subtle hover:text-white">+</button>
+            </div>
+            <div class="mt-4 space-y-2 flex-1">
+              ${items.length ? items.map(renderLifeItemList).join("") : `<div class="text-xs subtle">Nothing added yet.</div>`}
+            </div>
+          </div>`
+        }).join("")}
+
+        <div class="card p-5 sm:col-span-2">
+          <div class="flex items-center justify-between">
+             <h3 class="serif text-xl">Intercessory Foci</h3>
+             <button onclick="openSheet('lifeItem', {type: 'Intercessory Focus', icon: '🛐'})" class="secondary text-xs">+ Add Focus</button>
+          </div>
+          <div class="mt-4 grid sm:grid-cols-2 gap-3">
+             ${intercessory.length ? intercessory.map(renderLifeItemList).join("") : `<div class="text-xs subtle">No intercessory foci added yet.</div>`}
+          </div>
         </div>
       </div>
     </section>`;
   refreshNav();
 }
 
-function renderLifeItem(x) {
-  return `<div class="flex gap-3 p-3 rounded-2xl bg-white/[.025]">
-    <div class="w-9 h-9 rounded-xl bg-wine/15 grid place-items-center">${x.icon || "⌁"}</div>
-    <div class="flex-1 min-w-0"><div class="text-sm">${esc(x.title || x.text || "Untitled")}</div><div class="subtle text-xs mt-1">${esc(x.text || x.description || "")}</div></div>
+window.deleteLifeItem = async function(id) {
+  if(confirm("Delete this item?")) {
+    await deleteDoc(doc(db, "life_items", id));
+  }
+}
+
+function renderLifeItemList(x) {
+  return `<div class="flex justify-between gap-3 p-3 rounded-xl bg-white/[.025] group relative">
+    <div class="flex-1 min-w-0">
+       <div class="text-sm font-semibold">${esc(x.title || "Untitled")}</div>
+       ${x.text ? `<div class="subtle text-[11px] mt-1">${esc(x.text)}</div>` : ""}
+    </div>
+    <button onclick="deleteLifeItem('${x.id}')" class="opacity-0 group-hover:opacity-100 text-xs text-red-400 self-start p-1">✕</button>
   </div>`;
 }
 
@@ -720,12 +855,12 @@ function renderMemory() {
 }
 
 function renderMemoryCard(e) {
-  return `<article class="card overflow-hidden">
-    ${e.imageUrl ? `<img src="${esc(e.imageUrl)}" class="w-full h-52 object-cover" alt="Memory">` : ""}
-    <div class="p-4">
+  return `<article class="card overflow-hidden flex flex-col">
+    ${e.imageUrl ? `<img src="${esc(e.imageUrl)}" class="w-full h-48 sm:h-56 object-cover bg-black/20" alt="Memory">` : ""}
+    <div class="p-4 flex-1 flex flex-col">
       <div class="flex justify-between"><span class="tiny-label">${esc(e.type || "Memory")} · ${esc(e.sender || "")}</span><span class="subtle text-[10px]">${timeAgo(e.createdAt)}</span></div>
-      ${e.text ? `<p class="serif italic text-lg mt-3">“${esc(e.text)}”</p>` : ""}
-      ${e.audioUrl ? `<audio controls src="${esc(e.audioUrl)}" class="w-full mt-3"></audio>` : ""}
+      ${e.text ? `<p class="serif italic text-lg mt-3">"${esc(e.text)}"</p>` : ""}
+      ${e.audioUrl ? `<audio controls src="${esc(e.audioUrl)}" class="w-full mt-auto pt-3"></audio>` : ""}
     </div>
   </article>`;
 }
@@ -779,7 +914,7 @@ window.openRoutineEditor = function(editId=null) {
       </div>
       <div class="flex gap-2 pt-2">
         <button class="primary flex-1" type="submit">${r ? "Save changes" : "Create routine"}</button>
-        ${r ? `<button type="button" onclick="archiveRoutine('${r.id}')" class="secondary danger">Archive</button>` : ""}
+        ${r ? `<button type="button" onclick="archiveRoutine('${r.id}')" class="secondary danger">Delete</button>` : ""}
       </div>
     </form>`;
   document.getElementById("routine-sheet").classList.add("open");
@@ -806,8 +941,10 @@ window.openRoutineEditor = function(editId=null) {
   };
 };
 window.archiveRoutine = async function(id) {
-  try { await updateDoc(doc(db,"routines",id), {archived:true, updatedAt:serverTimestamp()}); closeRoutineSheet(); showToast("Routine archived."); }
-  catch(e) { showToast("Couldn't archive routine."); }
+  if(confirm("Are you sure you want to delete this routine?")) {
+    try { await updateDoc(doc(db,"routines",id), {archived:true, updatedAt:serverTimestamp()}); closeRoutineSheet(); showToast("Routine deleted."); }
+    catch(e) { showToast("Couldn't delete routine."); }
+  }
 };
 
 function renderSettings() {
@@ -822,10 +959,6 @@ function renderSettings() {
         <p class="subtle text-sm mt-2">The app listens to Firestore in real time. Browser notifications require permission and a hosted HTTPS environment.</p>
         <button onclick="requestNotifications()" class="secondary mt-3">Enable browser notifications</button>
       </div>
-      <div class="card p-4">
-        <div class="tiny-label">Data model</div>
-        <p class="subtle text-sm mt-2">Routines, daily completions, shared workspaces and entries are stored separately, so changing today's checklist doesn't rewrite your history.</p>
-      </div>
     </div>`);
 }
 window.requestNotifications = async function() {
@@ -837,17 +970,18 @@ window.requestNotifications = async function() {
 function renderNoteComposer(payload={}) {
   setComposer("Leave a note", "Voice-first", `
     <div class="space-y-4">
-      <textarea id="entry-text" class="input" placeholder="Write it, or leave this blank and just talk…"></textarea>
+      <textarea id="entry-text" class="input" placeholder="Write it, or leave this blank and just talk..."></textarea>
+      ${speechToTextBtn("entry-text")}
       ${voiceRecorderHtml("note-rec")}
       <button id="save-note" class="primary w-full">Save note</button>
     </div>`);
   const recorder = attachVoiceRecorder("note-rec","note-rec-preview","note-rec-status");
   document.getElementById("save-note").onclick = async () => {
     const btn = document.getElementById("save-note");
-    btn.disabled = true; btn.textContent = "Saving…";
+    btn.disabled = true; btn.textContent = "Saving...";
     try {
       await saveEntry({type:payload.type || "Note", text:document.getElementById("entry-text").value.trim(), audioBlob:recorder.getBlob(), scope:payload.scope || "personal"});
-    } catch(e) { console.error(e); showToast("Couldn't save. Check Firebase."); btn.disabled=false; btn.textContent="Save note"; }
+    } catch(e) { console.error(e); showToast("Couldn't save."); btn.disabled=false; btn.textContent="Save note"; }
   };
 }
 
@@ -855,7 +989,8 @@ function renderAppreciationComposer() {
   setComposer("Appreciation", "For each other", `
     <div class="space-y-4">
       <p class="subtle text-sm">Say the thing you might otherwise leave unsaid.</p>
-      <textarea id="entry-text" class="input" placeholder="I appreciate you because…"></textarea>
+      <textarea id="entry-text" class="input" placeholder="I appreciate you because..."></textarea>
+      ${speechToTextBtn("entry-text")}
       ${voiceRecorderHtml("app-rec")}
       <button id="save-app" class="primary w-full">Save appreciation</button>
     </div>`);
@@ -871,6 +1006,7 @@ function renderMemoryComposer() {
     <div class="space-y-4">
       <div><label class="tiny-label">Photo</label><input id="memory-file" type="file" accept="image/*" class="input mt-2"></div>
       <textarea id="entry-text" class="input" placeholder="What should you remember about this?"></textarea>
+      ${speechToTextBtn("entry-text")}
       ${voiceRecorderHtml("mem-rec")}
       <button id="save-memory" class="primary w-full">Save memory</button>
     </div>`);
@@ -881,79 +1017,88 @@ function renderMemoryComposer() {
   };
 }
 
-function renderDreamComposer() {
-  setComposer("Add a dream", "Our Life", `
+function renderLifeItemComposer(payload) {
+  setComposer(`Add ${payload.type}`, "Our Life", `
     <div class="space-y-4">
-      <input id="life-title" class="input" placeholder="Give it a title">
-      <textarea id="entry-text" class="input" placeholder="Describe the dream, picture, desire or future you see…"></textarea>
-      ${voiceRecorderHtml("dream-rec")}
-      <button id="save-dream" class="primary w-full">Save dream</button>
+      <input id="life-title" class="input" placeholder="Title (e.g. Dream house)">
+      <textarea id="entry-text" class="input" placeholder="Description or specific details..."></textarea>
+      ${speechToTextBtn("entry-text")}
+      <button id="save-life" class="primary w-full">Save to Our Life</button>
     </div>`);
-  const recorder = attachVoiceRecorder("dream-rec","dream-rec-preview","dream-rec-status");
-  document.getElementById("save-dream").onclick = async () => {
+  
+  document.getElementById("save-life").onclick = async () => {
     try {
       const title = document.getElementById("life-title").value.trim();
       const text = document.getElementById("entry-text").value.trim();
-      await saveEntry({type:"Dream", text, audioBlob:recorder.getBlob(), scope:"life", extra:{title, icon:"☾"}});
-      await addDoc(collection(db,"life_items"),{type:"Dream",title,text,icon:"☾",owner:currentUser,createdAt:serverTimestamp()});
-    } catch(e){console.error(e);showToast("Couldn't save dream.");}
-  };
-}
-
-function renderPlanComposer() {
-  setComposer("Add a plan", "Our Life", `
-    <div class="space-y-4">
-      <input id="life-title" class="input" placeholder="Plan / aspiration">
-      <textarea id="entry-text" class="input" placeholder="What does this mean? What are the next steps?"></textarea>
-      ${voiceRecorderHtml("plan-rec")}
-      <button id="save-plan" class="primary w-full">Save plan</button>
-    </div>`);
-  const recorder = attachVoiceRecorder("plan-rec","plan-rec-preview","plan-rec-status");
-  document.getElementById("save-plan").onclick = async () => {
-    try {
-      const title=document.getElementById("life-title").value.trim();
-      const text=document.getElementById("entry-text").value.trim();
-      await saveEntry({type:"Plan",text,audioBlob:recorder.getBlob(),scope:"life",extra:{title,icon:"⌁"}});
-      await addDoc(collection(db,"life_items"),{type:"Plan",title,text,icon:"⌁",owner:currentUser,createdAt:serverTimestamp()});
-    } catch(e){console.error(e);showToast("Couldn't save plan.");}
+      if(!title) return showToast("Title is required.");
+      await addDoc(collection(db,"life_items"),{
+        type: payload.type, title, text, icon: payload.icon,
+        owner: currentUser, createdAt: serverTimestamp()
+      });
+      closeSheet(); showToast("Saved to Our Life.");
+    } catch(e){console.error(e);showToast("Couldn't save item.");}
   };
 }
 
 function renderSharedComposer(payload={}) {
-  setComposer("Add shared item", "Together", `
+  const isEdit = !!payload.editId;
+  const s = isEdit ? sharedItems.find(x => x.id === payload.editId) : null;
+  
+  setComposer(isEdit ? "Edit shared item" : "Add shared item", "Together", `
     <div class="space-y-4">
+      <input type="hidden" id="s-id" value="${s?.id || ""}">
       <div class="grid grid-cols-2 gap-3">
         <div><label class="tiny-label">Type</label>
           <select id="s-type" class="input mt-2">
-            <option>Book</option><option>Message</option><option>Conversation</option><option>Agreement</option><option>Prayer</option><option>Topic</option><option>Shared activity</option>
+            ${["Book","Message","Conversation","Agreement","Prayer","Topic","Shared activity"].map(v => `<option ${s?.type===v?'selected':''}>${v}</option>`).join("")}
           </select>
         </div>
-        <div><label class="tiny-label">Month</label><input id="s-month" class="input mt-2" value="${monthName()}"></div>
+        <div><label class="tiny-label">Month</label><input id="s-month" class="input mt-2" value="${s?.month || monthName()}"></div>
       </div>
-      <input id="s-title" class="input" placeholder="Title">
-      <input id="s-subtitle" class="input" placeholder="Short description / speaker / question">
-      <select id="s-icon" class="input"><option>♡</option><option>📖</option><option>🎧</option><option>💬</option><option>🤝</option><option>✦</option></select>
-      ${voiceRecorderHtml("shared-rec")}
-      <textarea id="s-note" class="input" placeholder="Optional first thought…"></textarea>
-      <button id="save-shared" class="primary w-full">Add to Together</button>
+      <input id="s-title" class="input" placeholder="Title" value="${esc(s?.title || "")}">
+      <input id="s-subtitle" class="input" placeholder="Short description / speaker / question" value="${esc(s?.subtitle || "")}">
+      <div class="grid grid-cols-2 gap-3">
+         <input id="s-link" class="input" placeholder="Link URL" value="${esc(s?.link || "")}">
+         <input id="s-where" class="input" placeholder="Where to find (e.g. Telegram)" value="${esc(s?.where || "")}">
+      </div>
+      <select id="s-icon" class="input"><option ${s?.icon==='♡'?'selected':''}>♡</option><option ${s?.icon==='📖'?'selected':''}>📖</option><option ${s?.icon==='🎧'?'selected':''}>🎧</option><option ${s?.icon==='💬'?'selected':''}>💬</option><option ${s?.icon==='🤝'?'selected':''}>🤝</option><option ${s?.icon==='✦'?'selected':''}>✦</option></select>
+      
+      ${!isEdit ? `
+        ${voiceRecorderHtml("shared-rec")}
+        <textarea id="s-note" class="input" placeholder="Optional first thought..."></textarea>
+      ` : ""}
+      <button id="save-shared" class="primary w-full">${isEdit ? "Save changes" : "Add to Together"}</button>
     </div>`);
-  const recorder = attachVoiceRecorder("shared-rec","shared-rec-preview","shared-rec-status");
+    
+  let recorder = null;
+  if(!isEdit) recorder = attachVoiceRecorder("shared-rec","shared-rec-preview","shared-rec-status");
+  
   document.getElementById("save-shared").onclick = async () => {
     try {
       const title=document.getElementById("s-title").value.trim();
       if(!title) return showToast("Give this item a title.");
-      const audioBlob=recorder.getBlob();
-      const audioUrl=audioBlob ? await uploadAudio(audioBlob,"shared_voice") : null;
-      await addDoc(collection(db,"shared_items"),{
-        type:document.getElementById("s-type").value,
-        month:document.getElementById("s-month").value.trim() || monthName(),
-        title, subtitle:document.getElementById("s-subtitle").value.trim(),
-        icon:document.getElementById("s-icon").value,
-        status:"Active", active:true, owner:currentUser, createdAt:serverTimestamp()
-      });
-      const note=document.getElementById("s-note").value.trim();
-      if(note || audioUrl) await addDoc(collection(db,"entries"),{type:"Shared thought",text:note,audioUrl,sender:currentUser,scope:"shared",createdAt:serverTimestamp()});
-      closeSheet(); showToast("Added to Together.");
+      
+      const payloadData = {
+        type: document.getElementById("s-type").value,
+        month: document.getElementById("s-month").value.trim() || monthName(),
+        title, 
+        subtitle: document.getElementById("s-subtitle").value.trim(),
+        link: document.getElementById("s-link").value.trim(),
+        where: document.getElementById("s-where").value.trim(),
+        icon: document.getElementById("s-icon").value,
+        status: "Active", active: true, owner: currentUser
+      };
+      
+      if(isEdit) {
+        await updateDoc(doc(db, "shared_items", s.id), {...payloadData, updatedAt: serverTimestamp()});
+      } else {
+        const audioBlob=recorder.getBlob();
+        const audioUrl=audioBlob ? await uploadAudio(audioBlob,"shared_voice") : null;
+        await addDoc(collection(db,"shared_items"),{...payloadData, createdAt:serverTimestamp()});
+        const note=document.getElementById("s-note").value.trim();
+        if(note || audioUrl) await addDoc(collection(db,"entries"),{type:"Shared thought",text:note,audioUrl,sender:currentUser,scope:"shared",createdAt:serverTimestamp()});
+      }
+      closeSheet(); showToast(isEdit ? "Updated." : "Added to Together.");
     } catch(e){console.error(e);showToast("Couldn't save shared item.");}
   };
 }
@@ -963,7 +1108,8 @@ function renderEntryComposer(payload={}) {
   setComposer(item ? item.title : "Shared entry", item ? (item.type || "Together") : "Together", `
     <div class="space-y-4">
       ${item ? `<div class="card p-4"><div class="tiny-label">${esc(item.type || "Shared")}</div><div class="serif text-xl mt-1">${esc(item.title)}</div><div class="subtle text-sm mt-1">${esc(item.subtitle || "")}</div></div>` : ""}
-      <textarea id="entry-text" class="input" placeholder="Capture your thought, answer, reaction or conclusion…"></textarea>
+      <textarea id="entry-text" class="input" placeholder="Capture your thought, answer, reaction or conclusion..."></textarea>
+      ${speechToTextBtn("entry-text")}
       ${voiceRecorderHtml("entry-rec")}
       <button id="save-entry" class="primary w-full">Save to this</button>
     </div>`);
@@ -1012,6 +1158,11 @@ function listenAll() {
     lifeItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     render();
   }, err=>console.error("life",err)));
+  
+  unsubscribers.push(onSnapshot(query(collection(db,"todos"),orderBy("createdAt","desc")), snap=>{
+    todos=snap.docs.map(d=>({id:d.id,...d.data()}));
+    render();
+  }, err=>console.error("todos",err)));
 }
 
 let lastNotifiedId = sessionStorage.getItem("last_notified_entry");
