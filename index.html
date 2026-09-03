@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#241318" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Our Space - Motolani & Zusi</title>
+  <title>Our Space — Motolani & Zusi</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -126,6 +126,8 @@
     .scroll-x { overflow-x: auto; scrollbar-width: none; }
     .scroll-x::-webkit-scrollbar { display: none; }
     .progress-bar { height: 6px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; }
+
+    .vision-board { background-image: radial-gradient(circle, rgba(255,255,255,.09) 1px, transparent 1px); background-size: 18px 18px; }
     .progress-fill { height: 100%; background: var(--olive); border-radius: inherit; transition: width .3s ease; }
     .voice-btn {
       width: 48px; height: 48px; border-radius: 50%; background: var(--wine);
@@ -180,7 +182,7 @@
         </div>
       </div>
       <div class="mt-4 text-center">
-        <p class="serif italic text-cream/90 text-sm">"Our shared mantra - guiding our vision every day."</p>
+        <p class="serif italic text-cream/90 text-sm">“we are believers, we believe God for great things and we make them happen”</p>
       </div>
     </header>
 
@@ -190,7 +192,7 @@
 
   <!-- BOTTOM NAV -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 px-3 pb-3 pt-2">
-    <div class="glass max-w-xl mx-auto rounded-3xl px-2 py-2 grid grid-cols-4">
+    <div class="glass max-w-xl mx-auto rounded-3xl px-2 py-2 grid grid-cols-5">
       <button data-tab="today" onclick="setTab('today')" class="tab py-2 flex flex-col items-center gap-1 text-xs subtle">
         <span class="text-lg">◷</span><span>Today</span><span class="tab-dot w-1 h-1 rounded-full bg-wine"></span>
       </button>
@@ -244,7 +246,7 @@ import {
   serverTimestamp, onSnapshot, query, orderBy, where, limit, getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
-  getStorage, ref, uploadBytes, getDownloadURL
+  getStorage, ref, uploadBytes, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
@@ -271,6 +273,14 @@ let memories = [];
 let recentEntries = [];
 let todos = [];
 let unsubscribers = [];
+let completionHistory = [];
+let analyticsRange = 30;
+const CORE_VALUES = [
+  "We actively celebrate our differences / uniqueness",
+  "We present a united front always",
+  "We pursue measurable mutual growth & development"
+];
+let backupEndpoint = localStorage.getItem("our_space_backup_endpoint") || "";
 
 const starterRoutines = {
   Motolani: [
@@ -307,6 +317,26 @@ function todayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
+function dateKey(d=new Date()) {
+  const x=d instanceof Date ? d : new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
+}
+function weekKey(d=new Date()) {
+  const x=new Date(d); x.setHours(0,0,0,0);
+  const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day);
+  return `week_${dateKey(x)}`;
+}
+function routineCompletionKey(r, d=new Date()) {
+  if (r.frequency === "weekly") return `${weekKey(d)}_${r.id}`;
+  if (r.frequency === "project") return `project_${r.id}`;
+  return `${dateKey(d)}_${r.id}`;
+}
+function fmtDateTime(ts) {
+  const d=ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : new Date());
+  return d.toLocaleString("en-US", {month:"short", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit"});
+}
+function daysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return d; }
+function percent(a,b){ return b ? Math.round(a/b*100) : 0; }
 function fmtDate(d = new Date()) {
   return d.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
 }
@@ -355,6 +385,7 @@ window.openSheet = function(type, payload={}) {
   else if (type === "shared") renderSharedComposer(payload);
   else if (type === "entry") renderEntryComposer(payload);
   else if (type === "lifeItem") renderLifeItemComposer(payload);
+  else if (type === "analytics") renderAnalytics();
   document.getElementById("composer").classList.add("open");
   document.getElementById("scrim").classList.add("open");
 };
@@ -461,8 +492,12 @@ async function uploadAudio(blob, prefix="voice") {
   const path = `${prefix}/${Date.now()}_${currentUser}.${ext}`;
   const r = ref(storage, path);
   await uploadBytes(r, blob);
-  return await getDownloadURL(r);
+  return {url:await getDownloadURL(r), path};
 }
+
+function buildOurLifeBackup(){const lines=['OUR SPACE — OUR LIFE','Backup created: '+new Date().toLocaleString(),'','CORE VALUES',...CORE_VALUES.map((v,i)=>`${i+1}. ${v}`),''];['Prophecy','Confession','Faith Project','Testimony','Intercessory Focus','Vision Board'].forEach(type=>{lines.push(type.toUpperCase());const items=lifeItems.filter(x=>x.type===type);if(!items.length)lines.push('—');items.forEach(x=>{lines.push(`• ${x.title||'Untitled'}`);if(x.text)lines.push(x.text);lines.push(`  Added by ${x.owner||'Unknown'} · ${fmtDateTime(x.createdAt)}`);});lines.push('');});return lines.join('\n');}
+window.backupOurLife=async function(){const content=buildOurLifeBackup();if(backupEndpoint){try{const res=await fetch(backupEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Our Space — Our Life Backup',content,lifeItems,coreValues:CORE_VALUES,createdAt:new Date().toISOString()})});if(!res.ok)throw new Error('Backup endpoint returned '+res.status);showToast('Google Docs backup sent.');return;}catch(e){console.error(e);showToast('Google Docs backup failed; downloading instead.');}}const blob=new Blob([content],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`our-space-life-backup-${todayKey()}.txt`;a.click();URL.revokeObjectURL(url);try{await navigator.clipboard.writeText(content);showToast('Backup downloaded and copied. Paste into Google Docs.');}catch(e){showToast('Backup downloaded.');}};
+window.deleteEntry=async function(id){if(!confirm('Delete this entry and its attached media?'))return;try{const e=recentEntries.find(x=>x.id===id);await deleteDoc(doc(db,'entries',id));if(e?.audioPath){try{await deleteObject(ref(storage,e.audioPath));}catch(_){}}if(e?.imagePath){try{await deleteObject(ref(storage,e.imagePath));}catch(_){} }showToast('Entry deleted.');}catch(err){console.error(err);showToast("Couldn't delete entry.");}};
 
 async function saveEntry({type="Note", text="", audioBlob=null, imageFile=null, scope="personal", extra={}}) {
   if (!text && !audioBlob && !imageFile) {
@@ -470,15 +505,16 @@ async function saveEntry({type="Note", text="", audioBlob=null, imageFile=null, 
     return;
   }
   let audioUrl = null, imageUrl = null;
-  if (audioBlob) audioUrl = await uploadAudio(audioBlob, "voice_notes");
+  let audioPath=null, imagePath=null;
+  if (audioBlob) { const ext=audioBlob.type.includes("mp4")?"m4a":"webm"; audioPath=`voice_notes/${Date.now()}_${currentUser}.${ext}`; const ar=ref(storage,audioPath); await uploadBytes(ar,audioBlob); audioUrl=await getDownloadURL(ar); }
   if (imageFile) {
-    const path = `memories/${Date.now()}_${imageFile.name}`;
-    const r = ref(storage, path);
+    imagePath = `memories/${Date.now()}_${imageFile.name}`;
+    const r = ref(storage, imagePath);
     await uploadBytes(r, imageFile);
     imageUrl = await getDownloadURL(r);
   }
   await addDoc(collection(db, "entries"), {
-    type, text, audioUrl, imageUrl,
+    type, text, audioUrl, audioPath, imageUrl, imagePath,
     sender: currentUser, scope,
     createdAt: serverTimestamp(),
     ...extra
@@ -490,8 +526,8 @@ async function saveEntry({type="Note", text="", audioBlob=null, imageFile=null, 
 function renderToday() {
   const mine = routines.filter(r => r.owner === currentUser && isActiveRoutine(r));
   const theirs = routines.filter(r => r.owner === otherPerson() && isActiveRoutine(r));
-  const mineDone = mine.filter(r => completions[`${todayKey()}_${r.id}`]).length;
-  const theirDone = theirs.filter(r => completions[`${todayKey()}_${r.id}`]).length;
+  const mineDone = mine.filter(r => completions[routineCompletionKey(r)]).length;
+  const theirDone = theirs.filter(r => completions[routineCompletionKey(r)]).length;
   const pct = mine.length ? Math.round(mineDone/mine.length*100) : 0;
 
   const daily = mine.filter(r => r.frequency === "daily");
@@ -566,7 +602,7 @@ function renderToday() {
               <h3 class="serif text-xl">${esc(otherPerson())}</h3>
               <span class="mono text-xs">${theirDone}/${theirs.length}</span>
             </div>
-            ${routineSection("THEIR ROUTINES", theirs, true)}
+            ${routineSection(`${getPronoun(otherPerson()).toUpperCase()} ROUTINES`, theirs, true)}
           </div>
 
           <div class="card p-5">
@@ -605,9 +641,9 @@ function routineSection(label, list, isTheirs) {
         ${list.map(r => `
           <div class="flex items-center gap-2">
             <button ${!isTheirs ? `onclick="toggleRoutine('${r.id}')"` : "disabled"} class="flex-1 text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] ${!isTheirs ? 'hover:bg-white/[.05] cursor-pointer' : 'cursor-default'} transition">
-              <span class="check ${completions[`${todayKey()}_${r.id}`] ? "done" : ""}"></span>
+              <span class="check ${completions[routineCompletionKey(r)] ? "done" : ""}"></span>
               <span class="min-w-0 flex-1">
-                <span class="block text-sm ${completions[`${todayKey()}_${r.id}`] ? "line-through opacity-50" : ""}">${esc(r.name)}</span>
+                <span class="block text-sm ${completions[routineCompletionKey(r)] ? "line-through opacity-50" : ""}">${esc(r.name)}</span>
                 <span class="block subtle text-[11px] mt-0.5">${iconFor(r.category)} ${esc(r.category || "Routine")}${r.nonNegotiable ? " · non-negotiable" : ""}</span>
               </span>
             </button>
@@ -665,7 +701,7 @@ function renderTodayTogether() {
 
 function renderEntryCompact(e) {
   const media = e.audioUrl ? `<audio controls src="${esc(e.audioUrl)}" class="w-full h-8 mt-2"></audio>` :
-    e.imageUrl ? `<img src="${esc(e.imageUrl)}" class="rounded-xl mt-2 max-h-36 w-full object-cover">` : "";
+    e.imageUrl ? `<img src="${esc(e.imageUrl)}" class="rounded-xl mt-2 max-h-36 w-full object-contain bg-black/10">` : "";
   return `<div class="rounded-2xl bg-white/[.025] p-3">
     <div class="flex justify-between gap-3">
       <span class="tiny-label">${esc(e.type || "Entry")} · ${esc(e.sender || "")}</span>
@@ -673,6 +709,7 @@ function renderEntryCompact(e) {
     </div>
     ${e.text ? `<p class="serif italic text-sm mt-2">${esc(e.text)}</p>` : ""}
     ${media}
+    <div class="flex justify-end mt-2"><button onclick="deleteEntry('${e.id}')" class="text-[10px] subtle hover:text-red-300">Delete</button></div>
   </div>`;
 }
 
@@ -760,70 +797,44 @@ function renderLife() {
     { title: "Faith Projects", type: "Faith Project", icon: "🏗️" },
     { title: "Testimonies", type: "Testimony", icon: "🙌" }
   ];
-
   const intercessory = lifeItems.filter(i => i.type === "Intercessory Focus");
   const visionBoard = lifeItems.filter(i => i.type === "Vision Board");
-
   document.getElementById("app").innerHTML = `
     <section class="fade pt-3">
-      <div class="pb-5">
-        <div class="tiny-label">The bigger picture</div>
-        <h2 class="serif text-4xl mt-2">Our Life.</h2>
-        <p class="subtle text-sm mt-2 max-w-xl">The things that matter beyond today's checklist.</p>
-      </div>
-
+      <div class="pb-5"><div class="tiny-label">The bigger picture</div><h2 class="serif text-4xl mt-2">Our Life.</h2><p class="subtle text-sm mt-2 max-w-xl">Vision, faith, growth and the things we are building together.</p></div>
       <div class="card p-5 mb-5 border border-olive/30 bg-olive/5">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 class="serif text-2xl">Vision Board</h3>
-            <p class="subtle text-xs mt-1">Your structured visual future.</p>
-          </div>
-          <button onclick="openSheet('lifeItem', {type: 'Vision Board', icon: '🖼️'})" class="secondary text-xs">+ Pin to Board</button>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-           ${visionBoard.length ? visionBoard.map(v => `
-             <div class="bg-white/5 rounded-xl p-3 relative group">
-                <button onclick="deleteLifeItem('${v.id}')" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 bg-black/50 text-white rounded text-[10px] px-1">✕</button>
-                <div class="text-xs font-bold mb-1">${esc(v.title)}</div>
-                <div class="text-[10px] subtle line-clamp-3">${esc(v.text)}</div>
-             </div>
-           `).join("") : `<div class="empty p-4 text-xs subtle col-span-full">Pin your first vision board item.</div>`}
+        <div class="flex items-start justify-between gap-4 mb-4"><div><div class="tiny-label">Our Core Values</div><h3 class="serif text-2xl mt-1">How we choose to live.</h3></div><span class="text-xl">◈</span></div>
+        <div class="grid sm:grid-cols-3 gap-3">${CORE_VALUES.map((v,i)=>`<div class="rounded-2xl bg-black/10 border border-white/5 p-4"><div class="mono text-[10px] subtle">0${i+1}</div><p class="serif text-base mt-2">${esc(v)}</p></div>`).join("")}</div>
+      </div>
+      <div class="card p-5 mb-5">
+        <div class="flex items-center justify-between gap-4 mb-4"><div><div class="tiny-label">Our visual future</div><h3 class="serif text-2xl mt-1">Vision Board.</h3><p class="subtle text-xs mt-1">Drag pins around the board. Add text or an image.</p></div><button onclick="openSheet('lifeItem',{type:'Vision Board',icon:'🖼️'})" class="secondary text-xs">+ Pin</button></div>
+        <div id="vision-board" class="vision-board relative min-h-[360px] rounded-2xl overflow-hidden bg-black/20 border border-white/5">
+          ${visionBoard.length ? visionBoard.map(renderVisionPin).join("") : `<div class="absolute inset-0 grid place-items-center text-center p-8"><div><div class="text-4xl">🖼️</div><p class="serif text-lg mt-2">Pin the future here.</p><p class="subtle text-xs mt-1">Add a dream, picture, goal or word and move it wherever you want.</p></div></div>`}
         </div>
       </div>
-
       <div class="grid sm:grid-cols-2 gap-4">
-        ${boards.map(b => {
-          const items = lifeItems.filter(i => i.type === b.type);
-          return `
-          <div class="card p-5 flex flex-col">
-            <div class="flex items-start justify-between">
-              <div class="flex items-center gap-2"><span class="text-xl">${b.icon}</span><h3 class="serif text-xl">${b.title}</h3></div>
-              <button onclick="openSheet('lifeItem', {type: '${b.type}', icon: '${b.icon}'})" class="text-xs subtle hover:text-white">+</button>
-            </div>
-            <div class="mt-4 space-y-2 flex-1">
-              ${items.length ? items.map(renderLifeItemList).join("") : `<div class="text-xs subtle">Nothing added yet.</div>`}
-            </div>
-          </div>`
-        }).join("")}
-
-        <div class="card p-5 sm:col-span-2">
-          <div class="flex items-center justify-between">
-             <h3 class="serif text-xl">Intercessory Foci</h3>
-             <button onclick="openSheet('lifeItem', {type: 'Intercessory Focus', icon: '🛐'})" class="secondary text-xs">+ Add Focus</button>
-          </div>
-          <div class="mt-4 grid sm:grid-cols-2 gap-3">
-             ${intercessory.length ? intercessory.map(renderLifeItemList).join("") : `<div class="text-xs subtle">No intercessory foci added yet.</div>`}
-          </div>
-        </div>
+        ${boards.map(b => { const items=lifeItems.filter(i=>i.type===b.type); return `<div class="card p-5 flex flex-col"><div class="flex items-start justify-between"><div class="flex items-center gap-2"><span class="text-xl">${b.icon}</span><h3 class="serif text-xl">${b.title}</h3></div><button onclick="openSheet('lifeItem',{type:'${b.type}',icon:'${b.icon}'})" class="text-xs subtle hover:text-white">+</button></div><div class="mt-4 space-y-2 flex-1">${items.length ? items.map(renderLifeItemList).join("") : `<div class="text-xs subtle">Nothing added yet.</div>`}</div></div>`; }).join("")}
+        <div class="card p-5 sm:col-span-2"><div class="flex items-center justify-between"><h3 class="serif text-xl">Intercessory Foci</h3><button onclick="openSheet('lifeItem',{type:'Intercessory Focus',icon:'🛐'})" class="secondary text-xs">+ Add Focus</button></div><div class="mt-4 grid sm:grid-cols-2 gap-3">${intercessory.length ? intercessory.map(renderLifeItemList).join("") : `<div class="text-xs subtle">No intercessory foci added yet.</div>`}</div></div>
       </div>
+      <div class="card p-5 mt-4"><div class="flex items-center justify-between gap-3"><div><div class="tiny-label">Backup</div><h3 class="serif text-xl mt-1">Protect Our Life.</h3><p class="subtle text-xs mt-1">Export the complete Our Life archive, including timestamps.</p></div><button onclick="backupOurLife()" class="secondary text-xs">Create backup</button></div></div>
     </section>`;
-  refreshNav();
+  document.querySelectorAll('[data-vision-id]').forEach(el=>attachVisionDrag(el)); refreshNav();
+}
+function renderVisionPin(v){
+  const left=Number.isFinite(v.x)?v.x:(10+(Math.abs(hashCode(v.id))%70)); const top=Number.isFinite(v.y)?v.y:(10+(Math.abs(hashCode(v.id+'y'))%65));
+  return `<div data-vision-id="${v.id}" class="absolute w-36 sm:w-44 rounded-2xl bg-[#f5f0e8] text-[#241318] shadow-2xl p-3 cursor-grab select-none" style="left:${left}%;top:${top}%;touch-action:none;z-index:${v.z||1}"><button onclick="deleteLifeItem('${v.id}')" class="absolute top-1 right-1 text-[10px] opacity-60 hover:opacity-100">✕</button>${v.imageUrl?`<img src="${esc(v.imageUrl)}" class="w-full h-24 object-cover rounded-xl mb-2">`:`<div class="text-2xl">${v.icon||'✦'}</div>`}<div class="font-semibold text-xs pr-4">${esc(v.title||'Untitled')}</div><div class="text-[10px] mt-1 opacity-70 line-clamp-4">${esc(v.text||'')}</div><div class="text-[9px] mt-2 opacity-50">${fmtDateTime(v.createdAt)}</div></div>`;
+}
+function hashCode(str=''){let h=0;for(let i=0;i<str.length;i++)h=((h<<5)-h)+str.charCodeAt(i)|0;return h;}
+function attachVisionDrag(el){
+  let dragging=false; el.addEventListener('pointerdown',e=>{if(e.target.tagName==='BUTTON')return;dragging=true;el.setPointerCapture(e.pointerId);el.style.cursor='grabbing';});
+  el.addEventListener('pointermove',e=>{if(!dragging)return;const board=el.parentElement,r=board.getBoundingClientRect();let x=((e.clientX-r.left-el.offsetWidth/2)/r.width)*100,y=((e.clientY-r.top-el.offsetHeight/2)/r.height)*100;x=Math.max(0,Math.min(78,x));y=Math.max(0,Math.min(78,y));el.style.left=x+'%';el.style.top=y+'%';});
+  el.addEventListener('pointerup',async()=>{if(!dragging)return;dragging=false;el.style.cursor='grab';const board=el.parentElement,r=board.getBoundingClientRect();const x=(el.offsetLeft/r.width)*100,y=(el.offsetTop/r.height)*100;try{await updateDoc(doc(db,'life_items',el.dataset.visionId),{x,y,updatedAt:serverTimestamp()});}catch(e){console.error(e);}});
 }
 
 window.deleteLifeItem = async function(id) {
-  if(confirm("Delete this item?")) {
-    await deleteDoc(doc(db, "life_items", id));
-  }
+  if(!confirm("Delete this item?")) return;
+  try { const item=lifeItems.find(x=>x.id===id); await deleteDoc(doc(db,"life_items",id)); if(item?.imagePath){try{await deleteObject(ref(storage,item.imagePath));}catch(_){}} showToast("Deleted."); }
+  catch(e){console.error(e);showToast("Couldn't delete item.");}
 }
 
 function renderLifeItemList(x) {
@@ -831,10 +842,16 @@ function renderLifeItemList(x) {
     <div class="flex-1 min-w-0">
        <div class="text-sm font-semibold">${esc(x.title || "Untitled")}</div>
        ${x.text ? `<div class="subtle text-[11px] mt-1">${esc(x.text)}</div>` : ""}
+       <div class="subtle text-[10px] mt-2">${esc(x.owner || "")} · ${fmtDateTime(x.createdAt)}</div>
     </div>
     <button onclick="deleteLifeItem('${x.id}')" class="opacity-0 group-hover:opacity-100 text-xs text-red-400 self-start p-1">✕</button>
   </div>`;
 }
+
+function routineStatsFor(owner,range=30){const mine=routines.filter(r=>r.owner===owner&&!r.archived),cutoff=daysAgo(range-1),now=new Date();let expected=0,done=0;const per=mine.map(r=>{let exp=0,dn=0;if(r.frequency==='daily'){let d=new Date(Math.max(new Date(r.startDate||cutoff).getTime(),cutoff.getTime())),end=new Date(Math.min(new Date(r.endDate||now).getTime(),now.getTime()));while(d<=end){exp++;if(completionHistory.some(c=>c.routineId===r.id&&c.date===dateKey(d)))dn++;d.setDate(d.getDate()+1);}}else if(r.frequency==='weekly'){let d=new Date(cutoff),seen=new Set();while(d<=now){const k=weekKey(d);if(!seen.has(k)){exp++;seen.add(k);if(completionHistory.some(c=>c.routineId===r.id&&c.period===k))dn++;}d.setDate(d.getDate()+1);}}else{exp=1;dn=completionHistory.some(c=>c.routineId===r.id&&c.period==='project')?1:0;}expected+=exp;done+=dn;return{r,exp,dn,pct:percent(dn,exp)};});return{owner,expected,done,pct:percent(done,expected),per};}
+function renderAnalytics(){const a=routineStatsFor(currentUser,analyticsRange),b=routineStatsFor(otherPerson(),analyticsRange),sharedEntries=recentEntries.filter(e=>e.scope==='shared'),sharedCount=sharedItems.filter(x=>x.active!==false).length,categories=[...new Set(routines.filter(r=>r.owner===currentUser&&!r.archived).map(r=>r.category||'Other'))];const catRows=categories.map(cat=>{const rs=a.per.filter(x=>(x.r.category||'Other')===cat);return{cat,p:percent(rs.reduce((n,x)=>n+x.dn,0),rs.reduce((n,x)=>n+x.exp,0))};});const together=percent(a.pct+b.pct,200);document.getElementById('app').innerHTML=`<section class="fade pt-3"><div class="flex items-end justify-between gap-4 pb-5"><div><div class="tiny-label">Patterns, not pressure</div><h2 class="serif text-4xl mt-2">Analytics.</h2><p class="subtle text-sm mt-2">Consistency, shared activity and mutual growth.</p></div><select onchange="analyticsRange=Number(this.value);renderAnalytics()" class="input w-auto"><option value="7" ${analyticsRange===7?'selected':''}>7 days</option><option value="30" ${analyticsRange===30?'selected':''}>30 days</option><option value="90" ${analyticsRange===90?'selected':''}>90 days</option></select></div><div class="grid sm:grid-cols-2 gap-4">${analyticsPersonCard(a,'My consistency')}${analyticsPersonCard(b,`${getPronoun(otherPerson())} consistency`)}</div><div class="card p-5 mt-4"><div class="tiny-label">Together</div><h3 class="serif text-2xl mt-1">Our shared pulse.</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">${metric('Shared items',sharedCount)}${metric('Shared entries',sharedEntries.length)}${metric('Active routines',routines.filter(r=>!r.archived).length)}${metric('Mutual growth',together+'%')}</div><div class="mt-5"><div class="flex justify-between text-xs"><span class="subtle">Together consistency</span><span>${together}%</span></div><div class="progress-bar mt-2"><div class="progress-fill" style="width:${together}%"></div></div></div></div><div class="card p-5 mt-4"><div class="tiny-label">My routine mix</div><h3 class="serif text-xl mt-1">Where consistency is strongest.</h3><div class="mt-4 space-y-3">${catRows.map(x=>`<div><div class="flex justify-between text-xs"><span>${esc(x.cat)}</span><span>${x.p}%</span></div><div class="progress-bar mt-1"><div class="progress-fill" style="width:${x.p}%"></div></div></div>`).join('')||'<div class="subtle text-xs">Add routines to start seeing category trends.</div>'}</div></div><div class="card p-5 mt-4"><div class="tiny-label">Routine detail</div><h3 class="serif text-xl mt-1">What is compounding.</h3><div class="mt-4 space-y-2">${a.per.sort((x,y)=>y.pct-x.pct).slice(0,10).map(x=>`<div class="flex items-center gap-3 p-3 rounded-xl bg-white/[.025]"><div class="flex-1 min-w-0"><div class="text-sm truncate">${esc(x.r.name)}</div><div class="subtle text-[10px]">${x.dn}/${x.exp} expected periods</div></div><span class="mono text-xs">${x.pct}%</span></div>`).join('')||'<div class="subtle text-xs">No routine data yet.</div>'}</div></div></section>`;refreshNav();}
+function metric(label,value){return`<div class="rounded-2xl bg-white/[.025] p-3"><div class="tiny-label">${label}</div><div class="serif text-2xl mt-2">${value}</div></div>`;}
+function analyticsPersonCard(st,label){return`<div class="card p-5"><div class="tiny-label">${label}</div><div class="flex items-end justify-between mt-2"><h3 class="serif text-2xl">${esc(st.owner)}</h3><span class="mono text-lg">${st.pct}%</span></div><div class="progress-bar mt-4"><div class="progress-fill" style="width:${st.pct}%"></div></div><div class="grid grid-cols-2 gap-2 mt-4"><div class="rounded-xl bg-white/[.025] p-3"><div class="tiny-label">Completed</div><div class="serif text-xl mt-1">${st.done}</div></div><div class="rounded-xl bg-white/[.025] p-3"><div class="tiny-label">Expected</div><div class="serif text-xl mt-1">${st.expected}</div></div></div></div>`;}
 
 function renderMemory() {
   document.getElementById("app").innerHTML = `
@@ -856,11 +873,14 @@ function renderMemory() {
 
 function renderMemoryCard(e) {
   return `<article class="card overflow-hidden flex flex-col">
-    ${e.imageUrl ? `<img src="${esc(e.imageUrl)}" class="w-full h-48 sm:h-56 object-cover bg-black/20" alt="Memory">` : ""}
+    ${e.imageUrl ? `<img src="${esc(e.imageUrl)}" class="w-full max-h-[420px] object-contain bg-black/20" alt="Memory">` : ""}
     <div class="p-4 flex-1 flex flex-col">
       <div class="flex justify-between"><span class="tiny-label">${esc(e.type || "Memory")} · ${esc(e.sender || "")}</span><span class="subtle text-[10px]">${timeAgo(e.createdAt)}</span></div>
       ${e.text ? `<p class="serif italic text-lg mt-3">"${esc(e.text)}"</p>` : ""}
       ${e.audioUrl ? `<audio controls src="${esc(e.audioUrl)}" class="w-full mt-auto pt-3"></audio>` : ""}
+      <div class="flex justify-end gap-2 mt-3">
+        <button onclick="deleteEntry('${e.id}')" class="text-xs subtle hover:text-red-300">Delete</button>
+      </div>
     </div>
   </article>`;
 }
@@ -873,8 +893,8 @@ function isActiveRoutine(r) {
 }
 
 window.toggleRoutine = async function(id) {
-  const key = `${todayKey()}_${id}`;
   const r = routines.find(x=>x.id===id);
+  const key = r ? routineCompletionKey(r) : null;
   if (!r) return;
   const refDoc = doc(db, "routine_completions", key);
   try {
@@ -882,7 +902,7 @@ window.toggleRoutine = async function(id) {
       await deleteDoc(refDoc);
       delete completions[key];
     } else {
-      await setDoc(refDoc, {routineId:id, owner:r.owner, date:todayKey(), completedBy:currentUser, completedAt:serverTimestamp()});
+      await setDoc(refDoc, {routineId:id, owner:r.owner, date:todayKey(), period:r.frequency === "weekly" ? weekKey() : r.frequency === "project" ? "project" : todayKey(), frequency:r.frequency, completedBy:currentUser, completedAt:serverTimestamp()});
       completions[key] = true;
     }
     render();
@@ -941,10 +961,13 @@ window.openRoutineEditor = function(editId=null) {
   };
 };
 window.archiveRoutine = async function(id) {
-  if(confirm("Are you sure you want to delete this routine?")) {
-    try { await updateDoc(doc(db,"routines",id), {archived:true, updatedAt:serverTimestamp()}); closeRoutineSheet(); showToast("Routine deleted."); }
-    catch(e) { showToast("Couldn't delete routine."); }
-  }
+  if(!confirm("Delete this routine and its completion history?")) return;
+  try {
+    await deleteDoc(doc(db,"routines",id));
+    const related=completionHistory.filter(c=>c.routineId===id);
+    for(const c of related){ try{await deleteDoc(doc(db,"routine_completions",c.id));}catch(_){}}
+    closeRoutineSheet(); showToast("Routine deleted.");
+  } catch(e) { console.error(e); showToast("Couldn't delete routine."); }
 };
 
 function renderSettings() {
@@ -959,8 +982,16 @@ function renderSettings() {
         <p class="subtle text-sm mt-2">The app listens to Firestore in real time. Browser notifications require permission and a hosted HTTPS environment.</p>
         <button onclick="requestNotifications()" class="secondary mt-3">Enable browser notifications</button>
       </div>
+      <div class="card p-4">
+        <div class="tiny-label">Google Docs backup</div>
+        <p class="subtle text-sm mt-2">Optional: connect a Google Apps Script Web App URL. Without it, the app creates a backup file and copies the archive for pasting into Google Docs.</p>
+        <input id="backup-endpoint" class="input mt-3" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(backupEndpoint)}">
+        <button onclick="saveBackupEndpoint()" class="secondary mt-3">Save backup connection</button>
+      </div>
+      </div>
     </div>`);
 }
+window.saveBackupEndpoint=function(){backupEndpoint=document.getElementById('backup-endpoint').value.trim();localStorage.setItem('our_space_backup_endpoint',backupEndpoint);showToast(backupEndpoint?'Backup connection saved.':'Backup connection cleared.');};
 window.requestNotifications = async function() {
   if (!("Notification" in window)) return showToast("Notifications aren't supported here.");
   const p = await Notification.requestPermission();
@@ -1018,26 +1049,9 @@ function renderMemoryComposer() {
 }
 
 function renderLifeItemComposer(payload) {
-  setComposer(`Add ${payload.type}`, "Our Life", `
-    <div class="space-y-4">
-      <input id="life-title" class="input" placeholder="Title (e.g. Dream house)">
-      <textarea id="entry-text" class="input" placeholder="Description or specific details..."></textarea>
-      ${speechToTextBtn("entry-text")}
-      <button id="save-life" class="primary w-full">Save to Our Life</button>
-    </div>`);
-  
-  document.getElementById("save-life").onclick = async () => {
-    try {
-      const title = document.getElementById("life-title").value.trim();
-      const text = document.getElementById("entry-text").value.trim();
-      if(!title) return showToast("Title is required.");
-      await addDoc(collection(db,"life_items"),{
-        type: payload.type, title, text, icon: payload.icon,
-        owner: currentUser, createdAt: serverTimestamp()
-      });
-      closeSheet(); showToast("Saved to Our Life.");
-    } catch(e){console.error(e);showToast("Couldn't save item.");}
-  };
+  const isProphecy=payload.type==='Prophecy', isVision=payload.type==='Vision Board';
+  setComposer(`Add ${payload.type}`, "Our Life", `<div class="space-y-4"><input id="life-title" class="input" placeholder="Title"><textarea id="entry-text" class="input" placeholder="${isProphecy?'Write the prophecy exactly as you want it preserved...':'Description or specific details...'}"></textarea>${speechToTextBtn("entry-text")}${isVision?`<div><label class="tiny-label">Picture (optional)</label><input id="life-image" type="file" accept="image/*" class="input mt-2"></div>`:''}${isProphecy?`<div class="rounded-xl bg-white/[.03] border border-white/5 p-3 text-xs subtle">Timestamp: <span class="text-white">${fmtDateTime()}</span><br>Stored automatically when you save.</div>`:''}<button id="save-life" class="primary w-full">Save to Our Life</button></div>`);
+  document.getElementById("save-life").onclick=async()=>{try{const title=document.getElementById("life-title").value.trim(),text=document.getElementById("entry-text").value.trim();if(!title)return showToast("Title is required.");let imageUrl=null,imagePath=null;const file=document.getElementById("life-image")?.files?.[0];if(file){imagePath=`life_images/${Date.now()}_${file.name}`;const rr=ref(storage,imagePath);await uploadBytes(rr,file);imageUrl=await getDownloadURL(rr);}await addDoc(collection(db,"life_items"),{type:payload.type,title,text,icon:payload.icon,owner:currentUser,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),imageUrl,imagePath,x:isVision?8:null,y:isVision?8:null});closeSheet();showToast("Saved to Our Life.");}catch(e){console.error(e);showToast("Couldn't save item.");}};
 }
 
 function renderSharedComposer(payload={}) {
@@ -1093,10 +1107,10 @@ function renderSharedComposer(payload={}) {
         await updateDoc(doc(db, "shared_items", s.id), {...payloadData, updatedAt: serverTimestamp()});
       } else {
         const audioBlob=recorder.getBlob();
-        const audioUrl=audioBlob ? await uploadAudio(audioBlob,"shared_voice") : null;
+        const audio=audioBlob ? await uploadAudio(audioBlob,"shared_voice") : null;
         await addDoc(collection(db,"shared_items"),{...payloadData, createdAt:serverTimestamp()});
         const note=document.getElementById("s-note").value.trim();
-        if(note || audioUrl) await addDoc(collection(db,"entries"),{type:"Shared thought",text:note,audioUrl,sender:currentUser,scope:"shared",createdAt:serverTimestamp()});
+        if(note || audio) await addDoc(collection(db,"entries"),{type:"Shared thought",text:note,audioUrl:audio?.url||null,audioPath:audio?.path||null,sender:currentUser,scope:"shared",createdAt:serverTimestamp()});
       }
       closeSheet(); showToast(isEdit ? "Updated." : "Added to Together.");
     } catch(e){console.error(e);showToast("Couldn't save shared item.");}
@@ -1125,6 +1139,7 @@ function render() {
   if (activeTab==="today") renderToday();
   if (activeTab==="together") renderTogether();
   if (activeTab==="life") renderLife();
+  if (activeTab==="analytics") renderAnalytics();
   if (activeTab==="memory") renderMemory();
 }
 
@@ -1137,8 +1152,14 @@ function listenAll() {
   }, err=>console.error("routines",err)));
 
   unsubscribers.push(onSnapshot(collection(db,"routine_completions"), snap=>{
-    completions={};
-    snap.forEach(d=>{ const x=d.data(); if(x.date===todayKey()) completions[d.id]=true; });
+    completions={}; completionHistory=[];
+    snap.forEach(d=>{
+      const x=d.data();
+      completionHistory.push({id:d.id,...x});
+      const r=routines.find(rr=>rr.id===x.routineId);
+      if(r && d.id===routineCompletionKey(r)) completions[d.id]=true;
+      else if(!r && (x.date===todayKey() || x.period===weekKey() || x.period==="project")) completions[d.id]=true;
+    });
     render();
   }, err=>console.error("completions",err)));
 
@@ -1154,7 +1175,7 @@ function listenAll() {
     maybeNotify(recentEntries[0]);
   }, err=>console.error("entries",err)));
 
-  unsubscribers.push(onSnapshot(query(collection(db,"life_items"),orderBy("createdAt","desc"),limit(50)), snap=>{
+  unsubscribers.push(onSnapshot(query(collection(db,"life_items"),orderBy("createdAt","desc")), snap=>{
     lifeItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     render();
   }, err=>console.error("life",err)));
