@@ -65,16 +65,13 @@
     .serif { font-family: Fraunces, Georgia, serif; }
     .mono { font-family: "Space Mono", monospace; }
     .glass {
-      background: rgba(36,23,28,.82);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
+      background: linear-gradient(180deg,rgba(48,31,38,.76),rgba(27,18,22,.72));
+      backdrop-filter: blur(24px) saturate(130%);
+      -webkit-backdrop-filter: blur(24px) saturate(130%);
       border: 1px solid var(--line);
     }
-    .card {
-      background: linear-gradient(145deg, rgba(50,29,37,.92), rgba(31,20,24,.94));
-      border: 1px solid var(--line);
-      border-radius: 22px;
-    }
+    .card {position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(54,34,42,.90),rgba(25,17,21,.96));border:1px solid rgba(255,255,255,.095);border-radius:26px;box-shadow:0 18px 55px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.035)}
+    .card::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.035),transparent 30%,transparent 72%,rgba(199,168,117,.025))}
     .subtle { color: var(--muted); }
     .tiny-label {
       font: 700 10px/1.2 "Space Mono", monospace;
@@ -152,6 +149,18 @@
       border-radius: 14px; padding: 12px 15px; font-size: 14px;
     }
     .danger { color: #d79ba9; }
+    .hero-glow{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(113,51,69,.72),rgba(39,25,31,.88) 52%,rgba(75,91,50,.28));border:1px solid rgba(255,255,255,.10);border-radius:30px;box-shadow:0 25px 80px rgba(0,0,0,.25)}
+    .hero-glow::after{content:"";position:absolute;width:260px;height:260px;right:-90px;top:-110px;border-radius:50%;background:rgba(199,168,117,.12);filter:blur(8px);pointer-events:none}
+    .eyebrow{font:700 9px/1.2 "Space Mono",monospace;letter-spacing:.18em;text-transform:uppercase;color:rgba(247,240,229,.56)}
+    .soft-card{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.075);border-radius:20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+    .value-card{min-height:132px;padding:18px;border-radius:22px;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(0,0,0,.10));border:1px solid rgba(255,255,255,.075);transition:.2s ease}
+    .value-card:hover{border-color:rgba(199,168,117,.22);transform:translateY(-2px)}
+    .icon-action{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);font-size:11px;transition:.16s ease}
+    .icon-action:hover{background:rgba(255,255,255,.13);transform:translateY(-1px)}
+    .icon-action.danger:hover{background:rgba(170,65,84,.22);color:#f0a9b6}
+    .action-group{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+    .vision-pin{box-shadow:0 22px 45px rgba(0,0,0,.28),0 3px 8px rgba(0,0,0,.18);transition:box-shadow .18s ease,transform .18s ease}
+    .vision-pin:hover{box-shadow:0 28px 60px rgba(0,0,0,.35);transform:translateY(-2px) rotate(.2deg)}
     @media (min-width: 900px) {
       .app-shell { max-width: 1120px; margin: 0 auto; }
       .desktop-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
@@ -181,8 +190,9 @@
           <button onclick="openSheet('settings')" class="w-10 h-10 rounded-full border border-white/10 grid place-items-center text-sm">⚙</button>
         </div>
       </div>
-      <div class="mt-4 text-center">
-        <p class="serif italic text-cream/90 text-sm">“we are believers, we believe God for great things and we make them happen”</p>
+      <div class="mt-4 hero-glow px-5 py-4 text-center">
+        <div class="eyebrow">Our shared mantra</div>
+        <p class="serif italic text-cream/90 text-sm sm:text-base mt-2">“we are believers, we believe God for great things and we make them happen”</p>
       </div>
     </header>
 
@@ -204,6 +214,9 @@
       </button>
       <button data-tab="memory" onclick="setTab('memory')" class="tab py-2 flex flex-col items-center gap-1 text-xs subtle">
         <span class="text-lg">✦</span><span>Memories</span><span class="tab-dot w-1 h-1 rounded-full bg-wine"></span>
+      </button>
+      <button data-tab="analytics" onclick="setTab('analytics')" class="tab py-2 flex flex-col items-center gap-1 text-xs subtle">
+        <span class="text-lg">⌁</span><span>Pulse</span><span class="tab-dot w-1 h-1 rounded-full bg-wine"></span>
       </button>
     </div>
   </nav>
@@ -278,7 +291,10 @@ let analyticsRange = 30;
 const CORE_VALUES = [
   "We actively celebrate our differences / uniqueness",
   "We present a united front always",
-  "We pursue measurable mutual growth & development"
+  "We pursue measurable mutual growth & development ruthlessly",
+  "We always have faith projects",
+  "We always give thanks",
+  "We are very liberal..."
 ];
 let backupEndpoint = localStorage.getItem("our_space_backup_endpoint") || "";
 
@@ -765,30 +781,25 @@ function renderTogether() {
 }
 
 function sharedCard(x) {
-  return `<div class="relative rounded-2xl p-4 bg-white/[.025] border border-white/5 hover:border-white/10 transition flex flex-col group">
-    <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition">
-       <button onclick="openSheet('shared', {editId:'${x.id}'})" class="text-xs bg-white/10 rounded px-2 py-1 hover:bg-white/20">Edit</button>
-       <button onclick="deleteShared('${x.id}')" class="text-xs bg-red-500/20 text-red-300 rounded px-2 py-1 hover:bg-red-500/40">Del</button>
+  return `<div class="relative rounded-[24px] p-5 bg-white/[.028] border border-white/[.07] hover:border-white/[.14] hover:-translate-y-0.5 transition duration-200 flex flex-col group shadow-[0_16px_45px_rgba(0,0,0,.12)]">
+    <div class="absolute top-4 right-4 action-group opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+      <button aria-label="Edit" title="Edit" onclick="event.stopPropagation();openSheet('shared',{editId:'${x.id}'})" class="icon-action">✎</button>
+      <button aria-label="Delete" title="Delete" onclick="event.stopPropagation();deleteShared('${x.id}')" class="icon-action danger text-red-300">⌫</button>
     </div>
-    <div class="flex justify-between gap-3" onclick="openSheet('entry',{sharedId:'${x.id}'})" class="cursor-pointer">
-      <span class="text-lg">${x.icon || "♡"}</span>
-      <span class="tiny-label mt-1">${esc(x.type || "Shared")}</span>
+    <div class="flex items-center gap-3 cursor-pointer" onclick="openSheet('entry',{sharedId:'${x.id}'})">
+      <span class="w-10 h-10 rounded-2xl grid place-items-center bg-white/[.06] text-xl">${x.icon || "♡"}</span>
+      <span class="tiny-label">${esc(x.type || "Shared")}</span>
     </div>
     <div class="cursor-pointer flex-1" onclick="openSheet('entry',{sharedId:'${x.id}'})">
-      <h4 class="serif text-lg mt-3">${esc(x.title)}</h4>
-      <p class="subtle text-xs mt-1">${esc(x.subtitle || "")}</p>
-      ${x.link ? `<a href="${x.link.startsWith('http') ? x.link : 'https://'+x.link}" target="_blank" onclick="event.stopPropagation()" class="text-[11px] text-olive mt-2 block break-all hover:underline">🔗 ${esc(x.link)}</a>` : ""}
-      ${x.where ? `<p class="text-[11px] text-muted mt-1">📍 ${esc(x.where)}</p>` : ""}
+      <h4 class="serif text-xl mt-4 pr-16">${esc(x.title)}</h4>
+      <p class="subtle text-xs mt-1 leading-5">${esc(x.subtitle || "")}</p>
+      ${x.link ? `<a href="${x.link.startsWith('http') ? x.link : 'https://'+x.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="text-[11px] text-olive mt-3 block break-all hover:underline">↗ ${esc(x.link)}</a>` : ""}
+      ${x.where ? `<p class="text-[11px] text-muted mt-2">⌖ ${esc(x.where)}</p>` : ""}
     </div>
-    ${x.status ? `<div class="mt-3"><span class="chip">${esc(x.status)}</span></div>` : ""}
+    ${x.status ? `<div class="mt-4"><span class="chip">${esc(x.status)}</span></div>` : ""}
   </div>`;
 }
 
-window.deleteShared = async function(id) {
-  if(!confirm("Delete this shared item?")) return;
-  try { await deleteDoc(doc(db,"shared_items",id)); }
-  catch(e) { showToast("Couldn't delete."); }
-}
 
 function renderLife() {
   const boards = [
@@ -801,11 +812,8 @@ function renderLife() {
   const visionBoard = lifeItems.filter(i => i.type === "Vision Board");
   document.getElementById("app").innerHTML = `
     <section class="fade pt-3">
-      <div class="pb-5"><div class="tiny-label">The bigger picture</div><h2 class="serif text-4xl mt-2">Our Life.</h2><p class="subtle text-sm mt-2 max-w-xl">Vision, faith, growth and the things we are building together.</p></div>
-      <div class="card p-5 mb-5 border border-olive/30 bg-olive/5">
-        <div class="flex items-start justify-between gap-4 mb-4"><div><div class="tiny-label">Our Core Values</div><h3 class="serif text-2xl mt-1">How we choose to live.</h3></div><span class="text-xl">◈</span></div>
-        <div class="grid sm:grid-cols-3 gap-3">${CORE_VALUES.map((v,i)=>`<div class="rounded-2xl bg-black/10 border border-white/5 p-4"><div class="mono text-[10px] subtle">0${i+1}</div><p class="serif text-base mt-2">${esc(v)}</p></div>`).join("")}</div>
-      </div>
+      <div class="hero-glow p-6 sm:p-8 mb-5"><div class="eyebrow">The bigger picture</div><h2 class="serif text-4xl sm:text-5xl mt-2">Our Life.</h2><p class="subtle text-sm mt-3 max-w-xl leading-6">Vision, faith, growth, gratitude and the beautiful work of becoming one without becoming the same.</p><div class="mt-6 flex flex-wrap items-center gap-2"><span class="chip">Our marriage in one line</span><span class="serif italic text-sm">Romans 12:11</span></div></div>
+      <div class="card p-5 sm:p-6 mb-5"><div class="flex items-start justify-between gap-4 mb-5"><div><div class="tiny-label">Our Core Values</div><h3 class="serif text-2xl mt-1">How we choose to live.</h3><p class="subtle text-xs mt-1">Not rules. The culture of us.</p></div><span class="text-2xl">◈</span></div><div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${CORE_VALUES.map((v,i)=>`<div class="value-card"><div class="mono text-[10px] subtle">${String(i+1).padStart(2,'0')}</div><p class="serif text-[15px] leading-6 mt-3">${esc(v)}</p></div>`).join("")}</div></div>
       <div class="card p-5 mb-5">
         <div class="flex items-center justify-between gap-4 mb-4"><div><div class="tiny-label">Our visual future</div><h3 class="serif text-2xl mt-1">Vision Board.</h3><p class="subtle text-xs mt-1">Drag pins around the board. Add text or an image.</p></div><button onclick="openSheet('lifeItem',{type:'Vision Board',icon:'🖼️'})" class="secondary text-xs">+ Pin</button></div>
         <div id="vision-board" class="vision-board relative min-h-[360px] rounded-2xl overflow-hidden bg-black/20 border border-white/5">
@@ -822,7 +830,7 @@ function renderLife() {
 }
 function renderVisionPin(v){
   const left=Number.isFinite(v.x)?v.x:(10+(Math.abs(hashCode(v.id))%70)); const top=Number.isFinite(v.y)?v.y:(10+(Math.abs(hashCode(v.id+'y'))%65));
-  return `<div data-vision-id="${v.id}" class="absolute w-36 sm:w-44 rounded-2xl bg-[#f5f0e8] text-[#241318] shadow-2xl p-3 cursor-grab select-none" style="left:${left}%;top:${top}%;touch-action:none;z-index:${v.z||1}"><button onclick="deleteLifeItem('${v.id}')" class="absolute top-1 right-1 text-[10px] opacity-60 hover:opacity-100">✕</button>${v.imageUrl?`<img src="${esc(v.imageUrl)}" class="w-full h-24 object-cover rounded-xl mb-2">`:`<div class="text-2xl">${v.icon||'✦'}</div>`}<div class="font-semibold text-xs pr-4">${esc(v.title||'Untitled')}</div><div class="text-[10px] mt-1 opacity-70 line-clamp-4">${esc(v.text||'')}</div><div class="text-[9px] mt-2 opacity-50">${fmtDateTime(v.createdAt)}</div></div>`;
+  return `<div data-vision-id="${v.id}" class="vision-pin absolute w-36 sm:w-44 rounded-2xl bg-[#f5f0e8] text-[#241318] p-3 cursor-grab select-none" style="left:${left}%;top:${top}%;touch-action:none;z-index:${v.z||1}"><button onclick="deleteLifeItem('${v.id}')" class="absolute top-1 right-1 text-[10px] opacity-60 hover:opacity-100">✕</button>${v.imageUrl?`<img src="${esc(v.imageUrl)}" class="w-full h-24 object-cover rounded-xl mb-2">`:`<div class="text-2xl">${v.icon||'✦'}</div>`}<div class="font-semibold text-xs pr-4">${esc(v.title||'Untitled')}</div><div class="text-[10px] mt-1 opacity-70 line-clamp-4">${esc(v.text||'')}</div><div class="text-[9px] mt-2 opacity-50">${fmtDateTime(v.createdAt)}</div></div>`;
 }
 function hashCode(str=''){let h=0;for(let i=0;i<str.length;i++)h=((h<<5)-h)+str.charCodeAt(i)|0;return h;}
 function attachVisionDrag(el){
@@ -838,13 +846,9 @@ window.deleteLifeItem = async function(id) {
 }
 
 function renderLifeItemList(x) {
-  return `<div class="flex justify-between gap-3 p-3 rounded-xl bg-white/[.025] group relative">
-    <div class="flex-1 min-w-0">
-       <div class="text-sm font-semibold">${esc(x.title || "Untitled")}</div>
-       ${x.text ? `<div class="subtle text-[11px] mt-1">${esc(x.text)}</div>` : ""}
-       <div class="subtle text-[10px] mt-2">${esc(x.owner || "")} · ${fmtDateTime(x.createdAt)}</div>
-    </div>
-    <button onclick="deleteLifeItem('${x.id}')" class="opacity-0 group-hover:opacity-100 text-xs text-red-400 self-start p-1">✕</button>
+  return `<div class="flex justify-between gap-3 p-3.5 rounded-2xl bg-white/[.028] border border-white/[.045] group relative hover:bg-white/[.045] transition">
+    <div class="flex-1 min-w-0"><div class="text-sm font-semibold pr-2">${esc(x.title || "Untitled")}</div>${x.text ? `<div class="subtle text-[11px] mt-1 leading-5">${esc(x.text)}</div>` : ""}<div class="subtle text-[10px] mt-2">${esc(x.owner || "")} · ${fmtDateTime(x.createdAt)}</div></div>
+    <div class="action-group self-start opacity-0 group-hover:opacity-100 transition-opacity"><button aria-label="Edit" title="Edit" onclick="openSheet('lifeItem',{editId:'${x.id}',type:'${x.type}',icon:'${x.icon||''}'})" class="icon-action">✎</button><button aria-label="Delete" title="Delete" onclick="deleteLifeItem('${x.id}')" class="icon-action danger text-red-300">⌫</button></div>
   </div>`;
 }
 
@@ -1050,8 +1054,26 @@ function renderMemoryComposer() {
 
 function renderLifeItemComposer(payload) {
   const isProphecy=payload.type==='Prophecy', isVision=payload.type==='Vision Board';
-  setComposer(`Add ${payload.type}`, "Our Life", `<div class="space-y-4"><input id="life-title" class="input" placeholder="Title"><textarea id="entry-text" class="input" placeholder="${isProphecy?'Write the prophecy exactly as you want it preserved...':'Description or specific details...'}"></textarea>${speechToTextBtn("entry-text")}${isVision?`<div><label class="tiny-label">Picture (optional)</label><input id="life-image" type="file" accept="image/*" class="input mt-2"></div>`:''}${isProphecy?`<div class="rounded-xl bg-white/[.03] border border-white/5 p-3 text-xs subtle">Timestamp: <span class="text-white">${fmtDateTime()}</span><br>Stored automatically when you save.</div>`:''}<button id="save-life" class="primary w-full">Save to Our Life</button></div>`);
-  document.getElementById("save-life").onclick=async()=>{try{const title=document.getElementById("life-title").value.trim(),text=document.getElementById("entry-text").value.trim();if(!title)return showToast("Title is required.");let imageUrl=null,imagePath=null;const file=document.getElementById("life-image")?.files?.[0];if(file){imagePath=`life_images/${Date.now()}_${file.name}`;const rr=ref(storage,imagePath);await uploadBytes(rr,file);imageUrl=await getDownloadURL(rr);}await addDoc(collection(db,"life_items"),{type:payload.type,title,text,icon:payload.icon,owner:currentUser,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),imageUrl,imagePath,x:isVision?8:null,y:isVision?8:null});closeSheet();showToast("Saved to Our Life.");}catch(e){console.error(e);showToast("Couldn't save item.");}};
+  const editing=payload.editId ? lifeItems.find(x=>x.id===payload.editId) : null;
+  const titleValue=esc(editing?.title||''), textValue=esc(editing?.text||'');
+  setComposer(`${editing?'Edit':'Add'} ${payload.type}`, "Our Life", `<div class="space-y-4"><input id="life-title" class="input" placeholder="Title" value="${titleValue}"><textarea id="entry-text" class="input" placeholder="${isProphecy?'Write the prophecy exactly as you want it preserved...':'Description or specific details...'}">${textValue}</textarea>${speechToTextBtn("entry-text")}${isVision?`<div><label class="tiny-label">Picture (optional)</label><input id="life-image" type="file" accept="image/*" class="input mt-2"></div>`:''}${isProphecy?`<div class="rounded-xl bg-white/[.03] border border-white/5 p-3 text-xs subtle">Timestamp: <span class="text-white">${editing?fmtDateTime(editing.createdAt):fmtDateTime()}</span>${editing?'':'<br>Stored automatically when you save.'}</div>`:''}<button id="save-life" class="primary w-full">${editing?'Save changes':'Save to Our Life'}</button></div>`);
+  document.getElementById("save-life").onclick=async()=>{
+    try {
+      const title=document.getElementById("life-title").value.trim(), text=document.getElementById("entry-text").value.trim();
+      if(!title) return showToast("Title is required.");
+      if(editing){
+        const patch={title,text,updatedAt:serverTimestamp()};
+        const file=document.getElementById("life-image")?.files?.[0];
+        if(file){const imagePath=`life_images/${Date.now()}_${file.name}`;const rr=ref(storage,imagePath);await uploadBytes(rr,file);patch.imagePath=imagePath;patch.imageUrl=await getDownloadURL(rr);}
+        await updateDoc(doc(db,"life_items",editing.id),patch);
+      } else {
+        let imageUrl=null,imagePath=null; const file=document.getElementById("life-image")?.files?.[0];
+        if(file){imagePath=`life_images/${Date.now()}_${file.name}`;const rr=ref(storage,imagePath);await uploadBytes(rr,file);imageUrl=await getDownloadURL(rr);}
+        await addDoc(collection(db,"life_items"),{type:payload.type,title,text,icon:payload.icon,owner:currentUser,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),imageUrl,imagePath,x:isVision?8:null,y:isVision?8:null});
+      }
+      closeSheet(); showToast(editing?"Changes saved.":"Saved to Our Life.");
+    } catch(e){console.error(e);showToast("Couldn't save item.");}
+  };
 }
 
 function renderSharedComposer(payload={}) {
