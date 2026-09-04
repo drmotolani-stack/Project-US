@@ -159,6 +159,10 @@
     .icon-action:hover{background:rgba(255,255,255,.13);transform:translateY(-1px)}
     .icon-action.danger:hover{background:rgba(170,65,84,.22);color:#f0a9b6}
     .action-group{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+    .routine-actions{display:flex;align-items:center;justify-content:center;flex:0 0 38px}.routine-row{min-width:0}
+    .pulse-hero{background:radial-gradient(circle at 85% 15%,rgba(199,168,117,.13),transparent 32%),linear-gradient(145deg,rgba(113,51,69,.34),rgba(255,255,255,.025));}
+    .pulse-number{font-family:"Cormorant Garamond",serif;font-size:44px;line-height:1;color:var(--cream);font-weight:500}.analytics-details summary::-webkit-details-marker{display:none}.analytics-details summary{outline:none}
+
     .vision-pin{box-shadow:0 22px 45px rgba(0,0,0,.28),0 3px 8px rgba(0,0,0,.18);transition:box-shadow .18s ease,transform .18s ease}
     .vision-pin:hover{box-shadow:0 28px 60px rgba(0,0,0,.35);transform:translateY(-2px) rotate(.2deg)}
     @media (min-width: 900px) {
@@ -297,6 +301,12 @@ const CORE_VALUES = [
   "We are very liberal..."
 ];
 let backupEndpoint = localStorage.getItem("our_space_backup_endpoint") || "";
+
+const starterTogetherRoutines = [
+  ["Pray together", "daily", "Together · Faith", true],
+  ["Read Leverage devotional together", "daily", "Together · Faith", true],
+  ["Join Morning Dew together", "daily", "Together · Faith", true]
+];
 
 const starterRoutines = {
   Motolani: [
@@ -602,6 +612,18 @@ function renderToday() {
           <div class="card p-5">
             <div class="flex items-center justify-between mb-3">
               <div>
+                <div class="tiny-label">Together non-negotiables</div>
+                <h3 class="serif text-xl mt-1">The three things we do together.</h3>
+                <p class="subtle text-xs mt-1">One shared rhythm — not three separate personal tasks.</p>
+              </div>
+              <span class="text-lg">♡</span>
+            </div>
+            ${routineSection("OUR SHARED RHYTHMS", routines.filter(r => r.owner === "Together" && isActiveRoutine(r)), false, false)}
+          </div>
+
+          <div class="card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <div>
                 <div class="tiny-label">Today together</div>
                 <h3 class="serif text-xl mt-1">Small things, together.</h3>
               </div>
@@ -648,22 +670,22 @@ function renderToday() {
   refreshNav();
 }
 
-function routineSection(label, list, isTheirs) {
+function routineSection(label, list, isTheirs, allowEdit=true) {
   if (!list.length) return `<div class="empty p-4 subtle text-sm">No ${label.toLowerCase()} routines yet.</div>`;
   return `
     <div>
       <div class="tiny-label mb-2">${label}</div>
       <div class="space-y-2">
         ${list.map(r => `
-          <div class="flex items-center gap-2">
-            <button ${!isTheirs ? `onclick="toggleRoutine('${r.id}')"` : "disabled"} class="flex-1 text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] ${!isTheirs ? 'hover:bg-white/[.05] cursor-pointer' : 'cursor-default'} transition">
+          <div class="routine-row flex items-center gap-2 rounded-2xl">
+            <button ${!isTheirs ? `onclick="toggleRoutine('${r.id}')"` : "disabled"} class="flex-1 min-w-0 text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] ${!isTheirs ? 'hover:bg-white/[.05] cursor-pointer' : 'cursor-default'} transition">
               <span class="check ${completions[routineCompletionKey(r)] ? "done" : ""}"></span>
               <span class="min-w-0 flex-1">
                 <span class="block text-sm ${completions[routineCompletionKey(r)] ? "line-through opacity-50" : ""}">${esc(r.name)}</span>
                 <span class="block subtle text-[11px] mt-0.5">${iconFor(r.category)} ${esc(r.category || "Routine")}${r.nonNegotiable ? " · non-negotiable" : ""}</span>
               </span>
             </button>
-            ${!isTheirs ? `<button onclick="openRoutineEditor('${r.id}')" class="p-3 text-xs subtle hover:text-white transition">Edit</button>` : ""}
+            ${allowEdit && !isTheirs && r.owner !== "Together" ? `<div class="routine-actions"><button aria-label="Edit" title="Edit" onclick="openRoutineEditor('${r.id}')" class="icon-action">✎</button></div>` : ""}
           </div>`).join("")}
       </div>
     </div>`;
@@ -853,7 +875,42 @@ function renderLifeItemList(x) {
 }
 
 function routineStatsFor(owner,range=30){const mine=routines.filter(r=>r.owner===owner&&!r.archived),cutoff=daysAgo(range-1),now=new Date();let expected=0,done=0;const per=mine.map(r=>{let exp=0,dn=0;if(r.frequency==='daily'){let d=new Date(Math.max(new Date(r.startDate||cutoff).getTime(),cutoff.getTime())),end=new Date(Math.min(new Date(r.endDate||now).getTime(),now.getTime()));while(d<=end){exp++;if(completionHistory.some(c=>c.routineId===r.id&&c.date===dateKey(d)))dn++;d.setDate(d.getDate()+1);}}else if(r.frequency==='weekly'){let d=new Date(cutoff),seen=new Set();while(d<=now){const k=weekKey(d);if(!seen.has(k)){exp++;seen.add(k);if(completionHistory.some(c=>c.routineId===r.id&&c.period===k))dn++;}d.setDate(d.getDate()+1);}}else{exp=1;dn=completionHistory.some(c=>c.routineId===r.id&&c.period==='project')?1:0;}expected+=exp;done+=dn;return{r,exp,dn,pct:percent(dn,exp)};});return{owner,expected,done,pct:percent(done,expected),per};}
-function renderAnalytics(){const a=routineStatsFor(currentUser,analyticsRange),b=routineStatsFor(otherPerson(),analyticsRange),sharedEntries=recentEntries.filter(e=>e.scope==='shared'),sharedCount=sharedItems.filter(x=>x.active!==false).length,categories=[...new Set(routines.filter(r=>r.owner===currentUser&&!r.archived).map(r=>r.category||'Other'))];const catRows=categories.map(cat=>{const rs=a.per.filter(x=>(x.r.category||'Other')===cat);return{cat,p:percent(rs.reduce((n,x)=>n+x.dn,0),rs.reduce((n,x)=>n+x.exp,0))};});const together=percent(a.pct+b.pct,200);document.getElementById('app').innerHTML=`<section class="fade pt-3"><div class="flex items-end justify-between gap-4 pb-5"><div><div class="tiny-label">Patterns, not pressure</div><h2 class="serif text-4xl mt-2">Analytics.</h2><p class="subtle text-sm mt-2">Consistency, shared activity and mutual growth.</p></div><select onchange="analyticsRange=Number(this.value);renderAnalytics()" class="input w-auto"><option value="7" ${analyticsRange===7?'selected':''}>7 days</option><option value="30" ${analyticsRange===30?'selected':''}>30 days</option><option value="90" ${analyticsRange===90?'selected':''}>90 days</option></select></div><div class="grid sm:grid-cols-2 gap-4">${analyticsPersonCard(a,'My consistency')}${analyticsPersonCard(b,`${getPronoun(otherPerson())} consistency`)}</div><div class="card p-5 mt-4"><div class="tiny-label">Together</div><h3 class="serif text-2xl mt-1">Our shared pulse.</h3><div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">${metric('Shared items',sharedCount)}${metric('Shared entries',sharedEntries.length)}${metric('Active routines',routines.filter(r=>!r.archived).length)}${metric('Mutual growth',together+'%')}</div><div class="mt-5"><div class="flex justify-between text-xs"><span class="subtle">Together consistency</span><span>${together}%</span></div><div class="progress-bar mt-2"><div class="progress-fill" style="width:${together}%"></div></div></div></div><div class="card p-5 mt-4"><div class="tiny-label">My routine mix</div><h3 class="serif text-xl mt-1">Where consistency is strongest.</h3><div class="mt-4 space-y-3">${catRows.map(x=>`<div><div class="flex justify-between text-xs"><span>${esc(x.cat)}</span><span>${x.p}%</span></div><div class="progress-bar mt-1"><div class="progress-fill" style="width:${x.p}%"></div></div></div>`).join('')||'<div class="subtle text-xs">Add routines to start seeing category trends.</div>'}</div></div><div class="card p-5 mt-4"><div class="tiny-label">Routine detail</div><h3 class="serif text-xl mt-1">What is compounding.</h3><div class="mt-4 space-y-2">${a.per.sort((x,y)=>y.pct-x.pct).slice(0,10).map(x=>`<div class="flex items-center gap-3 p-3 rounded-xl bg-white/[.025]"><div class="flex-1 min-w-0"><div class="text-sm truncate">${esc(x.r.name)}</div><div class="subtle text-[10px]">${x.dn}/${x.exp} expected periods</div></div><span class="mono text-xs">${x.pct}%</span></div>`).join('')||'<div class="subtle text-xs">No routine data yet.</div>'}</div></div></section>`;refreshNav();}
+function renderAnalytics(){
+  const a=routineStatsFor(currentUser,analyticsRange), b=routineStatsFor(otherPerson(),analyticsRange);
+  const shared=sharedItems.filter(x=>x.active!==false);
+  const sharedEntries=recentEntries.filter(e=>e.scope==='shared');
+  const togetherRoutines=routines.filter(r=>r.owner==='Together'&&!r.archived);
+  const togetherStats=routineStatsFor('Together',analyticsRange);
+  const books=shared.filter(x=>x.type==='Book').length;
+  const messages=shared.filter(x=>x.type==='Message').length;
+  const conversations=shared.filter(x=>x.type==='Conversation'||x.type==='Topic').length;
+  const sharedNotes=sharedEntries.length;
+  const categories=[...new Set(routines.filter(r=>r.owner===currentUser&&!r.archived).map(r=>r.category||'Other'))];
+  const catRows=categories.map(cat=>{const rs=a.per.filter(x=>(x.r.category||'Other')===cat);return{cat,p:percent(rs.reduce((n,x)=>n+x.dn,0),rs.reduce((n,x)=>n+x.exp,0))};});
+  const sharedPct=togetherStats.pct;
+  document.getElementById('app').innerHTML=`<section class="fade pt-3 pb-8">
+    <div class="flex items-end justify-between gap-4 pb-5">
+      <div><div class="tiny-label">A gentle look back</div><h2 class="serif text-4xl mt-2">Pulse.</h2><p class="subtle text-sm mt-2">A few signals worth noticing — not a scorecard.</p></div>
+      <select onchange="analyticsRange=Number(this.value);renderAnalytics()" class="input w-auto"><option value="7" ${analyticsRange===7?'selected':''}>7 days</option><option value="30" ${analyticsRange===30?'selected':''}>30 days</option><option value="90" ${analyticsRange===90?'selected':''}>90 days</option></select>
+    </div>
+
+    <div class="card p-5 sm:p-6 pulse-hero mb-4">
+      <div class="flex items-start justify-between gap-4"><div><div class="tiny-label">Our shared pulse</div><h3 class="serif text-2xl mt-1">Are we showing up for us?</h3><p class="subtle text-xs mt-2">Only the things that are genuinely shared.</p></div><div class="pulse-number">${sharedPct}%</div></div>
+      <div class="progress-bar mt-5"><div class="progress-fill" style="width:${sharedPct}%"></div></div>
+      <div class="grid grid-cols-3 gap-2 mt-5">
+        ${metric('Books',books)}${metric('Messages',messages)}${metric('Conversations',conversations)}
+      </div>
+      <div class="grid grid-cols-2 gap-2 mt-2">${metric('Shared notes',sharedNotes)}${metric('Together rhythms',togetherRoutines.length)}</div>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4 mb-4">${analyticsPersonCard(a,`${currentUser}'s rhythm`)}${analyticsPersonCard(b,`${otherPerson()}'s rhythm`)}</div>
+
+    <details class="card p-5 mb-4 analytics-details"><summary class="cursor-pointer list-none flex items-center justify-between"><div><div class="tiny-label">Personal detail</div><h3 class="serif text-xl mt-1">Where things are landing.</h3></div><span class="subtle">⌄</span></summary><div class="mt-5 space-y-3">${catRows.map(x=>`<div><div class="flex justify-between text-xs"><span>${esc(x.cat)}</span><span>${x.p}%</span></div><div class="progress-bar mt-1"><div class="progress-fill" style="width:${x.p}%"></div></div></div>`).join('')||'<div class="subtle text-xs">Add routines to start seeing patterns.</div>'}</div></details>
+
+    <details class="card p-5 analytics-details"><summary class="cursor-pointer list-none flex items-center justify-between"><div><div class="tiny-label">Routine detail</div><h3 class="serif text-xl mt-1">See the individual routines.</h3></div><span class="subtle">⌄</span></summary><div class="mt-4 space-y-2">${a.per.sort((x,y)=>y.pct-x.pct).slice(0,10).map(x=>`<div class="flex items-center gap-3 p-3 rounded-xl bg-white/[.025]"><div class="flex-1 min-w-0"><div class="text-sm truncate">${esc(x.r.name)}</div><div class="subtle text-[10px]">${x.dn}/${x.exp} expected periods</div></div><span class="mono text-xs">${x.pct}%</span></div>`).join('')||'<div class="subtle text-xs">No routine data yet.</div>'}</div></details>
+  </section>`;refreshNav();
+}
+
 function metric(label,value){return`<div class="rounded-2xl bg-white/[.025] p-3"><div class="tiny-label">${label}</div><div class="serif text-2xl mt-2">${value}</div></div>`;}
 function analyticsPersonCard(st,label){return`<div class="card p-5"><div class="tiny-label">${label}</div><div class="flex items-end justify-between mt-2"><h3 class="serif text-2xl">${esc(st.owner)}</h3><span class="mono text-lg">${st.pct}%</span></div><div class="progress-bar mt-4"><div class="progress-fill" style="width:${st.pct}%"></div></div><div class="grid grid-cols-2 gap-2 mt-4"><div class="rounded-xl bg-white/[.025] p-3"><div class="tiny-label">Completed</div><div class="serif text-xl mt-1">${st.done}</div></div><div class="rounded-xl bg-white/[.025] p-3"><div class="tiny-label">Expected</div><div class="serif text-xl mt-1">${st.expected}</div></div></div></div>`;}
 
@@ -1219,13 +1276,17 @@ function maybeNotify(e) {
 
 async function seedIfEmpty() {
   const snap=await getDocs(query(collection(db,"routines"),limit(1)));
-  if (!snap.empty) return;
-  for (const owner of PEOPLE) {
-    for (const [name,frequency,category,nonNegotiable] of starterRoutines[owner]) {
-      await addDoc(collection(db,"routines"),{
-        name, frequency, category, nonNegotiable, owner,
-        archived:false, createdAt:serverTimestamp(), updatedAt:serverTimestamp()
-      });
+  if (snap.empty) {
+    for (const owner of PEOPLE) {
+      for (const [name,frequency,category,nonNegotiable] of starterRoutines[owner]) {
+        await addDoc(collection(db,"routines"),{name,frequency,category,nonNegotiable,owner,archived:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+      }
+    }
+  }
+  const togetherSnap=await getDocs(query(collection(db,"routines"),where("owner","==","Together"),limit(1)));
+  if (togetherSnap.empty) {
+    for (const [name,frequency,category,nonNegotiable] of starterTogetherRoutines) {
+      await addDoc(collection(db,"routines"),{name,frequency,category,nonNegotiable,owner:"Together",archived:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
     }
   }
 }
