@@ -185,6 +185,16 @@
     .season-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     @media (max-width:899px){.app-shell{padding-left:14px!important;padding-right:14px!important}.desktop-grid{display:block}.desktop-grid>.space-y-4 + .space-y-4{margin-top:16px}.sheet{max-height:88vh}.hero-glow{border-radius:24px}.card{border-radius:22px}.grid{min-width:0}}
     @media (max-width:520px){.text-4xl{font-size:2.15rem;line-height:1}.text-5xl{font-size:2.65rem;line-height:1}.grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}nav .tab{padding-left:2px;padding-right:2px}nav .tab span:nth-child(2){font-size:10px}.toast{max-width:calc(100vw - 32px);white-space:normal;text-align:center}}
+    /* SEASONAL THEMES */
+    .season-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid rgba(236,223,201,.11);border-radius:999px;background:rgba(255,255,255,.035);font-size:10px;color:rgba(243,234,219,.68);letter-spacing:.04em;transition:all 1s ease}.season-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 14px color-mix(in srgb,var(--gold) 55%,transparent)}
+    .season-transition *{transition-duration:1.05s!important}
+    .theme-preview{height:74px;border-radius:18px;border:1px solid rgba(255,255,255,.08);padding:10px;display:flex;align-items:flex-end;justify-content:space-between;overflow:hidden;position:relative}.theme-preview:before{content:"";position:absolute;inset:-30%;background:radial-gradient(circle at 20% 20%,var(--preview-a),transparent 45%),radial-gradient(circle at 90% 10%,var(--preview-b),transparent 42%),var(--preview-bg);filter:saturate(105%)}.theme-preview span{position:relative;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--preview-text)}
+    .theme-option{cursor:pointer;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:5px;background:rgba(255,255,255,.02);transition:.2s}.theme-option.active{border-color:var(--gold);box-shadow:0 0 0 2px rgba(205,180,138,.10)}.theme-option:hover{transform:translateY(-2px)}
+
+    /* Seasonal palette integration */
+    body { background: radial-gradient(circle at 15% -10%, var(--glow-a, rgba(125,57,77,.20)), transparent 34%), radial-gradient(circle at 100% 0%, var(--glow-b, rgba(95,116,66,.10)), transparent 28%), var(--bg); }
+    .glass { background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 76%, transparent), color-mix(in srgb, var(--bg) 78%, transparent)); }
+    .card { background: linear-gradient(145deg, color-mix(in srgb, var(--panel2) 88%, transparent), color-mix(in srgb, var(--bg) 94%, transparent)); }
   </style>
 </head>
 
@@ -317,6 +327,21 @@ const CORE_VALUES = [
 let backupEndpoint = localStorage.getItem("our_space_backup_endpoint") || "";
 let seasonMonth = localStorage.getItem("our_space_season_month") || new Date().toLocaleDateString("en-US",{month:"long"});
 let seasonText = localStorage.getItem("our_space_season_text") || "";
+let themeMode = localStorage.getItem("our_space_theme_mode") || "auto";
+const THEMES = [
+  {id:"building",name:"Forest & Champagne",bg:"#07130e",deep:"#07130e",mid:"#0b1a13",panel:"#10221a",panel2:"#173026",wine:"#8f725b",olive:"#81966a",cream:"#f3eadb",muted:"#a9ad9e",gold:"#cdb48a",line:"rgba(242,231,211,.10)",a:"rgba(103,135,92,.22)",b:"rgba(176,139,91,.14)"},
+  {id:"becoming",name:"Terracotta & Cream",bg:"#17100d",deep:"#17100d",mid:"#211611",panel:"#2b1c17",panel2:"#3a251d",wine:"#a76550",olive:"#8d855e",cream:"#f6eadb",muted:"#b8a79b",gold:"#d2ae7e",line:"rgba(246,234,219,.11)",a:"rgba(174,91,64,.20)",b:"rgba(205,169,117,.15)"},
+  {id:"resting",name:"Midnight & Lavender",bg:"#0c0d18",deep:"#0c0d18",mid:"#111329",panel:"#191a32",panel2:"#252344",wine:"#79688f",olive:"#8994a6",cream:"#eee9e2",muted:"#aaa7ba",gold:"#c9b8d8",line:"rgba(238,233,226,.10)",a:"rgba(106,98,164,.20)",b:"rgba(171,143,184,.13)"},
+  {id:"peace",name:"Olive & Sand",bg:"#10140d",deep:"#10140d",mid:"#171c12",panel:"#202817",panel2:"#2c351f",wine:"#8b8060",olive:"#82965e",cream:"#f2ebda",muted:"#afb09c",gold:"#cfbb8a",line:"rgba(242,235,218,.10)",a:"rgba(111,137,75,.21)",b:"rgba(205,181,123,.13)"},
+  {id:"celebrating",name:"Burgundy & Blush",bg:"#160b10",deep:"#160b10",mid:"#211019",panel:"#2b151f",panel2:"#3b1d29",wine:"#a15b70",olive:"#8d8861",cream:"#f7ebe5",muted:"#bba5ab",gold:"#d3b18c",line:"rgba(247,235,229,.10)",a:"rgba(155,61,92,.20)",b:"rgba(209,160,132,.14)"},
+  {id:"renewing",name:"Blue & Pearl",bg:"#081119",deep:"#081119",mid:"#0c1b27",panel:"#122534",panel2:"#183346",wine:"#718ba0",olive:"#799a91",cream:"#edf1ed",muted:"#a5b1b5",gold:"#c9c3aa",line:"rgba(237,241,237,.10)",a:"rgba(63,118,146,.20)",b:"rgba(177,166,133,.12)"}
+];
+function autoTheme(){const epoch=new Date(2026,8,7).getTime();const days=Math.floor((Date.now()-epoch)/86400000);return THEMES[((days<0?0:Math.floor(days/7)))%THEMES.length];}
+function applyTheme(theme,animate=true){if(!theme)return;const root=document.documentElement;if(animate)document.body.classList.add('season-transition');const map={bg:theme.bg,panel:theme.panel,panel2:theme.panel2,wine:theme.wine,olive:theme.olive,cream:theme.cream,muted:theme.muted,line:theme.line,glowA:theme.a,glowB:theme.b};Object.entries(map).forEach(([k,v])=>root.style.setProperty('--'+k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()),v));const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',theme.bg);setTimeout(()=>document.body.classList.remove('season-transition'),1200);}
+function currentTheme(){return themeMode==='auto'?autoTheme():(THEMES.find(t=>t.id===themeMode)||THEMES[0]);}
+function initTheme(){applyTheme(currentTheme(),false);}
+window.setThemeMode=function(mode){themeMode=mode;localStorage.setItem('our_space_theme_mode',mode);applyTheme(currentTheme());renderSettings();};
+
 
 const starterTogetherRoutines = [
   ["Pray together", "daily", "Together · Faith", true],
@@ -893,7 +918,7 @@ window.archiveRoutine = async function(id) {
   } catch(e) { console.error(e); showToast("Couldn't delete routine."); }
 };
 
-function renderSettings(){setComposer("Settings","Our Space",`<div class="space-y-3"><div class="card p-4"><div class="tiny-label">Current identity</div><div class="flex items-center justify-between mt-2"><span class="serif text-xl">${esc(currentUser)}</span><span class="chip">this device</span></div></div><div class="card p-4"><div class="tiny-label">Current season</div><p class="subtle text-sm mt-2">Set the month and season phrase shown under Together.</p><div class="grid grid-cols-2 gap-3 mt-3"><input id="season-month" class="input" value="${esc(seasonMonth)}" placeholder="September"><input id="season-text" class="input" value="${esc(seasonText)}" placeholder="Our season of divine speed"></div><button onclick="saveSeasonSettings()" class="secondary mt-3">Save current season</button></div><div class="card p-4"><div class="tiny-label">Notifications</div><p class="subtle text-sm mt-2">Browser notifications require permission and a hosted HTTPS environment.</p><button onclick="requestNotifications()" class="secondary mt-3">Enable browser notifications</button></div><div class="card p-4"><div class="tiny-label">Google Docs backup</div><p class="subtle text-sm mt-2">Optional: connect a Google Apps Script Web App URL.</p><input id="backup-endpoint" class="input mt-3" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(backupEndpoint)}"><button onclick="saveBackupEndpoint()" class="secondary mt-3">Save backup connection</button></div></div>`);}
+function renderSettings(){setComposer("Settings","Our Space",`<div class="space-y-3"><div class="card p-4"><div class="tiny-label">Current identity</div><div class="flex items-center justify-between mt-2"><span class="serif text-xl">${esc(currentUser)}</span><span class="chip">this device</span></div></div><div class="card p-4"><div class="tiny-label">Current season</div><p class="subtle text-sm mt-2">You choose the month and the meaning. The visual atmosphere can rotate separately.</p><div class="grid grid-cols-2 gap-3 mt-3"><input id="season-month" class="input" value="${esc(seasonMonth)}" placeholder="September"><input id="season-text" class="input" value="${esc(seasonText)}" placeholder="Our season of divine speed"></div><button onclick="saveSeasonSettings()" class="secondary mt-3">Save current season</button><div class="mt-5"><div class="tiny-label">Visual atmosphere</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3"><button onclick="setThemeMode('auto')" class="theme-option ${themeMode==='auto'?'active':''}"><div class="theme-preview" style="--preview-bg:#07130e;--preview-a:rgba(103,135,92,.3);--preview-b:rgba(205,180,138,.22);--preview-text:#f3eadb"><span>Auto · weekly</span></div></button>${THEMES.map(t=>`<button onclick="setThemeMode('${t.id}')" class="theme-option ${themeMode===t.id?'active':''}"><div class="theme-preview" style="--preview-bg:${t.bg};--preview-a:${t.a};--preview-b:${t.b};--preview-text:${t.cream}"><span>${esc(t.name)}</span></div></button>`).join('')}</div></div></div><div class="card p-4"><div class="tiny-label">Notifications</div><p class="subtle text-sm mt-2">Browser notifications require permission and a hosted HTTPS environment.</p><button onclick="requestNotifications()" class="secondary mt-3">Enable browser notifications</button></div><div class="card p-4"><div class="tiny-label">Google Docs backup</div><p class="subtle text-sm mt-2">Optional: connect a Google Apps Script Web App URL.</p><input id="backup-endpoint" class="input mt-3" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(backupEndpoint)}"><button onclick="saveBackupEndpoint()" class="secondary mt-3">Save backup connection</button></div></div>`);}
 window.saveSeasonSettings=async function(){seasonMonth=document.getElementById('season-month').value.trim()||currentMonthShort();seasonText=document.getElementById('season-text').value.trim();localStorage.setItem('our_space_season_month',seasonMonth);localStorage.setItem('our_space_season_text',seasonText);try{await setDoc(doc(db,'app_settings','general'),{seasonMonth,seasonText,updatedAt:serverTimestamp()},{merge:true});showToast('Current season saved.');}catch(e){console.error(e);showToast('Saved on this device; shared setting needs Firestore permission.');}};
 
 window.saveBackupEndpoint=function(){backupEndpoint=document.getElementById('backup-endpoint').value.trim();localStorage.setItem('our_space_backup_endpoint',backupEndpoint);showToast(backupEndpoint?'Backup connection saved.':'Backup connection cleared.');};
@@ -1146,6 +1171,7 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape"){ closeSheet(); closeRoutineSheet(); }
 });
 
+initTheme();
 render();
 listenAll();
 seedIfEmpty().catch(e=>{console.error("seed",e);showToast("Our Space is open; some starter data could not sync yet.");});
