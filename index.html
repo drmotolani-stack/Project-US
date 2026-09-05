@@ -335,6 +335,12 @@ let routines = [];
 let completions = {};
 let sharedItems = [];
 let sharedRhythms = [];
+
+const DEFAULT_SHARED_RHYTHMS = [
+  ["Pray together","🙏","Spiritual"],
+  ["Read Leverage devotional together","📖","Devotional"],
+  ["Join Morning Dew together","🌅","Morning Dew"]
+];
 let lifeItems = [];
 let memories = [];
 let recentEntries = [];
@@ -611,11 +617,6 @@ async function saveEntry({type="Note", text="", audioBlob=null, imageFile=null, 
   showToast("Saved.");
 }
 
-const DEFAULT_SHARED_RHYTHMS = [
-  ["Pray together","🙏","Spiritual"],
-  ["Read Leverage devotional together","📖","Devotional"],
-  ["Join Morning Dew together","🌅","Morning Dew"]
-];
 function sharedRhythmDone(r){return !!completions[`shared_${dateKey(new Date())}_${r.id}`];}
 function renderSharedRhythm(r){const done=sharedRhythmDone(r);return `<div class="ritual-row"><button onclick="toggleSharedRhythm('${r.id}')" class="check ${done?'done':''}"></button><div class="ritual-icon">${r.icon||'♡'}</div><div class="flex-1 min-w-0"><div class="text-sm ${done?'line-through opacity-55':''}">${esc(r.name)}</div><div class="subtle text-[10px] mt-1">${esc(r.category||'Together')} · today</div></div><span class="text-[10px] ${done?'text-[#b9c8aa]':'subtle'}">${done?'done':'open'}</span></div>`;}
 window.toggleSharedRhythm=async function(id){const r=sharedRhythms.find(x=>x.id===id);if(!r)return;const key=`shared_${dateKey(new Date())}_${id}`;const existing=Object.entries(completions).find(([k])=>k===key);try{if(existing){await deleteDoc(doc(db,'routine_completions',existing[0]));}else{await setDoc(doc(db,'routine_completions',key),{routineId:id,date:dateKey(new Date()),period:dateKey(new Date()),frequency:'shared_daily',completedBy:currentUser,completedAt:serverTimestamp(),shared:true});}}catch(e){console.error(e);showToast("Couldn't update shared rhythm.");}};
