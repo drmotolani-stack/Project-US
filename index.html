@@ -1176,14 +1176,20 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape"){ closeSheet(); closeRoutineSheet(); }
 });
 
-try {
-  await seedIfEmpty();
-  listenAll();
-  initTheme();
+// Render the interface immediately. Firebase is allowed to fail without taking the whole app down.
+initTheme();
 render();
+
+// Start live data after the UI is visible. A Firestore problem should not blank the app.
+try {
+  listenAll();
+  seedIfEmpty().catch(e => {
+    console.error("Our Space seed error:", e);
+    showToast("Our Space opened, but Firebase needs attention.");
+  });
 } catch(e) {
-  console.error(e);
-  document.getElementById("app").innerHTML=`<div class="card p-6 mt-6"><h2 class="serif text-2xl">Firebase needs attention.</h2><p class="subtle text-sm mt-2">The app loaded, but it couldn't reach Firestore. Check your Firebase project, Firestore database and security rules.</p><pre class="mono text-[10px] mt-4 whitespace-pre-wrap opacity-60">${esc(e.message)}</pre></div>`;
+  console.error("Our Space Firebase startup error:", e);
+  showToast("Our Space opened, but Firebase needs attention.");
 }
 
 /* ===== FINAL UX OVERRIDES: compact routine buckets + prayer wall ===== */
