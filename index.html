@@ -332,6 +332,13 @@ let backupEndpoint = localStorage.getItem("our_space_backup_endpoint") || "";
 let seasonMonth = localStorage.getItem("our_space_season_month") || new Date().toLocaleDateString("en-US",{month:"long"});
 let seasonText = localStorage.getItem("our_space_season_text") || "";
 let themeMode = localStorage.getItem("our_space_theme_mode") || "auto";
+const DEFAULT_ROUTINE_BUCKETS = [
+  {id:"bucket1",name:"Bucket 1",icon:"✦"},
+  {id:"bucket2",name:"Bucket 2",icon:"◌"},
+  {id:"bucket3",name:"Bucket 3",icon:"↗"},
+  {id:"bucket4",name:"Bucket 4",icon:"♡"}
+];
+let routineBuckets = (()=>{try{const saved=JSON.parse(localStorage.getItem("our_space_routine_buckets")||"null");return Array.isArray(saved)&&saved.length===4?saved:DEFAULT_ROUTINE_BUCKETS.map(x=>({...x}));}catch(_){return DEFAULT_ROUTINE_BUCKETS.map(x=>({...x}));}})();
 const THEMES = [
   {id:"building",name:"Forest & Champagne",bg:"#07130e",deep:"#07130e",mid:"#0b1a13",panel:"#10221a",panel2:"#173026",wine:"#8f725b",olive:"#81966a",cream:"#f3eadb",muted:"#a9ad9e",gold:"#cdb48a",line:"rgba(242,231,211,.10)",a:"rgba(103,135,92,.22)",b:"rgba(176,139,91,.14)"},
   {id:"becoming",name:"Terracotta & Cream",bg:"#17100d",deep:"#17100d",mid:"#211611",panel:"#2b1c17",panel2:"#3a251d",wine:"#a76550",olive:"#8d855e",cream:"#f6eadb",muted:"#b8a79b",gold:"#d2ae7e",line:"rgba(246,234,219,.11)",a:"rgba(174,91,64,.20)",b:"rgba(205,169,117,.15)"},
@@ -350,7 +357,7 @@ window.setThemeMode=function(mode){themeMode=mode;localStorage.setItem('our_spac
 const starterTogetherRoutines = [
   ["Pray together", "daily", "Together · Faith", true],
   ["Read Leverage devotional together", "daily", "Together · Faith", true],
-  ["Join Morning Dew together", "daily", "Together · Faith", true]
+  ["Join Morning Dew together", "weekdays", "Together · Faith", true]
 ];
 
 const starterRoutines = {
@@ -430,17 +437,26 @@ function monthName() {
   return new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
 }
 function currentMonthShort(){return new Date().toLocaleDateString("en-US",{month:"long"});}
-const ROUTINE_BUCKETS=[{id:"spirit",name:"Spirit & Mind",icon:"✦"},{id:"body",name:"Body & Energy",icon:"◌"},{id:"life",name:"Work, Growth & Life",icon:"↗"}];
-function bucketForRoutine(r){
-  if(r && r.bucket && ROUTINE_BUCKETS.some(b=>b.name===r.bucket)) return r.bucket;
+function legacyBucketId(r){
+  const raw=(r?.bucket||"").toLowerCase();
+  if(raw.includes("spirit")||raw.includes("faith")) return "bucket1";
+  if(raw.includes("body")||raw.includes("energy")) return "bucket2";
+  if(raw.includes("work")||raw.includes("growth")||raw.includes("life")) return "bucket3";
   const text=((r?.name||"")+" "+(r?.category||"")).toLowerCase();
-  if(/prayer|pray|bible|devotion|devotional|faith|worship|scripture|meditat|thank you father|confession|morning dew|leverage/.test(text)) return "Spirit & Mind";
-  if(/gym|exercise|walk|run|workout|water|sleep|health|meal|food|stretch|fitness|body/.test(text)) return "Body & Energy";
-  return "Work, Growth & Life";
+  if(/prayer|pray|bible|devotion|devotional|faith|worship|scripture|meditat|thank you father|confession|morning dew|leverage/.test(text)) return "bucket1";
+  if(/gym|exercise|walk|run|workout|water|sleep|health|meal|food|stretch|fitness|body/.test(text)) return "bucket2";
+  if(/career|work|finance|linkedin|wsj|ft|pmp|book|read|growth|model/.test(text)) return "bucket3";
+  return "bucket4";
 }
-function routinesByBucket(list){const out={};ROUTINE_BUCKETS.forEach(b=>out[b.name]=[]);list.forEach(r=>(out[bucketForRoutine(r)]||=[]).push(r));return out;}
-function routineRowCompact(r,isTheirs){const done=!!completions[routineCompletionKey(r)];return `<div class="routine-row flex items-center gap-2"><button ${!isTheirs?`onclick="toggleRoutine('${r.id}')"`:"disabled"} class="flex-1 min-w-0 text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] ${!isTheirs?'hover:bg-white/[.05] cursor-pointer':'cursor-default'} transition"><span class="check ${done?'done':''}"></span><span class="min-w-0 flex-1"><span class="block text-sm ${done?'line-through opacity-50':''}">${esc(r.name)}</span><span class="block subtle text-[10px] mt-0.5">${iconFor(r.category)} ${esc(r.category||"Routine")}${r.nonNegotiable?' · non-negotiable':''}</span></span></button>${!isTheirs?`<div class="routine-actions"><button aria-label="Edit" title="Edit" onclick="openRoutineEditor('${r.id}')" class="icon-action">✎</button></div>`:''}</div>`;}
-function renderRoutineBuckets(list,isTheirs=false){const grouped=routinesByBucket(list);return ROUTINE_BUCKETS.map((b,i)=>{const items=grouped[b.name]||[];if(!items.length)return '';return `<details class="bucket" ${i===0?'open':''}><summary class="flex items-center justify-between gap-3 p-4"><span class="flex items-center gap-3"><span class="w-8 h-8 rounded-xl bg-white/[.05] grid place-items-center">${b.icon}</span><span><span class="block text-sm font-semibold">${b.name}</span><span class="subtle text-[10px]">${items.length} routine${items.length===1?'':'s'}</span></span></span><span class="bucket-arrow subtle">⌄</span></summary><div class="p-2 space-y-1">${items.map(r=>routineRowCompact(r,isTheirs)).join('')}</div></details>`;}).join('');}
+function bucketIdForRoutine(r){
+  if(r?.bucketId && routineBuckets.some(b=>b.id===r.bucketId)) return r.bucketId;
+  if(r?.bucket){const byName=routineBuckets.find(b=>b.name===r.bucket);if(byName)return byName.id;}
+  return legacyBucketId(r);
+}
+function bucketForRoutine(r){return routineBuckets.find(b=>b.id===bucketIdForRoutine(r))?.name||routineBuckets[0].name;}
+function routinesByBucket(list){const out={};routineBuckets.forEach(b=>out[b.id]=[]);list.forEach(r=>(out[bucketIdForRoutine(r)]||= []).push(r));return out;}
+function routineRowCompact(r,isTheirs){const done=!!completions[routineCompletionKey(r)];return `<div class="routine-row flex items-center gap-2"><button ${!isTheirs?`onclick="toggleRoutine('${r.id}')"`:"disabled"} class="flex-1 min-w-0 text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] ${!isTheirs?'hover:bg-white/[.05] cursor-pointer':'cursor-default'} transition"><span class="check ${done?'done':''}"></span><span class="min-w-0 flex-1"><span class="block text-sm ${done?'line-through opacity-50':''}">${esc(r.name)}</span><span class="block subtle text-[10px] mt-0.5">${iconFor(r.category)} ${esc(r.category||"Routine")}${r.nonNegotiable?' · non-negotiable':''}${r.frequency==='weekdays'?' · Mon–Fri':''}</span></span></button>${!isTheirs?`<div class="routine-actions"><button aria-label="Edit" title="Edit" onclick="openRoutineEditor('${r.id}')" class="icon-action">✎</button></div>`:''}</div>`;}
+function renderRoutineBuckets(list,isTheirs=false){const grouped=routinesByBucket(list);return routineBuckets.map((b,i)=>{const items=grouped[b.id]||[];return `<details class="bucket" ${i===0?'open':''}><summary class="flex items-center justify-between gap-3 p-4"><span class="flex items-center gap-3"><span class="w-8 h-8 rounded-xl bg-white/[.05] grid place-items-center">${b.icon||'○'}</span><span><span class="block text-sm font-semibold">${esc(b.name)}</span><span class="subtle text-[10px]">${items.length} routine${items.length===1?'':'s'}</span></span></span><span class="bucket-arrow subtle">⌄</span></summary><div class="p-2 space-y-1">${items.length?items.map(r=>routineRowCompact(r,isTheirs)).join(''):`<div class="p-3 subtle text-xs">Nothing here yet.</div>`}</div></details>`;}).join('');}
 function seasonDisplay(){return `${esc(seasonMonth||currentMonthShort())}: ${esc(seasonText||'Our season')}`;}
 
 function showToast(msg) {
@@ -580,7 +596,7 @@ async function uploadAudio(blob, prefix="voice") {
   return {url:await getDownloadURL(r), path};
 }
 
-function buildOurLifeBackup(){const lines=['OUR SPACE — OUR LIFE','Backup created: '+new Date().toLocaleString(),'','CORE VALUES',...CORE_VALUES.map((v,i)=>`${i+1}. ${v}`),''];['Prophecy','Confession','Faith Project','Testimony','Prayer Focus','Intercessory Focus','Vision Board'].forEach(type=>{lines.push(type.toUpperCase());const items=lifeItems.filter(x=>x.type===type);if(!items.length)lines.push('—');items.forEach(x=>{lines.push(`• ${x.title||'Untitled'}`);if(x.text)lines.push(x.text);lines.push(`  Added by ${x.owner||'Unknown'} · ${fmtDateTime(x.createdAt)}`);});lines.push('');});return lines.join('\n');}
+function buildOurLifeBackup(){const lines=['OUR SPACE — OUR LIFE','Backup created: '+new Date().toLocaleString(),'','CORE VALUES',...CORE_VALUES.map((v,i)=>`${i+1}. ${v}`),''];['Prophecy','Confession','Faith Project','Testimony','Church Takeaway','Prayer Focus','Intercessory Focus','Vision Board'].forEach(type=>{lines.push(type.toUpperCase());const items=lifeItems.filter(x=>x.type===type);if(!items.length)lines.push('—');items.forEach(x=>{lines.push(`• ${x.title||'Untitled'}`);if(x.text)lines.push(x.text);lines.push(`  Added by ${x.owner||'Unknown'} · ${fmtDateTime(x.createdAt)}`);});lines.push('');});return lines.join('\n');}
 window.backupOurLife=async function(){const content=buildOurLifeBackup();if(backupEndpoint){try{const res=await fetch(backupEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Our Space — Our Life Backup',content,lifeItems,coreValues:CORE_VALUES,createdAt:new Date().toISOString()})});if(!res.ok)throw new Error('Backup endpoint returned '+res.status);showToast('Google Docs backup sent.');return;}catch(e){console.error(e);showToast('Google Docs backup failed; downloading instead.');}}const blob=new Blob([content],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`our-space-life-backup-${todayKey()}.txt`;a.click();URL.revokeObjectURL(url);try{await navigator.clipboard.writeText(content);showToast('Backup downloaded and copied. Paste into Google Docs.');}catch(e){showToast('Backup downloaded.');}};
 window.deleteEntry=async function(id){if(!confirm('Delete this entry and its attached media?'))return;try{const e=recentEntries.find(x=>x.id===id);await deleteDoc(doc(db,'entries',id));if(e?.audioPath){try{await deleteObject(ref(storage,e.audioPath));}catch(_){}}if(e?.imagePath){try{await deleteObject(ref(storage,e.imagePath));}catch(_){} }showToast('Entry deleted.');}catch(err){console.error(err);showToast("Couldn't delete entry.");}};
 
@@ -614,8 +630,8 @@ function renderToday(){
   const myTodos=todos.filter(t=>t.owner===currentUser&&!t.completed),myCompletedTodos=todos.filter(t=>t.owner===currentUser&&t.completed),recent=recentEntries.slice(0,4);
   document.getElementById('app').innerHTML=`<section class="fade"><div class="pt-3 pb-5"><div class="tiny-label">${fmtDate()}</div><div class="flex items-end justify-between gap-4 mt-2"><h2 class="serif text-4xl sm:text-5xl">Today.</h2><div class="relative w-16 h-16 rounded-full ring grid place-items-center" style="--pct:${pct}%"><div class="w-12 h-12 rounded-full bg-wineDeep grid place-items-center"><span class="mono text-xs">${mineDone}/${mine.length}</span></div></div></div></div>
   <div class="desktop-grid"><div class="space-y-4">
-    <div class="card p-5"><div class="flex items-center justify-between mb-4"><div><div class="tiny-label">My day</div><h3 class="serif text-xl mt-1">${esc(getPronoun(currentUser))} routines</h3></div></div><div class="space-y-2">${renderRoutineBuckets(mine,false)||`<div class="empty p-4 subtle text-sm">No routines yet.</div>`}</div><button onclick="openRoutineEditor()" class="w-full secondary mt-4">+ Add a routine</button></div>
-    <div class="card p-5"><div class="tiny-label">Personal To-Do</div><h3 class="serif text-xl mt-1">One-off tasks</h3><form onsubmit="addTodo(event)" class="flex gap-2 mt-3"><input id="new-todo-input" class="input flex-1 py-2 text-sm" placeholder="Add a task..." required><button type="submit" class="primary py-2 px-4 text-sm">+</button></form><div class="mt-4 space-y-2">${myTodos.map(t=>renderTodo(t)).join('')}${myCompletedTodos.map(t=>renderTodo(t,true)).join('')}</div></div>
+    <div class="card p-5"><div class="flex items-center justify-between mb-4"><div><div class="tiny-label">My day</div><h3 class="serif text-xl mt-1">${esc(getPronoun(currentUser))} routines</h3></div></div><div class="space-y-2">${renderRoutineBuckets(mine,false)}</div><div class="grid grid-cols-2 gap-2 mt-4"><button onclick="openRoutineEditor()" class="secondary">+ Add routine</button><button onclick="openNonNegotiablesManager()" class="secondary">Core / non-negotiables</button></div></div>
+    <div class="card p-5"><div class="tiny-label">Personal To-Do</div><h3 class="serif text-xl mt-1">One-off tasks</h3><form onsubmit="addTodo(event)" class="mt-3 space-y-2"><div class="flex gap-2"><input id="new-todo-input" class="input flex-1 py-2 text-sm" placeholder="Add a task..." required><button type="submit" class="primary py-2 px-4 text-sm">+</button></div><div class="grid grid-cols-2 gap-2"><input id="new-todo-date" type="date" class="input py-2 text-xs"><input id="new-todo-time" type="time" class="input py-2 text-xs"></div></form><div class="mt-4 space-y-2">${myTodos.map(t=>renderTodo(t)).join('')}${myCompletedTodos.map(t=>renderTodo(t,true)).join('')}</div></div>
     <div class="card p-5"><div class="flex items-center justify-between mb-3"><div><div class="tiny-label">Together</div><h3 class="serif text-xl mt-1">Our shared rhythms.</h3></div><span class="text-lg">♡</span></div>${routineSection('OUR SHARED RHYTHMS',routines.filter(r=>r.owner==='Together'&&isActiveRoutine(r)),false,false)}</div>
     <div class="card p-5"><div class="flex items-center justify-between mb-3"><div><div class="tiny-label">Today together</div><h3 class="serif text-xl mt-1">Small things, together.</h3></div><button onclick="setTab('together')" class="subtle text-xs">Open →</button></div>${renderTodayTogether()}</div>
   </div><div class="space-y-4">
@@ -645,37 +661,24 @@ function routineSection(label, list, isTheirs, allowEdit=true) {
     </div>`;
 }
 
+function formatSchedule(date,time){if(!date)return '';try{const d=new Date(`${date}T${time||'00:00'}`);return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:time?'numeric':undefined,minute:time?'2-digit':undefined});}catch(_){return date+(time?` · ${time}`:'');}}
 function renderTodo(t, isCompleted=false) {
-  return `
-    <div class="flex items-center gap-3 p-2 border-b border-white/5 last:border-0">
+  return `<div class="flex items-center gap-3 p-2 border-b border-white/5 last:border-0 group">
       <button onclick="toggleTodo('${t.id}', ${!isCompleted})" class="check ${isCompleted ? 'done' : ''} w-5 h-5"></button>
-      <span class="flex-1 text-sm ${isCompleted ? 'line-through opacity-50' : ''}">${esc(t.text)}</span>
+      <div class="flex-1 min-w-0"><div class="text-sm ${isCompleted ? 'line-through opacity-50' : ''}">${esc(t.text)}</div>${t.reminderDate?`<div class="subtle text-[10px] mt-1">⏰ ${esc(formatSchedule(t.reminderDate,t.reminderTime))}</div>`:''}</div>
+      <button onclick="openTodoEditor('${t.id}')" class="text-xs subtle hover:text-white p-1">✎</button>
       <button onclick="deleteTodo('${t.id}')" class="text-xs text-muted hover:text-red-400 p-1">✕</button>
-    </div>
-  `;
+    </div>`;
 }
-
 window.addTodo = async function(e) {
   e.preventDefault();
-  const input = document.getElementById("new-todo-input");
-  const text = input.value.trim();
-  if(!text) return;
-  try {
-    await addDoc(collection(db, "todos"), {
-      text, owner: currentUser, completed: false, createdAt: serverTimestamp()
-    });
-    input.value = "";
-  } catch(err) { console.error(err); showToast("Failed to add task."); }
-}
-
-window.toggleTodo = async function(id, status) {
-  try { await updateDoc(doc(db, "todos", id), {completed: status, updatedAt: serverTimestamp()}); }
-  catch(e) { console.error(e); showToast("Couldn't update task."); }
-}
-window.deleteTodo = async function(id) {
-  try { await deleteDoc(doc(db, "todos", id)); }
-  catch(e) { console.error(e); showToast("Couldn't delete task."); }
-}
+  const input=document.getElementById("new-todo-input"), date=document.getElementById("new-todo-date")?.value||'', time=document.getElementById("new-todo-time")?.value||'';
+  const text=input.value.trim(); if(!text)return;
+  try {await addDoc(collection(db,"todos"),{text,owner:currentUser,completed:false,reminderDate:date||null,reminderTime:time||null,reminderEnabled:!!(date&&time),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});input.value="";if(document.getElementById("new-todo-date"))document.getElementById("new-todo-date").value='';if(document.getElementById("new-todo-time"))document.getElementById("new-todo-time").value='';} catch(err){console.error(err);showToast("Failed to add task.");}
+};
+window.openTodoEditor=function(id){const t=todos.find(x=>x.id===id);if(!t)return;setComposer("Edit task","One-off task",`<div class="space-y-4"><input id="todo-edit-text" class="input" value="${esc(t.text)}"><div class="grid grid-cols-2 gap-3"><div><label class="tiny-label">Reminder date</label><input id="todo-edit-date" type="date" class="input mt-2" value="${esc(t.reminderDate||'')}"></div><div><label class="tiny-label">Reminder time</label><input id="todo-edit-time" type="time" class="input mt-2" value="${esc(t.reminderTime||'')}"></div></div><p class="subtle text-xs">Add both a date and time to receive a push reminder on your registered devices.</p><button id="todo-edit-save" class="primary w-full">Save changes</button></div>`);document.getElementById('todo-edit-save').onclick=async()=>{const text=document.getElementById('todo-edit-text').value.trim(),date=document.getElementById('todo-edit-date').value,time=document.getElementById('todo-edit-time').value;if(!text)return showToast('Task needs a name.');try{await updateDoc(doc(db,'todos',id),{text,reminderDate:date||null,reminderTime:time||null,reminderEnabled:!!(date&&time),reminderSentKey:null,updatedAt:serverTimestamp()});closeSheet();showToast('Task updated.');}catch(e){console.error(e);showToast("Couldn't update task.");}};};
+window.toggleTodo = async function(id, status) {try {await updateDoc(doc(db,"todos",id),{completed:status,updatedAt:serverTimestamp()});}catch(e){console.error(e);showToast("Couldn't update task.");}};
+window.deleteTodo = async function(id) {try {await deleteDoc(doc(db,"todos",id));}catch(e){console.error(e);showToast("Couldn't delete task.");}};
 
 function renderTodayTogether() {
   const active = sharedItems.filter(x => x.active !== false).slice(0,4);
@@ -724,6 +727,7 @@ function sharedCard(x) {
       <p class="subtle text-xs mt-1 leading-5">${esc(x.subtitle || "")}</p>
       ${x.link ? `<a href="${x.link.startsWith('http') ? x.link : 'https://'+x.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="text-[11px] text-olive mt-3 block break-all hover:underline">↗ ${esc(x.link)}</a>` : ""}
       ${x.where ? `<p class="text-[11px] text-muted mt-2">⌖ ${esc(x.where)}</p>` : ""}
+      ${x.scheduleDate ? `<p class="text-[11px] text-gold mt-2">◷ ${esc(formatSchedule(x.scheduleDate,x.scheduleTime))}${x.reminderEnabled?' · reminder on':''}</p>` : ""}
     </div>
     ${x.status ? `<div class="mt-4"><span class="chip">${esc(x.status)}</span></div>` : ""}
   </div>`;
@@ -735,7 +739,11 @@ function prayerFocusItems(){return lifeItems.filter(x=>x.type==="Prayer Focus").
 function todayPrayerDay(){return new Date().toLocaleDateString("en-US",{weekday:"long"});}
 function todayPrayerFocus(){return prayerFocusItems().find(x=>x.day===todayPrayerDay());}
 function renderPrayerWall(){const focus=todayPrayerFocus(),others=lifeItems.filter(x=>x.type==="Intercessory Focus");return `<div class="card p-5 sm:p-6 mb-5"><div class="flex items-start justify-between gap-4"><div><div class="tiny-label">Prayer · 4:30 a.m.</div><h3 class="serif text-2xl mt-1">Prayer Focus</h3><p class="subtle text-xs mt-1">${todayPrayerDay()}'s focus for Motolani & Zusi.</p></div><button onclick="openPrayerBackend()" class="secondary text-xs">Edit Monday–Sunday</button></div><div class="mt-5">${focus?`<div class="rounded-2xl bg-white/[.03] border border-white/[.06] p-5"><div class="tiny-label">${esc(focus.title||"Today's prayer focus")}</div>${focus.text?`<p class="serif text-base leading-7 mt-3 whitespace-pre-wrap">${esc(focus.text)}</p>`:''}${focus.scripture?`<div class="mt-4 p-3 rounded-xl bg-olive/10 border border-olive/20"><div class="tiny-label">Scripture backing</div><p class="text-sm mt-1">${esc(focus.scripture)}</p></div>`:''}</div>`:`<div class="empty p-5 subtle text-sm">No ${todayPrayerDay()} prayer focus has been written yet. Open the backend to add it.</div>`}</div></div><div class="card p-5 sm:p-6"><div class="flex items-center justify-between gap-4"><div><div class="tiny-label">For others</div><h3 class="serif text-2xl mt-1">Intercessory Watchlist</h3></div><button onclick="openSheet('lifeItem',{type:'Intercessory Focus',icon:'🛐'})" class="secondary text-xs">+ Add</button></div><div class="mt-4 grid sm:grid-cols-2 gap-3">${others.length?others.map(renderLifeItemList).join(''):`<div class="empty p-4 subtle text-sm sm:col-span-2">No one on the watchlist yet.</div>`}</div></div>`;}
-function renderLife(){const boards=[{title:"Prophecies",type:"Prophecy",icon:"✧"},{title:"Confessions",type:"Confession",icon:"💬"},{title:"Faith Projects",type:"Faith Project",icon:"🏗️"},{title:"Testimonies",type:"Testimony",icon:"🙌"}],visionBoard=lifeItems.filter(i=>i.type==="Vision Board");document.getElementById('app').innerHTML=`<section class="fade pt-3"><div class="hero-glow p-6 sm:p-8 mb-5"><div class="eyebrow">Our marriage in one line</div><h2 class="serif text-3xl sm:text-4xl mt-3">Not slothful in business, fervent in spirit, serving the Lord.</h2><div class="chip mt-5 inline-block">Romans 12:11</div></div><div class="card p-5 sm:p-6 mb-5"><div class="flex items-center justify-between gap-4 mb-5"><h3 class="serif text-2xl">Core values</h3><span class="text-2xl">◈</span></div><div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${CORE_VALUES.map((v,i)=>`<div class="value-card"><div class="mono text-[10px] subtle">${String(i+1).padStart(2,'0')}</div><p class="serif text-[15px] leading-6 mt-3">${esc(v)}</p></div>`).join('')}</div></div><div class="card p-5 mb-5"><div class="flex items-center justify-between gap-4 mb-4"><div><div class="tiny-label">Our visual future</div><h3 class="serif text-2xl mt-1">Vision Board.</h3></div><button onclick="openSheet('lifeItem',{type:'Vision Board',icon:'🖼️'})" class="secondary text-xs">+ Pin</button></div><div id="vision-board" class="vision-board relative min-h-[360px] rounded-2xl overflow-hidden bg-black/20 border border-white/5">${visionBoard.length?visionBoard.map(renderVisionPin).join(''):`<div class="absolute inset-0 grid place-items-center text-center p-8"><div><div class="text-4xl">🖼️</div><p class="serif text-lg mt-2">Pin the future here.</p><p class="subtle text-xs mt-1">Add a dream, picture, goal or word and move it wherever you want.</p></div></div>`}</div></div>${renderPrayerWall()}<div class="grid sm:grid-cols-2 gap-4 mt-5">${boards.map(b=>{const items=lifeItems.filter(i=>i.type===b.type);return `<div class="card p-5 flex flex-col"><div class="flex items-start justify-between"><div class="flex items-center gap-2"><span class="text-xl">${b.icon}</span><h3 class="serif text-xl">${b.title}</h3></div><button onclick="openSheet('lifeItem',{type:'${b.type}',icon:'${b.icon}'})" class="text-xs subtle hover:text-white">+</button></div><div class="mt-4 space-y-2 flex-1">${items.length?items.map(renderLifeItemList).join(''):`<div class="text-xs subtle">Nothing added yet.</div>`}</div></div>`;}).join('')}</div><div class="card p-5 mt-4"><div class="flex items-center justify-between gap-3"><div><div class="tiny-label">Backup</div><h3 class="serif text-xl mt-1">Protect Our Life.</h3><p class="subtle text-xs mt-1">Export the complete Our Life archive, including timestamps.</p></div><button onclick="backupOurLife()" class="secondary text-xs">Create backup</button></div></div></section>`;document.querySelectorAll('[data-vision-id]').forEach(el=>attachVisionDrag(el));refreshNav();}
+function churchTakeaways(){return lifeItems.filter(x=>x.type==='Church Takeaway');}
+window.openChurchTakeaway=function(editId=null){const x=editId?lifeItems.find(i=>i.id===editId):null;setComposer(x?'Edit church takeaway':'Add church takeaway','What blessed us',`<div class="space-y-4"><input id="church-title" class="input" value="${esc(x?.title||'')}" placeholder="Service / message / date"><div><label class="tiny-label">What blessed me</label><textarea id="church-blessed" class="input mt-2" placeholder="What stood out, convicted, encouraged or instructed you?">${esc(x?.text||'')}</textarea></div><div><label class="tiny-label">Action points</label><textarea id="church-actions" class="input mt-2" placeholder="What are we going to do with it?">${esc(x?.actionPoints||'')}</textarea></div><label class="flex gap-3 items-center rounded-2xl bg-white/[.03] p-3"><input id="church-reviewed" type="checkbox" ${x?.reviewed?'checked':''}><span class="text-sm">Reviewed together verbally</span></label><button id="save-church" class="primary w-full">${x?'Save changes':'Save takeaway'}</button></div>`);document.getElementById('save-church').onclick=async()=>{const title=document.getElementById('church-title').value.trim()||'Church takeaway',text=document.getElementById('church-blessed').value.trim(),actionPoints=document.getElementById('church-actions').value.trim(),reviewed=document.getElementById('church-reviewed').checked;try{if(x)await updateDoc(doc(db,'life_items',x.id),{title,text,actionPoints,reviewed,updatedBy:currentUser,updatedAt:serverTimestamp()});else await addDoc(collection(db,'life_items'),{type:'Church Takeaway',title,text,actionPoints,reviewed,owner:currentUser,createdBy:currentUser,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});closeSheet();showToast('Church takeaway saved.');}catch(e){console.error(e);showToast("Couldn't save takeaway.");}};};
+window.toggleChurchReviewed=async function(id,status){try{await updateDoc(doc(db,'life_items',id),{reviewed:status,updatedBy:currentUser,updatedAt:serverTimestamp()});}catch(e){console.error(e);showToast("Couldn't update takeaway.");}};
+function renderChurchTakeaways(){const items=churchTakeaways();return `<div class="card p-5 sm:p-6 mb-5"><div class="flex items-start justify-between gap-4"><div><div class="tiny-label">After church</div><h3 class="serif text-2xl mt-1">What blessed us.</h3><p class="subtle text-xs mt-1">Capture it now. Review it together later.</p></div><button onclick="openChurchTakeaway()" class="secondary text-xs">+ Add</button></div><div class="mt-4 space-y-3">${items.length?items.slice(0,8).map(x=>`<div class="rounded-2xl bg-white/[.028] border border-white/[.05] p-4"><div class="flex justify-between gap-3"><div><div class="text-sm font-semibold">${esc(x.title||'Church takeaway')}</div><div class="subtle text-[10px] mt-1">${esc(x.owner||'')} · ${x.reviewed?'Reviewed together':'Pending verbal review'}</div></div><button onclick="openChurchTakeaway('${x.id}')" class="icon-action">✎</button></div>${x.text?`<p class="text-sm mt-3 leading-6">${esc(x.text)}</p>`:''}${x.actionPoints?`<div class="mt-3 rounded-xl bg-olive/10 border border-olive/20 p-3"><div class="tiny-label">Action points</div><p class="text-xs mt-1 leading-5">${esc(x.actionPoints)}</p></div>`:''}<label class="flex items-center gap-2 mt-3 text-xs subtle"><input type="checkbox" onchange="toggleChurchReviewed('${x.id}',this.checked)" ${x.reviewed?'checked':''}> Reviewed together</label></div>`).join(''):`<div class="empty p-4 subtle text-sm">Nothing captured yet.</div>`}</div></div>`;}
+function renderLife(){const boards=[{title:"Prophecies",type:"Prophecy",icon:"✧"},{title:"Confessions",type:"Confession",icon:"💬"},{title:"Faith Projects",type:"Faith Project",icon:"🏗️"},{title:"Testimonies",type:"Testimony",icon:"🙌"}],visionBoard=lifeItems.filter(i=>i.type==="Vision Board");document.getElementById('app').innerHTML=`<section class="fade pt-3"><div class="hero-glow p-6 sm:p-8 mb-5"><div class="eyebrow">Our marriage in one line</div><h2 class="serif text-3xl sm:text-4xl mt-3">Not slothful in business, fervent in spirit, serving the Lord.</h2><div class="chip mt-5 inline-block">Romans 12:11</div></div><div class="card p-5 sm:p-6 mb-5"><div class="flex items-center justify-between gap-4 mb-5"><h3 class="serif text-2xl">Core values</h3><span class="text-2xl">◈</span></div><div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${CORE_VALUES.map((v,i)=>`<div class="value-card"><div class="mono text-[10px] subtle">${String(i+1).padStart(2,'0')}</div><p class="serif text-[15px] leading-6 mt-3">${esc(v)}</p></div>`).join('')}</div></div><div class="card p-5 mb-5"><div class="flex items-center justify-between gap-4 mb-4"><div><div class="tiny-label">Our visual future</div><h3 class="serif text-2xl mt-1">Vision Board.</h3></div><button onclick="openSheet('lifeItem',{type:'Vision Board',icon:'🖼️'})" class="secondary text-xs">+ Pin</button></div><div id="vision-board" class="vision-board relative min-h-[360px] rounded-2xl overflow-hidden bg-black/20 border border-white/5">${visionBoard.length?visionBoard.map(renderVisionPin).join(''):`<div class="absolute inset-0 grid place-items-center text-center p-8"><div><div class="text-4xl">🖼️</div><p class="serif text-lg mt-2">Pin the future here.</p><p class="subtle text-xs mt-1">Add a dream, picture, goal or word and move it wherever you want.</p></div></div>`}</div></div>${renderChurchTakeaways()}${renderPrayerWall()}<div class="grid sm:grid-cols-2 gap-4 mt-5">${boards.map(b=>{const items=lifeItems.filter(i=>i.type===b.type);return `<div class="card p-5 flex flex-col"><div class="flex items-start justify-between"><div class="flex items-center gap-2"><span class="text-xl">${b.icon}</span><h3 class="serif text-xl">${b.title}</h3></div><button onclick="openSheet('lifeItem',{type:'${b.type}',icon:'${b.icon}'})" class="text-xs subtle hover:text-white">+</button></div><div class="mt-4 space-y-2 flex-1">${items.length?items.map(renderLifeItemList).join(''):`<div class="text-xs subtle">Nothing added yet.</div>`}</div></div>`;}).join('')}</div><div class="card p-5 mt-4"><div class="flex items-center justify-between gap-3"><div><div class="tiny-label">Backup</div><h3 class="serif text-xl mt-1">Protect Our Life.</h3><p class="subtle text-xs mt-1">Export the complete Our Life archive, including timestamps.</p></div><button onclick="backupOurLife()" class="secondary text-xs">Create backup</button></div></div></section>`;document.querySelectorAll('[data-vision-id]').forEach(el=>attachVisionDrag(el));refreshNav();}
 window.openPrayerBackend=function(){const byDay={};prayerFocusItems().forEach(x=>byDay[x.day]=x);setComposer("Prayer backend","Prayer Focus",`<div class="space-y-4"><p class="subtle text-sm">Write the seven recurring prayer focuses. Only today's focus appears on the Prayer Wall.</p><div class="space-y-3">${PRAYER_DAYS.map(day=>{const x=byDay[day]||{};return `<details class="prayer-day" ${day===todayPrayerDay()?'open':''}><summary class="flex items-center justify-between cursor-pointer"><div><div class="tiny-label">${day}</div><div class="serif text-lg mt-1">${esc(x.title||'Prayer focus')}</div></div><span class="subtle">⌄</span></summary><div class="mt-4 space-y-3"><input class="input prayer-title" data-day="${day}" value="${esc(x.title||'')}" placeholder="Focus title"><textarea class="input prayer-text" data-day="${day}" placeholder="Prayer points, declarations, notes...">${esc(x.text||'')}</textarea><input class="input prayer-scripture" data-day="${day}" value="${esc(x.scripture||'')}" placeholder="Scripture backing"><input type="hidden" class="prayer-id" data-day="${day}" value="${x.id||''}"></div></details>`;}).join('')}</div><button onclick="savePrayerBackend()" class="primary w-full">Save Monday–Sunday</button></div>`);document.getElementById('composer').classList.add('open');document.getElementById('scrim').classList.add('open');};
 window.savePrayerBackend=async function(){try{for(const day of PRAYER_DAYS){const title=document.querySelector(`.prayer-title[data-day="${day}"]`)?.value.trim()||'',text=document.querySelector(`.prayer-text[data-day="${day}"]`)?.value.trim()||'',scripture=document.querySelector(`.prayer-scripture[data-day="${day}"]`)?.value.trim()||'',id=document.querySelector(`.prayer-id[data-day="${day}"]`)?.value||'';if(id)await updateDoc(doc(db,'life_items',id),{title,text,scripture,day,type:'Prayer Focus',updatedBy:currentUser,updatedAt:serverTimestamp()});else if(title||text||scripture)await addDoc(collection(db,'life_items'),{title,text,scripture,day,type:'Prayer Focus',owner:currentUser,createdBy:currentUser,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});}closeSheet();showToast('Prayer Focus saved.');}catch(e){console.error(e);showToast("Couldn't save Prayer Focus.");}};
 
@@ -763,7 +771,7 @@ function renderLifeItemList(x) {
   </div>`;
 }
 
-function routineStatsFor(owner,range=30){const mine=routines.filter(r=>r.owner===owner&&!r.archived),cutoff=daysAgo(range-1),now=new Date();let expected=0,done=0;const per=mine.map(r=>{let exp=0,dn=0;if(r.frequency==='daily'){let d=new Date(Math.max(new Date(r.startDate||cutoff).getTime(),cutoff.getTime())),end=new Date(Math.min(new Date(r.endDate||now).getTime(),now.getTime()));while(d<=end){exp++;if(completionHistory.some(c=>c.routineId===r.id&&c.date===dateKey(d)))dn++;d.setDate(d.getDate()+1);}}else if(r.frequency==='weekly'){let d=new Date(cutoff),seen=new Set();while(d<=now){const k=weekKey(d);if(!seen.has(k)){exp++;seen.add(k);if(completionHistory.some(c=>c.routineId===r.id&&c.period===k))dn++;}d.setDate(d.getDate()+1);}}else{exp=1;dn=completionHistory.some(c=>c.routineId===r.id&&c.period==='project')?1:0;}expected+=exp;done+=dn;return{r,exp,dn,pct:percent(dn,exp)};});return{owner,expected,done,pct:percent(done,expected),per};}
+function routineStatsFor(owner,range=30){const mine=routines.filter(r=>r.owner===owner&&!r.archived),cutoff=daysAgo(range-1),now=new Date();let expected=0,done=0;const per=mine.map(r=>{let exp=0,dn=0;if(r.frequency==='daily'||r.frequency==='weekdays'){let d=new Date(Math.max(new Date(r.startDate||cutoff).getTime(),cutoff.getTime())),end=new Date(Math.min(new Date(r.endDate||now).getTime(),now.getTime()));while(d<=end){const eligible=r.frequency==='daily'||(d.getDay()!==0&&d.getDay()!==6);if(eligible){exp++;if(completionHistory.some(c=>c.routineId===r.id&&c.date===dateKey(d)))dn++;}d.setDate(d.getDate()+1);}}else if(r.frequency==='weekly'){let d=new Date(cutoff),seen=new Set();while(d<=now){const k=weekKey(d);if(!seen.has(k)){exp++;seen.add(k);if(completionHistory.some(c=>c.routineId===r.id&&c.period===k))dn++;}d.setDate(d.getDate()+1);}}else{exp=1;dn=completionHistory.some(c=>c.routineId===r.id&&c.period==='project')?1:0;}expected+=exp;done+=dn;return{r,exp,dn,pct:percent(dn,exp)};});return{owner,expected,done,pct:percent(done,expected),per};}
 function renderAnalytics(){
   const a=routineStatsFor(currentUser,analyticsRange), b=routineStatsFor(otherPerson(),analyticsRange);
   const shared=sharedItems.filter(x=>x.active!==false);
@@ -839,6 +847,7 @@ function isActiveRoutine(r) {
   if (r.archived) return false;
   if (r.startDate && todayKey() < r.startDate) return false;
   if (r.endDate && todayKey() > r.endDate) return false;
+  if (r.frequency === "weekdays") { const day=new Date().getDay(); if(day===0||day===6) return false; }
   return true;
 }
 
@@ -862,7 +871,7 @@ window.toggleRoutine = async function(id) {
   }
 };
 
-window.openRoutineEditor = function(editId=null) {
+window.openRoutineEditor = function(editId=null, forceNonNeg=false) {
   const r = editId ? routines.find(x=>x.id===editId) : null;
   document.getElementById("routine-title").textContent = r ? "Edit routine" : "Add routine";
   document.getElementById("routine-body").innerHTML = `
@@ -872,13 +881,13 @@ window.openRoutineEditor = function(editId=null) {
       <div class="grid grid-cols-2 gap-3">
         <div><label class="tiny-label">Frequency</label>
           <select id="r-frequency" class="input mt-2">
-            ${["daily","weekly","project"].map(v=>`<option ${r?.frequency===v?"selected":""} value="${v}">${v[0].toUpperCase()+v.slice(1)}</option>`).join("")}
+            ${[["daily","Daily"],["weekdays","Mon–Fri"],["weekly","Weekly"],["project","Project"]].map(([v,label])=>`<option ${r?.frequency===v?"selected":""} value="${v}">${label}</option>`).join("")}
           </select>
         </div>
         <div><label class="tiny-label">Category</label><input id="r-category" class="input mt-2" value="${esc(r?.category || "")}" placeholder="Spiritual"></div>
       </div>
-      <div><label class="tiny-label">Today bucket</label><select id="r-bucket" class="input mt-2">${ROUTINE_BUCKETS.map(b=>`<option value="${esc(b.name)}" ${bucketForRoutine(r||{name:"",category:""})===b.name?'selected':''}>${b.name}</option>`).join("")}</select><div class="subtle text-[10px] mt-1">Smart-classified initially. You can change it anytime.</div></div>
-      <label class="flex items-center gap-3 p-3 rounded-2xl bg-white/[.03]"><input id="r-nonneg" type="checkbox" ${r?.nonNegotiable?"checked":""}><span><span class="text-sm block">Non-negotiable</span><span class="subtle text-xs">Keep it visible as a core routine.</span></span></label>
+      <div><label class="tiny-label">Today bucket</label><select id="r-bucket" class="input mt-2">${routineBuckets.map(b=>`<option value="${b.id}" ${bucketIdForRoutine(r||{})===b.id?'selected':''}>${esc(b.name)}</option>`).join("")}</select><div class="subtle text-[10px] mt-1">The four bucket names are yours — rename them in Settings.</div></div>
+      <label class="flex items-center gap-3 p-3 rounded-2xl bg-white/[.03]"><input id="r-nonneg" type="checkbox" ${(r?.nonNegotiable||forceNonNeg)?"checked":""}><span><span class="text-sm block">Non-negotiable</span><span class="subtle text-xs">Keep it visible as a core routine.</span></span></label>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="tiny-label">Start date</label><input id="r-start" type="date" class="input mt-2" value="${r?.startDate || ""}"></div>
         <div><label class="tiny-label">End date</label><input id="r-end" type="date" class="input mt-2" value="${r?.endDate || ""}"></div>
@@ -896,7 +905,8 @@ window.openRoutineEditor = function(editId=null) {
       name: document.getElementById("r-name").value.trim(),
       frequency: document.getElementById("r-frequency").value,
       category: document.getElementById("r-category").value.trim() || "Other",
-      bucket: document.getElementById("r-bucket").value,
+      bucketId: document.getElementById("r-bucket").value,
+      bucket: routineBuckets.find(b=>b.id===document.getElementById("r-bucket").value)?.name || "Bucket 1",
       nonNegotiable: document.getElementById("r-nonneg").checked,
       startDate: document.getElementById("r-start").value || null,
       endDate: document.getElementById("r-end").value || null,
@@ -922,7 +932,17 @@ window.archiveRoutine = async function(id) {
   } catch(e) { console.error(e); showToast("Couldn't delete routine."); }
 };
 
-function renderSettings(){setComposer("Settings","Our Space",`<div class="space-y-3"><div class="card p-4"><div class="tiny-label">Current identity</div><div class="flex items-center justify-between mt-2"><span class="serif text-xl">${esc(currentUser)}</span><span class="chip">this device</span></div></div><div class="card p-4"><div class="tiny-label">Current season</div><p class="subtle text-sm mt-2">You choose the month and the meaning. The visual atmosphere can rotate separately.</p><div class="grid grid-cols-2 gap-3 mt-3"><input id="season-month" class="input" value="${esc(seasonMonth)}" placeholder="September"><input id="season-text" class="input" value="${esc(seasonText)}" placeholder="Our season of divine speed"></div><button onclick="saveSeasonSettings()" class="secondary mt-3">Save current season</button><div class="mt-5"><div class="tiny-label">Visual atmosphere</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3"><button onclick="setThemeMode('auto')" class="theme-option ${themeMode==='auto'?'active':''}"><div class="theme-preview" style="--preview-bg:#07130e;--preview-a:rgba(103,135,92,.3);--preview-b:rgba(205,180,138,.22);--preview-text:#f3eadb"><span>Auto · weekly</span></div></button>${THEMES.map(t=>`<button onclick="setThemeMode('${t.id}')" class="theme-option ${themeMode===t.id?'active':''}"><div class="theme-preview" style="--preview-bg:${t.bg};--preview-a:${t.a};--preview-b:${t.b};--preview-text:${t.cream}"><span>${esc(t.name)}</span></div></button>`).join('')}</div></div></div><div class="card p-4"><div class="tiny-label">Notifications</div><p class="subtle text-sm mt-2">Turn this on once on each phone or browser you both use. It lets Our Space receive real push notifications even when the site is not the active tab.</p><div class="flex items-center justify-between gap-3 mt-3"><div class="text-sm">Status <span id="notification-status" class="subtle">Checking…</span></div><div class="flex gap-2 flex-wrap"><button onclick="requestNotifications()" class="secondary">Enable notifications</button><button onclick="copyNotificationToken()" class="secondary">Copy device token</button></div></div><p class="subtle text-xs mt-3">We will use this same connection later for partner updates, task reminders, review periods and the 4:30 a.m. Prayer Focus.</p></div><div class="card p-4"><div class="tiny-label">Google Docs backup</div><p class="subtle text-sm mt-2">Optional: connect a Google Apps Script Web App URL.</p><input id="backup-endpoint" class="input mt-3" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(backupEndpoint)}"><button onclick="saveBackupEndpoint()" class="secondary mt-3">Save backup connection</button></div></div>`);}
+window.openNonNegotiablesManager=function(){const mine=routines.filter(r=>r.owner===currentUser&&r.nonNegotiable&&!r.archived);setComposer("Non-negotiables",`${currentUser}'s core routines`,`<div class="space-y-3"><p class="subtle text-sm">These are the routines you have marked as core. Add, edit or remove them here.</p>${mine.length?mine.map(r=>`<div class="flex items-center justify-between gap-3 rounded-2xl bg-white/[.03] p-3"><div><div class="text-sm">${esc(r.name)}</div><div class="subtle text-[10px] mt-1">${esc(bucketForRoutine(r))} · ${r.frequency==='weekdays'?'Mon–Fri':esc(r.frequency)}</div></div><button onclick="closeSheet();openRoutineEditor('${r.id}')" class="secondary text-xs">Edit</button></div>`).join(''):`<div class="empty p-4 subtle text-sm">No non-negotiables yet.</div>`}<button onclick="closeSheet();openRoutineEditor(null,true)" class="primary w-full">+ Add non-negotiable</button></div>`);};
+
+
+function renderSettings(){setComposer("Settings","Our Space",`<div class="space-y-3">
+<div class="card p-4"><div class="tiny-label">Current identity</div><div class="flex items-center justify-between mt-2"><span class="serif text-xl">${esc(currentUser)}</span><span class="chip">this device</span></div></div>
+<div class="card p-4"><div class="tiny-label">Four routine buckets</div><p class="subtle text-sm mt-2">These are intentionally generic. Rename them however you both want; every routine can be moved between them.</p><div class="grid grid-cols-2 gap-2 mt-3">${routineBuckets.map((b,i)=>`<input id="bucket-name-${i}" class="input" value="${esc(b.name)}" placeholder="Bucket ${i+1}">`).join('')}</div><button onclick="saveRoutineBuckets()" class="secondary mt-3">Save bucket names</button></div>
+<div class="card p-4"><div class="tiny-label">Current season</div><p class="subtle text-sm mt-2">You choose the month and the meaning. The visual atmosphere can rotate separately.</p><div class="grid grid-cols-2 gap-3 mt-3"><input id="season-month" class="input" value="${esc(seasonMonth)}" placeholder="September"><input id="season-text" class="input" value="${esc(seasonText)}" placeholder="Our season of divine speed"></div><button onclick="saveSeasonSettings()" class="secondary mt-3">Save current season</button><div class="mt-5"><div class="tiny-label">Visual atmosphere</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3"><button onclick="setThemeMode('auto')" class="theme-option ${themeMode==='auto'?'active':''}"><div class="theme-preview" style="--preview-bg:#07130e;--preview-a:rgba(103,135,92,.3);--preview-b:rgba(205,180,138,.22);--preview-text:#f3eadb"><span>Auto · weekly</span></div></button>${THEMES.map(t=>`<button onclick="setThemeMode('${t.id}')" class="theme-option ${themeMode===t.id?'active':''}"><div class="theme-preview" style="--preview-bg:${t.bg};--preview-a:${t.a};--preview-b:${t.b};--preview-text:${t.cream}"><span>${esc(t.name)}</span></div></button>`).join('')}</div></div></div>
+<div class="card p-4"><div class="tiny-label">Notifications</div><p class="subtle text-sm mt-2">Real push notifications are connected on each registered device. Timed one-off tasks and scheduled shared items now use this same system.</p><div class="flex items-center justify-between gap-3 mt-3"><div class="text-sm">Status <span id="notification-status" class="subtle">Checking…</span></div><div class="flex gap-2 flex-wrap"><button onclick="requestNotifications()" class="secondary">Enable notifications</button><button onclick="copyNotificationToken()" class="secondary">Copy device token</button></div></div></div>
+<div class="card p-4"><div class="tiny-label">Google Docs backup</div><p class="subtle text-sm mt-2">Optional: connect a Google Apps Script Web App URL.</p><input id="backup-endpoint" class="input mt-3" placeholder="https://script.google.com/macros/s/.../exec" value="${esc(backupEndpoint)}"><button onclick="saveBackupEndpoint()" class="secondary mt-3">Save backup connection</button></div>
+</div>`);}
+window.saveRoutineBuckets=async function(){const names=[0,1,2,3].map(i=>(document.getElementById(`bucket-name-${i}`)?.value||'').trim()||`Bucket ${i+1}`);routineBuckets=routineBuckets.map((b,i)=>({...b,name:names[i]}));localStorage.setItem('our_space_routine_buckets',JSON.stringify(routineBuckets));try{await setDoc(doc(db,'app_settings','general'),{routineBuckets,updatedAt:serverTimestamp()},{merge:true});showToast('Bucket names saved.');render();}catch(e){console.error(e);showToast('Saved on this device; shared setting could not sync.');}};
 window.saveSeasonSettings=async function(){seasonMonth=document.getElementById('season-month').value.trim()||currentMonthShort();seasonText=document.getElementById('season-text').value.trim();localStorage.setItem('our_space_season_month',seasonMonth);localStorage.setItem('our_space_season_text',seasonText);try{await setDoc(doc(db,'app_settings','general'),{seasonMonth,seasonText,updatedAt:serverTimestamp()},{merge:true});showToast('Current season saved.');}catch(e){console.error(e);showToast('Saved on this device; shared setting needs Firestore permission.');}};
 
 window.saveBackupEndpoint=function(){backupEndpoint=document.getElementById('backup-endpoint').value.trim();localStorage.setItem('our_space_backup_endpoint',backupEndpoint);showToast(backupEndpoint?'Backup connection saved.':'Backup connection cleared.');};
@@ -1122,7 +1142,7 @@ function renderSharedComposer(payload={}) {
       <div class="grid grid-cols-2 gap-3">
         <div><label class="tiny-label">Type</label>
           <select id="s-type" class="input mt-2">
-            ${["Book","Message","Conversation","Agreement","Prayer","Topic","Shared activity"].map(v => `<option ${s?.type===v?'selected':''}>${v}</option>`).join("")}
+            ${["Book","Message","Conversation","Agreement","Prayer","Topic","Shared activity","Review period"].map(v => `<option ${s?.type===v?'selected':''}>${v}</option>`).join("")}
           </select>
         </div>
         <div><label class="tiny-label">Month</label><input id="s-month" class="input mt-2" value="${s?.month || monthName()}"></div>
@@ -1133,6 +1153,7 @@ function renderSharedComposer(payload={}) {
          <input id="s-link" class="input" placeholder="Link URL" value="${esc(s?.link || "")}">
          <input id="s-where" class="input" placeholder="Where to find (e.g. Telegram)" value="${esc(s?.where || "")}">
       </div>
+      <div class="rounded-2xl bg-white/[.025] border border-white/[.05] p-3"><div class="tiny-label">Schedule / review period</div><div class="grid grid-cols-2 gap-3 mt-2"><input id="s-date" type="date" class="input" value="${esc(s?.scheduleDate||'')}"><input id="s-time" type="time" class="input" value="${esc(s?.scheduleTime||'')}"></div><label class="flex gap-2 items-center mt-3 text-xs"><input id="s-reminder" type="checkbox" ${(s?.reminderEnabled!==false&&s?.scheduleDate&&s?.scheduleTime)?'checked':''}><span>Remind both of us at this time</span></label></div>
       <select id="s-icon" class="input"><option ${s?.icon==='♡'?'selected':''}>♡</option><option ${s?.icon==='📖'?'selected':''}>📖</option><option ${s?.icon==='🎧'?'selected':''}>🎧</option><option ${s?.icon==='💬'?'selected':''}>💬</option><option ${s?.icon==='🤝'?'selected':''}>🤝</option><option ${s?.icon==='✦'?'selected':''}>✦</option></select>
       
       ${!isEdit ? `
@@ -1157,6 +1178,10 @@ function renderSharedComposer(payload={}) {
         subtitle: document.getElementById("s-subtitle").value.trim(),
         link: document.getElementById("s-link").value.trim(),
         where: document.getElementById("s-where").value.trim(),
+        scheduleDate: document.getElementById("s-date").value || null,
+        scheduleTime: document.getElementById("s-time").value || null,
+        reminderEnabled: document.getElementById("s-reminder").checked && !!document.getElementById("s-date").value && !!document.getElementById("s-time").value,
+        reminderSentKey: (isEdit && s.scheduleDate===document.getElementById("s-date").value && s.scheduleTime===document.getElementById("s-time").value) ? (s.reminderSentKey||null) : null,
         icon: document.getElementById("s-icon").value,
         status: "Active", active: true, owner: currentUser, updatedBy: currentUser
       };
@@ -1242,6 +1267,7 @@ function listenAll() {
     todos=snap.docs.map(d=>({id:d.id,...d.data()}));
     render();
   }, err=>console.error("todos",err)));
+  unsubscribers.push(onSnapshot(doc(db,"app_settings","general"), snap=>{if(!snap.exists())return;const x=snap.data();if(Array.isArray(x.routineBuckets)&&x.routineBuckets.length===4){routineBuckets=x.routineBuckets;localStorage.setItem('our_space_routine_buckets',JSON.stringify(routineBuckets));}if(x.seasonMonth){seasonMonth=x.seasonMonth;localStorage.setItem('our_space_season_month',seasonMonth);}if(typeof x.seasonText==='string'){seasonText=x.seasonText;localStorage.setItem('our_space_season_text',seasonText);}render();},err=>console.warn('settings',err)));
 }
 
 let lastNotifiedId = sessionStorage.getItem("last_notified_entry");
@@ -1252,6 +1278,8 @@ function maybeNotify(e) {
     new Notification(`${e.sender} added ${e.type || "something"} to Our Space`, {body:e.text ? e.text.slice(0,90) : "Tap to open Our Space."});
   }
 }
+
+async function migrateMorningDew(){try{const snap=await getDocs(collection(db,'routines'));for(const d of snap.docs){const r=d.data();if(/morning dew/i.test(r.name||'')&&r.frequency!=='weekdays')await updateDoc(d.ref,{frequency:'weekdays',updatedAt:serverTimestamp()});}}catch(e){console.warn('Morning Dew migration',e);}}
 
 async function seedIfEmpty() {
   const snap=await getDocs(query(collection(db,"routines"),limit(1)));
@@ -1287,7 +1315,7 @@ initTheme();
 render();
 listenAll();
 initNotifications();
-seedIfEmpty().catch(e=>{console.error("seed",e);showToast("Our Space is open; some starter data could not sync yet.");});
+seedIfEmpty().then(()=>migrateMorningDew()).catch(e=>{console.error("seed",e);showToast("Our Space is open; some starter data could not sync yet.");});
 </script>
 </body>
 </html>
