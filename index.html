@@ -456,7 +456,8 @@ function bucketIdForRoutine(r){
 function bucketForRoutine(r){return routineBuckets.find(b=>b.id===bucketIdForRoutine(r))?.name||routineBuckets[0].name;}
 function routinesByBucket(list){const out={};routineBuckets.forEach(b=>out[b.id]=[]);list.forEach(r=>(out[bucketIdForRoutine(r)]||= []).push(r));return out;}
 function routineRowCompact(r,isTheirs){const done=!!completions[routineCompletionKey(r)];return `<div class="routine-row flex items-center gap-2"><button ${!isTheirs?`onclick="toggleRoutine('${r.id}')"`:"disabled"} class="flex-1 min-w-0 text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] ${!isTheirs?'hover:bg-white/[.05] cursor-pointer':'cursor-default'} transition"><span class="check ${done?'done':''}"></span><span class="min-w-0 flex-1"><span class="block text-sm ${done?'line-through opacity-50':''}">${esc(r.name)}</span><span class="block subtle text-[10px] mt-0.5">${iconFor(r.category)} ${esc(r.category||"Routine")}${r.nonNegotiable?' · non-negotiable':''}${r.frequency==='weekdays'?' · Mon–Fri':''}</span></span></button>${!isTheirs?`<div class="routine-actions"><button aria-label="Edit" title="Edit" onclick="openRoutineEditor('${r.id}')" class="icon-action">✎</button></div>`:''}</div>`;}
-function renderRoutineBuckets(list,isTheirs=false){const grouped=routinesByBucket(list);return routineBuckets.map((b,i)=>{const items=grouped[b.id]||[];return `<details class="bucket" ${i===0?'open':''}><summary class="flex items-center justify-between gap-3 p-4"><span class="flex items-center gap-3"><span class="w-8 h-8 rounded-xl bg-white/[.05] grid place-items-center">${b.icon||'○'}</span><span><span class="block text-sm font-semibold">${esc(b.name)}</span><span class="subtle text-[10px]">${items.length} routine${items.length===1?'':'s'}</span></span></span><span class="bucket-arrow subtle">⌄</span></summary><div class="p-2 space-y-1">${items.length?items.map(r=>routineRowCompact(r,isTheirs)).join(''):`<div class="p-3 subtle text-xs">Nothing here yet.</div>`}</div></details>`;}).join('');}
+function renderRoutineBuckets(list,isTheirs=false){const grouped=routinesByBucket(list);return routineBuckets.map((b,i)=>{const items=grouped[b.id]||[];return `<details class="bucket" ${i===0?'open':''}><summary class="flex items-center justify-between gap-3 p-4"><span class="flex items-center gap-3"><span class="w-8 h-8 rounded-xl bg-white/[.05] grid place-items-center">${b.icon||'○'}</span><span><span class="block text-sm font-semibold">${esc(b.name)}</span><span class="subtle text-[10px]">${items.length} routine${items.length===1?'':'s'}</span></span></span><span class="flex items-center gap-2">${!isTheirs?`<button type="button" onclick="event.preventDefault();event.stopPropagation();openBucketEditor('${b.id}')" class="secondary text-[10px] px-2 py-1">Rename</button>`:''}<span class="bucket-arrow subtle">⌄</span></span></summary><div class="p-2 space-y-1">${items.length?items.map(r=>routineRowCompact(r,isTheirs)).join(''):`<div class="p-3 subtle text-xs">Nothing here yet.</div>`}</div></details>`;}).join('');}
+window.openBucketEditor=function(id){const b=routineBuckets.find(x=>x.id===id);if(!b)return;setComposer('Rename bucket','Today routines',`<div class="space-y-4"><input id="bucket-edit-name" class="input" value="${esc(b.name)}" placeholder="Bucket name"><button id="bucket-edit-save" class="primary w-full">Save bucket name</button></div>`);document.getElementById('bucket-edit-save').onclick=async()=>{const name=(document.getElementById('bucket-edit-name').value||'').trim();if(!name)return showToast('Give the bucket a name.');routineBuckets=routineBuckets.map(x=>x.id===id?{...x,name}:x);localStorage.setItem('our_space_routine_buckets',JSON.stringify(routineBuckets));try{await setDoc(doc(db,'app_settings','general'),{routineBuckets,updatedAt:serverTimestamp()},{merge:true});closeSheet();render();showToast('Bucket renamed.');}catch(e){console.error(e);showToast('Could not save bucket name.');}};};
 function seasonDisplay(){return `${esc(seasonMonth||currentMonthShort())}: ${esc(seasonText||'Our season')}`;}
 
 function showToast(msg) {
@@ -666,8 +667,8 @@ function renderTodo(t, isCompleted=false) {
   return `<div class="flex items-center gap-3 p-2 border-b border-white/5 last:border-0 group">
       <button onclick="toggleTodo('${t.id}', ${!isCompleted})" class="check ${isCompleted ? 'done' : ''} w-5 h-5"></button>
       <div class="flex-1 min-w-0"><div class="text-sm ${isCompleted ? 'line-through opacity-50' : ''}">${esc(t.text)}</div>${t.reminderDate?`<div class="subtle text-[10px] mt-1">⏰ ${esc(formatSchedule(t.reminderDate,t.reminderTime))}</div>`:''}</div>
-      <button onclick="openTodoEditor('${t.id}')" class="text-xs subtle hover:text-white p-1">✎</button>
-      <button onclick="deleteTodo('${t.id}')" class="text-xs text-muted hover:text-red-400 p-1">✕</button>
+      <button onclick="openTodoEditor('${t.id}')" class="secondary text-[10px] px-2 py-1">Edit</button>
+      <button onclick="deleteTodo('${t.id}')" class="text-xs text-muted hover:text-red-400 p-1" title="Delete">✕</button>
     </div>`;
 }
 window.addTodo = async function(e) {
@@ -727,7 +728,7 @@ function sharedCard(x) {
       <p class="subtle text-xs mt-1 leading-5">${esc(x.subtitle || "")}</p>
       ${x.link ? `<a href="${x.link.startsWith('http') ? x.link : 'https://'+x.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="text-[11px] text-olive mt-3 block break-all hover:underline">↗ ${esc(x.link)}</a>` : ""}
       ${x.where ? `<p class="text-[11px] text-muted mt-2">⌖ ${esc(x.where)}</p>` : ""}
-      ${x.scheduleDate ? `<p class="text-[11px] text-gold mt-2">◷ ${esc(formatSchedule(x.scheduleDate,x.scheduleTime))}${x.reminderEnabled?' · reminder on':''}</p>` : ""}
+      ${x.scheduleDate ? `<p class="text-[11px] text-gold mt-2">◷ ${esc(formatSchedule(x.scheduleDate,x.scheduleTime))}${x.reminderEnabled?` · reminder: ${esc(x.reminderTarget==='both'?'both of us':x.reminderTarget||'both of us')}`:''}</p>` : ""}
     </div>
     ${x.status ? `<div class="mt-4"><span class="chip">${esc(x.status)}</span></div>` : ""}
   </div>`;
@@ -1153,7 +1154,7 @@ function renderSharedComposer(payload={}) {
          <input id="s-link" class="input" placeholder="Link URL" value="${esc(s?.link || "")}">
          <input id="s-where" class="input" placeholder="Where to find (e.g. Telegram)" value="${esc(s?.where || "")}">
       </div>
-      <div class="rounded-2xl bg-white/[.025] border border-white/[.05] p-3"><div class="tiny-label">Schedule / review period</div><div class="grid grid-cols-2 gap-3 mt-2"><input id="s-date" type="date" class="input" value="${esc(s?.scheduleDate||'')}"><input id="s-time" type="time" class="input" value="${esc(s?.scheduleTime||'')}"></div><label class="flex gap-2 items-center mt-3 text-xs"><input id="s-reminder" type="checkbox" ${(s?.reminderEnabled!==false&&s?.scheduleDate&&s?.scheduleTime)?'checked':''}><span>Remind both of us at this time</span></label></div>
+      <div class="rounded-2xl bg-white/[.025] border border-white/[.05] p-3"><div class="tiny-label">Schedule / review period</div><div class="grid grid-cols-2 gap-3 mt-2"><input id="s-date" type="date" class="input" value="${esc(s?.scheduleDate||'')}"><input id="s-time" type="time" class="input" value="${esc(s?.scheduleTime||'')}"></div><div class="mt-3"><label class="tiny-label">Who should be reminded?</label><select id="s-reminder-target" class="input mt-2"><option value="none" ${!s?.reminderEnabled?'selected':''}>No reminder</option><option value="${currentUser}" ${(s?.reminderTarget===currentUser || (s?.reminderEnabled&&s?.reminderTarget===undefined&&s?.owner===currentUser))?'selected':''}>Just me (${currentUser})</option><option value="${partnerName()}" ${s?.reminderTarget===partnerName()?'selected':''}>Just ${partnerName()}</option><option value="both" ${(s?.reminderTarget==='both' || (s?.reminderEnabled&&s?.reminderTarget===undefined))?'selected':''}>Both of us</option></select><p class="subtle text-[10px] mt-2">Choose a recipient. A date + time are required for the reminder to send.</p></div></div>
       <select id="s-icon" class="input"><option ${s?.icon==='♡'?'selected':''}>♡</option><option ${s?.icon==='📖'?'selected':''}>📖</option><option ${s?.icon==='🎧'?'selected':''}>🎧</option><option ${s?.icon==='💬'?'selected':''}>💬</option><option ${s?.icon==='🤝'?'selected':''}>🤝</option><option ${s?.icon==='✦'?'selected':''}>✦</option></select>
       
       ${!isEdit ? `
@@ -1180,8 +1181,9 @@ function renderSharedComposer(payload={}) {
         where: document.getElementById("s-where").value.trim(),
         scheduleDate: document.getElementById("s-date").value || null,
         scheduleTime: document.getElementById("s-time").value || null,
-        reminderEnabled: document.getElementById("s-reminder").checked && !!document.getElementById("s-date").value && !!document.getElementById("s-time").value,
-        reminderSentKey: (isEdit && s.scheduleDate===document.getElementById("s-date").value && s.scheduleTime===document.getElementById("s-time").value) ? (s.reminderSentKey||null) : null,
+        reminderTarget: document.getElementById("s-reminder-target").value,
+        reminderEnabled: document.getElementById("s-reminder-target").value !== "none" && !!document.getElementById("s-date").value && !!document.getElementById("s-time").value,
+        reminderSentKey: (isEdit && s.scheduleDate===document.getElementById("s-date").value && s.scheduleTime===document.getElementById("s-time").value && (s.reminderTarget||'both')===document.getElementById("s-reminder-target").value) ? (s.reminderSentKey||null) : null,
         icon: document.getElementById("s-icon").value,
         status: "Active", active: true, owner: currentUser, updatedBy: currentUser
       };
