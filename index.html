@@ -513,16 +513,22 @@ function refreshNav() {
   });
 }
 window.openSheet = function(type, payload={}) {
-  if (type === "settings") renderSettings();
-  else if (type === "note") renderNoteComposer(payload);
-  else if (type === "memory") renderMemoryComposer();
-  else if (type === "appreciation") renderAppreciationComposer();
-  else if (type === "shared") renderSharedComposer(payload);
-  else if (type === "entry") renderEntryComposer(payload);
-  else if (type === "lifeItem") renderLifeItemComposer(payload);
-  else if (type === "analytics") renderAnalytics();
-  document.getElementById("composer").classList.add("open");
-  document.getElementById("scrim").classList.add("open");
+  try {
+    if (type === "settings") renderSettings();
+    else if (type === "note") renderNoteComposer(payload);
+    else if (type === "memory") renderMemoryComposer();
+    else if (type === "appreciation") renderAppreciationComposer();
+    else if (type === "shared") renderSharedComposer(payload);
+    else if (type === "entry") renderEntryComposer(payload);
+    else if (type === "lifeItem") renderLifeItemComposer(payload);
+    else if (type === "analytics") renderAnalytics();
+    const composer=document.getElementById("composer"), scrim=document.getElementById("scrim");
+    if(composer) composer.classList.add("open");
+    if(scrim) scrim.classList.add("open");
+  } catch (e) {
+    console.error("Composer/openSheet error", type, payload, e);
+    showToast("Couldn't open that form. Refresh and try again.");
+  }
 };
 window.closeSheet = function() {
   document.getElementById("composer").classList.remove("open");
@@ -1240,7 +1246,7 @@ function renderSharedComposer(payload={}) {
          <input id="s-link" class="input" placeholder="Link URL" value="${esc(s?.link || "")}">
          <input id="s-where" class="input" placeholder="Where to find (e.g. Telegram)" value="${esc(s?.where || "")}">
       </div>
-      <div class="rounded-2xl bg-white/[.025] border border-white/[.05] p-3"><div class="tiny-label">Schedule / reminder</div><div class="grid grid-cols-2 gap-3 mt-3"><div><label class="field-label" for="s-date">Pick date</label><input id="s-date" type="date" class="input" value="${esc(s?.scheduleDate||'')}"></div><div><label class="field-label" for="s-time">Pick time</label><input id="s-time" type="time" class="input" value="${esc(s?.scheduleTime||'')}"></div></div><div class="mt-3"><label class="tiny-label">Who should be reminded?</label><select id="s-reminder-target" class="input mt-2"><option value="none" ${!s?.reminderEnabled?'selected':''}>No reminder</option><option value="${currentUser}" ${(s?.reminderTarget===currentUser || (s?.reminderEnabled&&s?.reminderTarget===undefined&&s?.owner===currentUser))?'selected':''}>Just me (${currentUser})</option><option value="${partnerName()}" ${s?.reminderTarget===partnerName()?'selected':''}>Just ${partnerName()}</option><option value="both" ${(s?.reminderTarget==='both' || (s?.reminderEnabled&&s?.reminderTarget===undefined))?'selected':''}>Both of us</option></select><p class="subtle text-[10px] mt-2">Choose a recipient. A date + time are required for the reminder to send.</p></div></div>
+      <div class="rounded-2xl bg-white/[.025] border border-white/[.05] p-3"><div class="tiny-label">Schedule / reminder</div><div class="grid grid-cols-2 gap-3 mt-3"><div><label class="field-label" for="s-date">Pick date</label><input id="s-date" type="date" class="input" value="${esc(s?.scheduleDate||'')}"></div><div><label class="field-label" for="s-time">Pick time</label><input id="s-time" type="time" class="input" value="${esc(s?.scheduleTime||'')}"></div></div><div class="mt-3"><label class="tiny-label">Who should be reminded?</label><select id="s-reminder-target" class="input mt-2"><option value="none" ${!s?.reminderEnabled?'selected':''}>No reminder</option><option value="${currentUser}" ${(s?.reminderTarget===currentUser || (s?.reminderEnabled&&s?.reminderTarget===undefined&&s?.owner===currentUser))?'selected':''}>Just me (${currentUser})</option><option value="${otherPerson()}" ${s?.reminderTarget===otherPerson()?'selected':''}>Just ${otherPerson()}</option><option value="both" ${(s?.reminderTarget==='both' || (s?.reminderEnabled&&s?.reminderTarget===undefined))?'selected':''}>Both of us</option></select><p class="subtle text-[10px] mt-2">Choose a recipient. A date + time are required for the reminder to send.</p></div></div>
       <select id="s-icon" class="input"><option ${s?.icon==='♡'?'selected':''}>♡</option><option ${s?.icon==='📖'?'selected':''}>📖</option><option ${s?.icon==='🎧'?'selected':''}>🎧</option><option ${s?.icon==='💬'?'selected':''}>💬</option><option ${s?.icon==='🤝'?'selected':''}>🤝</option><option ${s?.icon==='✦'?'selected':''}>✦</option></select>
       
       ${!isEdit ? `
