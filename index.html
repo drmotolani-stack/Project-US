@@ -96,13 +96,14 @@
     .tab-active .tab-dot { opacity: 1; transform: scale(1); }
     .tab-dot { opacity: 0; transform: scale(.5); transition: .2s; }
     .sheet {
-      position: fixed; inset: auto 0 0 0; z-index: 60;
+      position: fixed; inset: auto 0 0 0; z-index: 200;
       transform: translateY(110%); transition: transform .28s cubic-bezier(.22,1,.36,1);
       max-height: 92vh; overflow: auto;
     }
     .sheet.open { transform: translateY(0); }
+    .sheet > .max-w-xl { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
     .scrim {
-      position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.56);
+      position: fixed; inset: 0; z-index: 190; background: rgba(0,0,0,.56);
       opacity: 0; pointer-events: none; transition: opacity .22s;
     }
     .scrim.open { opacity: 1; pointer-events: auto; }
