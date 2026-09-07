@@ -175,6 +175,10 @@
     .app-shell{width:100%;max-width:1120px;margin:0 auto}
     .tab{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:inherit;min-width:0}
     .tab:focus-visible,.icon-action:focus-visible,button:focus-visible{outline:2px solid rgba(199,168,117,.65);outline-offset:2px}
+
+    /* Navigation must remain reachable even if a sheet/scrim state gets stuck on iOS. */
+    nav{z-index:140!important}
+    .field-label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
     .bucket{border:1px solid rgba(255,255,255,.075);border-radius:20px;background:rgba(255,255,255,.025);overflow:hidden}
     .bucket summary{list-style:none;cursor:pointer;user-select:none}
     .bucket summary::-webkit-details-marker{display:none}
@@ -437,6 +441,27 @@ function monthName() {
   return new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
 }
 function currentMonthShort(){return new Date().toLocaleDateString("en-US",{month:"long"});}
+function iconFor(category="") {
+  const t=String(category||"").toLowerCase();
+  if(/pray|faith|bible|devotion|worship|spirit/.test(t)) return "✦";
+  if(/health|body|gym|fitness|exercise|walk|sleep/.test(t)) return "◌";
+  if(/work|career|growth|book|read|learn|study|finance/.test(t)) return "↗";
+  if(/together|relationship|shared|love/.test(t)) return "♡";
+  return "•";
+}
+function seasonDisplay(){
+  const month=(seasonMonth||currentMonthShort()).trim();
+  const text=(seasonText||"").trim();
+  return text ? `${month}: ${text}` : month;
+}
+function currentJourneyMonthMatches(value){
+  if(!value) return true;
+  const v=String(value).trim().toLowerCase();
+  const now=new Date();
+  const longMonth=now.toLocaleDateString("en-US",{month:"long"}).toLowerCase();
+  const monthYear=now.toLocaleDateString("en-US",{month:"long",year:"numeric"}).toLowerCase();
+  return v===longMonth || v===monthYear;
+}
 function legacyBucketId(r){
   const raw=(r?.bucket||"").toLowerCase();
   if(raw.includes("spirit")||raw.includes("faith")) return "bucket1";
@@ -467,9 +492,20 @@ window.deleteBucket=async function(id){const b=routineBuckets.find(x=>x.id===id)
 
 
 window.setTab = function(tab) {
+  document.getElementById("composer")?.classList.remove("open");
+  document.getElementById("routine-sheet")?.classList.remove("open");
+  document.getElementById("scrim")?.classList.remove("open");
   activeTab = tab;
-  render();
-  window.scrollTo({top:0, behavior:"smooth"});
+  try {
+    render();
+    refreshNav();
+  } catch (e) {
+    console.error("Navigation/render error", tab, e);
+    const app=document.getElementById("app");
+    if(app) app.innerHTML=`<section class="fade pt-6"><div class="card p-5"><h2 class="serif text-2xl">This page hit a display error.</h2><p class="subtle text-sm mt-2">Your Firebase data has not been deleted. Refresh the app and try again.</p></div></section>`;
+    refreshNav();
+  }
+  window.scrollTo({top:0, behavior:"auto"});
 };
 function refreshNav() {
   document.querySelectorAll(".tab").forEach(b => {
@@ -633,7 +669,7 @@ function renderToday(){
   document.getElementById('app').innerHTML=`<section class="fade"><div class="pt-3 pb-5"><div class="tiny-label">${fmtDate()}</div><div class="flex items-end justify-between gap-4 mt-2"><h2 class="serif text-4xl sm:text-5xl">Today.</h2><div class="relative w-16 h-16 rounded-full ring grid place-items-center" style="--pct:${pct}%"><div class="w-12 h-12 rounded-full bg-wineDeep grid place-items-center"><span class="mono text-xs">${mineDone}/${mine.length}</span></div></div></div></div>
   <div class="desktop-grid"><div class="space-y-4">
     <div class="card p-5"><div class="flex items-center justify-between mb-4"><div><div class="tiny-label">My day</div><h3 class="serif text-xl mt-1">${esc(getPronoun(currentUser))} routines</h3></div></div><div class="space-y-2">${renderRoutineBuckets(mine,false)}</div><div class="grid grid-cols-2 gap-2 mt-4"><button onclick="openRoutineEditor()" class="secondary">+ Add routine</button><button onclick="openNonNegotiablesManager()" class="secondary">Core / non-negotiables</button></div></div>
-    <div class="card p-5"><div class="tiny-label">Personal To-Do</div><h3 class="serif text-xl mt-1">One-off tasks</h3><form onsubmit="addTodo(event)" class="mt-3 space-y-2"><div class="flex gap-2"><input id="new-todo-input" class="input flex-1 py-2 text-sm" placeholder="Add a task..." required><button type="submit" class="primary py-2 px-4 text-sm">+</button></div><div class="grid grid-cols-2 gap-2"><input id="new-todo-date" type="date" class="input py-2 text-xs"><input id="new-todo-time" type="time" class="input py-2 text-xs"></div></form><div class="mt-4 space-y-2">${myTodos.map(t=>renderTodo(t)).join('')}${myCompletedTodos.map(t=>renderTodo(t,true)).join('')}</div></div>
+    <div class="card p-5"><div class="tiny-label">Personal To-Do</div><h3 class="serif text-xl mt-1">One-off tasks</h3><form onsubmit="addTodo(event)" class="mt-3 space-y-2"><div class="flex gap-2"><input id="new-todo-input" class="input flex-1 py-2 text-sm" placeholder="Add a task..." required><button type="submit" class="primary py-2 px-4 text-sm">+</button></div><div class="grid grid-cols-2 gap-2"><div><label class="field-label" for="new-todo-date">Reminder date</label><input id="new-todo-date" type="date" class="input py-2 text-xs"></div><div><label class="field-label" for="new-todo-time">Reminder time</label><input id="new-todo-time" type="time" class="input py-2 text-xs"></div></div></form><div class="mt-4 space-y-2">${myTodos.map(t=>renderTodo(t)).join('')}${myCompletedTodos.map(t=>renderTodo(t,true)).join('')}</div></div>
     <div class="card p-5"><div class="flex items-center justify-between mb-3"><div><div class="tiny-label">Together</div><h3 class="serif text-xl mt-1">Our shared rhythms.</h3></div><span class="text-lg">♡</span></div>${routineSection('OUR SHARED RHYTHMS',routines.filter(r=>r.owner==='Together'&&isActiveRoutine(r)),false,false)}</div>
     <div class="card p-5"><div class="flex items-center justify-between mb-3"><div><div class="tiny-label">Today together</div><h3 class="serif text-xl mt-1">Small things, together.</h3></div><button onclick="setTab('together')" class="subtle text-xs">Open →</button></div>${renderTodayTogether()}</div>
   </div><div class="space-y-4">
@@ -665,7 +701,7 @@ function routineSection(label, list, isTheirs, allowEdit=true) {
 
 function formatSchedule(date,time){if(!date)return '';try{const d=new Date(`${date}T${time||'00:00'}`);return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:time?'numeric':undefined,minute:time?'2-digit':undefined});}catch(_){return date+(time?` · ${time}`:'');}}
 function sortedPersonalTodos(owner, completed=false){
-  const arr=todos.filter(t=>t.owner===owner && !!t.completed===!!completed);
+  const arr=todos.filter(t=>!t.archived && t.owner===owner && !!t.completed===!!completed);
   return arr.sort((a,b)=>{const ao=Number.isFinite(a.order)?a.order:999999;const bo=Number.isFinite(b.order)?b.order:999999; if(ao!==bo)return ao-bo; return (a.createdAt?.seconds||0)-(b.createdAt?.seconds||0);});
 }
 function renderTodo(t, isCompleted=false) {
@@ -686,10 +722,14 @@ window.addTodo = async function(e) {
 };
 window.openTodoEditor=function(id){const t=todos.find(x=>x.id===id);if(!t)return;setComposer("Edit task","One-off task",`<div class="space-y-4"><input id="todo-edit-text" class="input" value="${esc(t.text)}"><div class="grid grid-cols-2 gap-3"><div><label class="tiny-label">Reminder date</label><input id="todo-edit-date" type="date" class="input mt-2" value="${esc(t.reminderDate||'')}"></div><div><label class="tiny-label">Reminder time</label><input id="todo-edit-time" type="time" class="input mt-2" value="${esc(t.reminderTime||'')}"></div></div><p class="subtle text-xs">Add both a date and time to receive a push reminder on your registered devices.</p><button id="todo-edit-save" class="primary w-full">Save changes</button></div>`);document.getElementById('todo-edit-save').onclick=async()=>{const text=document.getElementById('todo-edit-text').value.trim(),date=document.getElementById('todo-edit-date').value,time=document.getElementById('todo-edit-time').value;if(!text)return showToast('Task needs a name.');try{await updateDoc(doc(db,'todos',id),{text,reminderDate:date||null,reminderTime:time||null,reminderEnabled:!!(date&&time),reminderSentKey:null,updatedAt:serverTimestamp()});closeSheet();showToast('Task updated.');}catch(e){console.error(e);showToast("Couldn't update task.");}};};
 window.toggleTodo = async function(id, status) {try {await updateDoc(doc(db,"todos",id),{completed:status,updatedAt:serverTimestamp()});}catch(e){console.error(e);showToast("Couldn't update task.");}};
-window.deleteTodo = async function(id) {try {await deleteDoc(doc(db,"todos",id));}catch(e){console.error(e);showToast("Couldn't delete task.");}};
+window.deleteTodo = async function(id) {
+  if(!confirm("Remove this task from the active list? Its history will be preserved.")) return;
+  try {await updateDoc(doc(db,"todos",id),{archived:true,archivedAt:serverTimestamp(),updatedAt:serverTimestamp()});showToast("Task archived — history preserved.");}
+  catch(e){console.error(e);showToast("Couldn't archive task.");}
+};
 
 function renderTodayTogether() {
-  const active = sharedItems.filter(x => x.active !== false).slice(0,4);
+  const active = sharedItems.filter(x => !x.archived && x.active !== false).slice(0,4);
   if (!active.length) return `<div class="empty p-4 subtle text-sm">Set up your first shared activity in Together.</div>`;
   return active.map(x => `
     <button onclick="openSheet('entry',{sharedId:'${x.id}'})" class="w-full text-left flex gap-3 py-3 border-b border-white/5 last:border-0 hover:bg-white/[.02] transition rounded-lg px-2">
@@ -717,12 +757,43 @@ function renderEntryCompact(e) {
 }
 
 function sharedSort(items){return [...items].sort((a,b)=>{const ao=Number.isFinite(a.order)?a.order:999999;const bo=Number.isFinite(b.order)?b.order:999999;if(ao!==bo)return ao-bo;return (a.createdAt?.seconds||0)-(b.createdAt?.seconds||0);});}
-function renderTogether(){const grouped={};sharedItems.forEach(x=>{const m=x.month||monthName();(grouped[m]||=[]).push(x);});Object.keys(grouped).forEach(m=>grouped[m]=sharedSort(grouped[m]));const current=grouped[monthName()]||[],others=Object.entries(grouped).filter(([m])=>m!==monthName());document.getElementById('app').innerHTML=`<section class="fade pt-3"><div class="pb-5"><div class="tiny-label">The shared journey</div><h2 class="serif text-4xl mt-2">Together.</h2></div><div class="card p-5 sm:p-6 mb-4 hero-glow"><div class="eyebrow">Our shared mantra</div><p class="serif italic text-lg sm:text-xl mt-3">“We are believers, we believe God for great things and we make them happen”</p><div class="season-line mt-6"><span class="chip">${seasonDisplay()}</span></div></div><div class="card p-5 mb-4"><div class="flex justify-between items-start gap-4"><div><div class="tiny-label">${monthName()}</div><h3 class="serif text-2xl mt-1">This month's journey</h3></div><button id="journey-add-btn" type="button" class="primary">+ Add</button></div><div class="grid sm:grid-cols-2 gap-3 mt-5">${current.length?current.map(sharedCard).join(''):`<div class="empty p-5 sm:col-span-2 subtle text-sm"><p>Nothing here yet. Add your current book, topic, message, conversation or agreement.</p><button id="journey-empty-add-btn" type="button" class="secondary mt-3">+ Add the first item</button></div>`}</div></div><div class="grid sm:grid-cols-2 gap-4">${others.map(([m,items])=>`<div class="card p-5"><div class="tiny-label">${esc(m)}</div><h3 class="serif text-xl mt-1">${items.length} shared items</h3><div class="mt-3">${items.slice(0,4).map(x=>`<div class="chip inline-block mr-1 mb-1">${esc(x.title)}</div>`).join('')}</div></div>`).join('')}<div class="card p-5"><div class="tiny-label">Shared capture</div><h3 class="serif text-xl mt-1">Talk instead of typing.</h3><button type="button" onclick="openSheet('note',{scope:'shared',type:'Together note'})" class="secondary mt-4">＋ Voice / note</button></div></div></section>`;refreshNav();const openAdd=()=>window.openSheet('shared',{});document.getElementById('journey-add-btn')?.addEventListener('click',openAdd);document.getElementById('journey-empty-add-btn')?.addEventListener('click',openAdd);}
+function renderTogether(){
+  const visibleShared=sharedItems.filter(x=>!x.archived);
+  const journeyItems=visibleShared.filter(x=>x.section!=="general");
+  const generalPlans=sharedSort(visibleShared.filter(x=>x.section==="general"));
+  const current=sharedSort(journeyItems.filter(x=>currentJourneyMonthMatches(x.month)));
+  const grouped={};
+  journeyItems.filter(x=>!currentJourneyMonthMatches(x.month)).forEach(x=>{const m=x.month||"Earlier";(grouped[m]||=[]).push(x);});
+  Object.keys(grouped).forEach(m=>grouped[m]=sharedSort(grouped[m]));
+  const others=Object.entries(grouped);
+  document.getElementById('app').innerHTML=`<section class="fade pt-3">
+    <div class="pb-5"><div class="tiny-label">The shared journey</div><h2 class="serif text-4xl mt-2">Together.</h2></div>
+    <div class="card p-5 sm:p-6 mb-4 hero-glow"><div class="eyebrow">Our shared mantra</div><p class="serif italic text-lg sm:text-xl mt-3">“We are believers, we believe God for great things and we make them happen”</p><div class="season-line mt-6"><span class="chip">${seasonDisplay()}</span></div></div>
+    <div class="card p-5 mb-4">
+      <div class="flex justify-between items-start gap-4"><div><div class="tiny-label">${monthName()}</div><h3 class="serif text-2xl mt-1">This month's journey</h3></div><button id="journey-add-btn" type="button" class="primary">+ Add</button></div>
+      <div class="grid sm:grid-cols-2 gap-3 mt-5">${current.length?current.map(sharedCard).join(''):`<div class="empty p-5 sm:col-span-2 subtle text-sm"><p>Nothing here yet. Add your current book, topic, message, conversation or agreement.</p><button id="journey-empty-add-btn" type="button" class="secondary mt-3">+ Add the first item</button></div>`}</div>
+    </div>
+    <div class="card p-5 mb-4">
+      <div class="flex justify-between items-start gap-4"><div><div class="tiny-label">Someday / later</div><h3 class="serif text-2xl mt-1">General Plans</h3><p class="subtle text-xs mt-1">A dumping ground for ideas and plans that are not tied to this month.</p></div><button id="general-plan-add-btn" type="button" class="secondary">+ Add plan</button></div>
+      <div class="grid sm:grid-cols-2 gap-3 mt-5">${generalPlans.length?generalPlans.map(sharedCard).join(''):`<div class="empty p-5 sm:col-span-2 subtle text-sm">No general plans yet. Drop future ideas here and add a reminder only when you need one.</div>`}</div>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-4">${others.map(([m,items])=>`<div class="card p-5"><div class="tiny-label">${esc(m)}</div><h3 class="serif text-xl mt-1">${items.length} shared items</h3><div class="mt-3">${items.slice(0,4).map(x=>`<div class="chip inline-block mr-1 mb-1">${esc(x.title)}</div>`).join('')}</div></div>`).join('')}<div class="card p-5"><div class="tiny-label">Shared capture</div><h3 class="serif text-xl mt-1">Talk instead of typing.</h3><button type="button" onclick="openSheet('note',{scope:'shared',type:'Together note'})" class="secondary mt-4">＋ Voice / note</button></div></div>
+  </section>`;
+  refreshNav();
+  const openJourney=()=>window.openSheet('shared',{section:'journey'});
+  const openGeneral=()=>window.openSheet('shared',{section:'general'});
+  document.getElementById('journey-add-btn')?.addEventListener('click',openJourney);
+  document.getElementById('journey-empty-add-btn')?.addEventListener('click',openJourney);
+  document.getElementById('general-plan-add-btn')?.addEventListener('click',openGeneral);
+}
 
+window.moveShared=async function(id,dir){const item=sharedItems.find(x=>x.id===id);if(!item)return;const isGeneral=item.section==='general';const month=item.month||monthName();const list=sharedSort(sharedItems.filter(x=>isGeneral?x.section==='general':x.section!=='general'&&(x.month||monthName())===month));const i=list.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=list.length)return;const a=list[i],b=list[j];const ao=Number.isFinite(a.order)?a.order:i*10,bo=Number.isFinite(b.order)?b.order:j*10;try{await Promise.all([updateDoc(doc(db,'shared_items',a.id),{order:bo,updatedAt:serverTimestamp()}),updateDoc(doc(db,'shared_items',b.id),{order:ao,updatedAt:serverTimestamp()})]);}catch(e){console.error(e);showToast("Couldn't reorder shared item.");}};
 
-window.moveShared=async function(id,dir){const item=sharedItems.find(x=>x.id===id);if(!item)return;const month=item.month||monthName();const list=sharedSort(sharedItems.filter(x=>(x.month||monthName())===month));const i=list.findIndex(x=>x.id===id),j=i+dir;if(i<0||j<0||j>=list.length)return;const a=list[i],b=list[j];const ao=Number.isFinite(a.order)?a.order:i*10,bo=Number.isFinite(b.order)?b.order:j*10;try{await Promise.all([updateDoc(doc(db,'shared_items',a.id),{order:bo,updatedAt:serverTimestamp()}),updateDoc(doc(db,'shared_items',b.id),{order:ao,updatedAt:serverTimestamp()})]);}catch(e){console.error(e);showToast("Couldn't reorder shared item.");}};
-
-window.deleteShared=async function(id){if(!confirm("Delete this shared item?"))return;try{await deleteDoc(doc(db,"shared_items",id));showToast("Shared item deleted.");}catch(e){console.error(e);showToast("Couldn't delete shared item.");}};
+window.deleteShared=async function(id){
+  if(!confirm("Remove this shared item from the active journey? Its history and entries will be preserved."))return;
+  try{await updateDoc(doc(db,"shared_items",id),{archived:true,active:false,archivedAt:serverTimestamp(),updatedAt:serverTimestamp()});showToast("Shared item archived — history preserved.");}
+  catch(e){console.error(e);showToast("Couldn't archive shared item.");}
+};
 
 function sharedCard(x) {
   return `<div class="relative rounded-[24px] p-5 bg-white/[.028] border border-white/[.07] hover:border-white/[.14] hover:-translate-y-0.5 transition duration-200 flex flex-col group shadow-[0_16px_45px_rgba(0,0,0,.12)]">
@@ -901,7 +972,7 @@ window.openRoutineEditor = function(editId=null, forceNonNeg=false) {
         </div>
         <div><label class="tiny-label">Category</label><input id="r-category" class="input mt-2" value="${esc(r?.category || "")}" placeholder="Spiritual"></div>
       </div>
-      <div><label class="tiny-label">Today bucket</label><select id="r-bucket" class="input mt-2">${routineBuckets.map(b=>`<option value="${b.id}" ${bucketIdForRoutine(r||{})===b.id?'selected':''}>${esc(b.name)}</option>`).join("")}</select><div class="subtle text-[10px] mt-1">The four bucket names are yours — rename them in Settings.</div></div>
+      <div><label class="tiny-label">Today bucket</label><select id="r-bucket" class="input mt-2">${routineBuckets.map(b=>`<option value="${b.id}" ${bucketIdForRoutine(r||{})===b.id?'selected':''}>${esc(b.name)}</option>`).join("")}</select><div class="subtle text-[10px] mt-1">Choose any bucket. You can create, rename or delete buckets from Today.</div></div>
       <label class="flex items-center gap-3 p-3 rounded-2xl bg-white/[.03]"><input id="r-nonneg" type="checkbox" ${(r?.nonNegotiable||forceNonNeg)?"checked":""}><span><span class="text-sm block">Non-negotiable</span><span class="subtle text-xs">Keep it visible as a core routine.</span></span></label>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="tiny-label">Start date</label><input id="r-start" type="date" class="input mt-2" value="${r?.startDate || ""}"></div>
@@ -1150,8 +1221,9 @@ function renderLifeItemComposer(payload) {
 function renderSharedComposer(payload={}) {
   const isEdit = !!payload.editId;
   const s = isEdit ? sharedItems.find(x => x.id === payload.editId) : null;
+  const isGeneral = payload.section === "general" || s?.section === "general";
   
-  setComposer(isEdit ? "Edit shared item" : "Add shared item", "Together", `
+  setComposer(isEdit ? (isGeneral ? "Edit general plan" : "Edit shared item") : (isGeneral ? "Add general plan" : "Add shared item"), isGeneral ? "General Plans" : "Together", `
     <div class="space-y-4">
       <input type="hidden" id="s-id" value="${s?.id || ""}">
       <div class="grid grid-cols-2 gap-3">
@@ -1160,7 +1232,7 @@ function renderSharedComposer(payload={}) {
             ${["Book","Message","Conversation","Agreement","Prayer","Topic","Shared activity","Review period"].map(v => `<option ${s?.type===v?'selected':''}>${v}</option>`).join("")}
           </select>
         </div>
-        <div><label class="tiny-label">Month</label><input id="s-month" class="input mt-2" value="${s?.month || monthName()}"></div>
+        ${isGeneral?`<div><label class="tiny-label">Section</label><div class="input mt-2 flex items-center">General Plans</div><input id="s-month" type="hidden" value=""></div>`:`<div><label class="tiny-label">Month</label><input id="s-month" class="input mt-2" value="${s?.month || monthName()}"></div>`}
       </div>
       <input id="s-title" class="input" placeholder="Title" value="${esc(s?.title || "")}">
       <input id="s-subtitle" class="input" placeholder="Short description / speaker / question" value="${esc(s?.subtitle || "")}">
@@ -1168,7 +1240,7 @@ function renderSharedComposer(payload={}) {
          <input id="s-link" class="input" placeholder="Link URL" value="${esc(s?.link || "")}">
          <input id="s-where" class="input" placeholder="Where to find (e.g. Telegram)" value="${esc(s?.where || "")}">
       </div>
-      <div class="rounded-2xl bg-white/[.025] border border-white/[.05] p-3"><div class="tiny-label">Schedule / review period</div><div class="grid grid-cols-2 gap-3 mt-2"><input id="s-date" type="date" class="input" value="${esc(s?.scheduleDate||'')}"><input id="s-time" type="time" class="input" value="${esc(s?.scheduleTime||'')}"></div><div class="mt-3"><label class="tiny-label">Who should be reminded?</label><select id="s-reminder-target" class="input mt-2"><option value="none" ${!s?.reminderEnabled?'selected':''}>No reminder</option><option value="${currentUser}" ${(s?.reminderTarget===currentUser || (s?.reminderEnabled&&s?.reminderTarget===undefined&&s?.owner===currentUser))?'selected':''}>Just me (${currentUser})</option><option value="${partnerName()}" ${s?.reminderTarget===partnerName()?'selected':''}>Just ${partnerName()}</option><option value="both" ${(s?.reminderTarget==='both' || (s?.reminderEnabled&&s?.reminderTarget===undefined))?'selected':''}>Both of us</option></select><p class="subtle text-[10px] mt-2">Choose a recipient. A date + time are required for the reminder to send.</p></div></div>
+      <div class="rounded-2xl bg-white/[.025] border border-white/[.05] p-3"><div class="tiny-label">Schedule / reminder</div><div class="grid grid-cols-2 gap-3 mt-3"><div><label class="field-label" for="s-date">Pick date</label><input id="s-date" type="date" class="input" value="${esc(s?.scheduleDate||'')}"></div><div><label class="field-label" for="s-time">Pick time</label><input id="s-time" type="time" class="input" value="${esc(s?.scheduleTime||'')}"></div></div><div class="mt-3"><label class="tiny-label">Who should be reminded?</label><select id="s-reminder-target" class="input mt-2"><option value="none" ${!s?.reminderEnabled?'selected':''}>No reminder</option><option value="${currentUser}" ${(s?.reminderTarget===currentUser || (s?.reminderEnabled&&s?.reminderTarget===undefined&&s?.owner===currentUser))?'selected':''}>Just me (${currentUser})</option><option value="${partnerName()}" ${s?.reminderTarget===partnerName()?'selected':''}>Just ${partnerName()}</option><option value="both" ${(s?.reminderTarget==='both' || (s?.reminderEnabled&&s?.reminderTarget===undefined))?'selected':''}>Both of us</option></select><p class="subtle text-[10px] mt-2">Choose a recipient. A date + time are required for the reminder to send.</p></div></div>
       <select id="s-icon" class="input"><option ${s?.icon==='♡'?'selected':''}>♡</option><option ${s?.icon==='📖'?'selected':''}>📖</option><option ${s?.icon==='🎧'?'selected':''}>🎧</option><option ${s?.icon==='💬'?'selected':''}>💬</option><option ${s?.icon==='🤝'?'selected':''}>🤝</option><option ${s?.icon==='✦'?'selected':''}>✦</option></select>
       
       ${!isEdit ? `
@@ -1188,7 +1260,8 @@ function renderSharedComposer(payload={}) {
       
       const payloadData = {
         type: document.getElementById("s-type").value,
-        month: document.getElementById("s-month").value.trim() || monthName(),
+        month: isGeneral ? null : (document.getElementById("s-month").value.trim() || monthName()),
+        section: isGeneral ? "general" : "journey",
         title, 
         subtitle: document.getElementById("s-subtitle").value.trim(),
         link: document.getElementById("s-link").value.trim(),
@@ -1207,7 +1280,8 @@ function renderSharedComposer(payload={}) {
       } else {
         const audioBlob=recorder.getBlob();
         const audio=audioBlob ? await uploadAudio(audioBlob,"shared_voice") : null;
-        await addDoc(collection(db,"shared_items"),{...payloadData, order:sharedItems.filter(x=>(x.month||monthName())===(payloadData.month||monthName())).length*10, createdAt:serverTimestamp()});
+        const peerCount = isGeneral ? sharedItems.filter(x=>x.section==='general').length : sharedItems.filter(x=>x.section!=='general'&&(x.month||monthName())===(payloadData.month||monthName())).length;
+        await addDoc(collection(db,"shared_items"),{...payloadData, order:peerCount*10, createdAt:serverTimestamp()});
         const note=document.getElementById("s-note").value.trim();
         if(note || audio) await addDoc(collection(db,"entries"),{type:"Shared thought",text:note,audioUrl:audio?.url||null,audioPath:audio?.path||null,sender:currentUser,scope:"shared",createdAt:serverTimestamp()});
       }
@@ -1326,6 +1400,15 @@ document.getElementById("identity").addEventListener("change", async e=>{
 document.addEventListener("keydown", e=>{
   if(e.key==="Escape"){ closeSheet(); closeRoutineSheet(); }
 });
+
+// Capture navigation taps at the document level so iOS/PWA nested elements cannot swallow them.
+document.addEventListener("click", (e) => {
+  const tab = e.target.closest?.("[data-tab]");
+  if (!tab) return;
+  e.preventDefault();
+  e.stopPropagation();
+  window.setTab(tab.dataset.tab);
+}, true);
 
 initTheme();
 render();
