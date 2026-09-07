@@ -350,7 +350,12 @@ const THEMES = [
   {id:"resting",name:"Midnight & Lavender",bg:"#0c0d18",deep:"#0c0d18",mid:"#111329",panel:"#191a32",panel2:"#252344",wine:"#79688f",olive:"#8994a6",cream:"#eee9e2",muted:"#aaa7ba",gold:"#c9b8d8",line:"rgba(238,233,226,.10)",a:"rgba(106,98,164,.20)",b:"rgba(171,143,184,.13)"},
   {id:"peace",name:"Olive & Sand",bg:"#10140d",deep:"#10140d",mid:"#171c12",panel:"#202817",panel2:"#2c351f",wine:"#8b8060",olive:"#82965e",cream:"#f2ebda",muted:"#afb09c",gold:"#cfbb8a",line:"rgba(242,235,218,.10)",a:"rgba(111,137,75,.21)",b:"rgba(205,181,123,.13)"},
   {id:"celebrating",name:"Burgundy & Blush",bg:"#160b10",deep:"#160b10",mid:"#211019",panel:"#2b151f",panel2:"#3b1d29",wine:"#a15b70",olive:"#8d8861",cream:"#f7ebe5",muted:"#bba5ab",gold:"#d3b18c",line:"rgba(247,235,229,.10)",a:"rgba(155,61,92,.20)",b:"rgba(209,160,132,.14)"},
-  {id:"renewing",name:"Blue & Pearl",bg:"#081119",deep:"#081119",mid:"#0c1b27",panel:"#122534",panel2:"#183346",wine:"#718ba0",olive:"#799a91",cream:"#edf1ed",muted:"#a5b1b5",gold:"#c9c3aa",line:"rgba(237,241,237,.10)",a:"rgba(63,118,146,.20)",b:"rgba(177,166,133,.12)"}
+  {id:"renewing",name:"Blue & Pearl",bg:"#081119",deep:"#081119",mid:"#0c1b27",panel:"#122534",panel2:"#183346",wine:"#718ba0",olive:"#799a91",cream:"#edf1ed",muted:"#a5b1b5",gold:"#c9c3aa",line:"rgba(237,241,237,.10)",a:"rgba(63,118,146,.20)",b:"rgba(177,166,133,.12)"},
+  {id:"peony",name:"Sage & Peony",bg:"#101510",deep:"#101510",mid:"#171d17",panel:"#202820",panel2:"#2b342b",wine:"#b7848f",olive:"#93a184",cream:"#f5eee9",muted:"#b8b5ad",gold:"#d8c2a3",line:"rgba(245,238,233,.10)",a:"rgba(166,190,157,.18)",b:"rgba(210,151,164,.16)"},
+  {id:"rosewood",name:"Rosewood & Linen",bg:"#180f11",deep:"#180f11",mid:"#211619",panel:"#2b1e21",panel2:"#38272b",wine:"#a86f78",olive:"#8f9379",cream:"#f7f0e7",muted:"#b9aaa8",gold:"#d7bb98",line:"rgba(247,240,231,.10)",a:"rgba(179,111,126,.18)",b:"rgba(222,195,157,.14)"},
+  {id:"moonmilk",name:"Plum & Moonmilk",bg:"#100d16",deep:"#100d16",mid:"#181320",panel:"#211a2b",panel2:"#2e243b",wine:"#8e6f93",olive:"#8c9682",cream:"#f2eef3",muted:"#b1a8b7",gold:"#d1bfd6",line:"rgba(242,238,243,.10)",a:"rgba(141,103,158,.19)",b:"rgba(205,179,215,.13)"},
+  {id:"buttercream",name:"Moss & Buttercream",bg:"#11140d",deep:"#11140d",mid:"#191d13",panel:"#22291a",panel2:"#303924",wine:"#9a8065",olive:"#8fa16e",cream:"#f7f1dd",muted:"#b3b3a1",gold:"#dcc68e",line:"rgba(247,241,221,.10)",a:"rgba(132,157,98,.19)",b:"rgba(225,199,130,.14)"},
+  {id:"powder",name:"Powder Blue & Cocoa",bg:"#0e1316",deep:"#0e1316",mid:"#151c20",panel:"#1d272c",panel2:"#29363c",wine:"#9a786d",olive:"#819995",cream:"#eef2ef",muted:"#aab5b6",gold:"#d0c2ad",line:"rgba(238,242,239,.10)",a:"rgba(131,176,193,.17)",b:"rgba(164,124,105,.14)"}
 ];
 function autoTheme(){const epoch=new Date(2026,8,7).getTime();const days=Math.floor((Date.now()-epoch)/86400000);return THEMES[((days<0?0:Math.floor(days/7)))%THEMES.length];}
 function applyTheme(theme,animate=true){if(!theme)return;const root=document.documentElement;if(animate)document.body.classList.add('season-transition');const map={bg:theme.bg,panel:theme.panel,panel2:theme.panel2,wine:theme.wine,olive:theme.olive,cream:theme.cream,muted:theme.muted,line:theme.line,glowA:theme.a,glowB:theme.b,heroA:theme.heroA||theme.a,heroMid:theme.heroMid||theme.panel,heroB:theme.heroB||theme.b,heroBorder:theme.heroBorder||theme.line,heroGold:theme.heroGold||'rgba(199,168,117,.12)'};Object.entries(map).forEach(([k,v])=>root.style.setProperty('--'+k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase()),v));const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',theme.bg);setTimeout(()=>document.body.classList.remove('season-transition'),1200);}
@@ -484,7 +489,7 @@ function routinesByBucket(list){const out={};routineBuckets.forEach(b=>out[b.id]
 function routineRowCompact(r,isTheirs){const done=!!completions[routineCompletionKey(r)];return `<div class="routine-row flex items-center gap-2"><button ${!isTheirs?`onclick="toggleRoutine('${r.id}')"`:"disabled"} class="flex-1 min-w-0 text-left flex items-center gap-3 p-3 rounded-2xl bg-white/[.025] ${!isTheirs?'hover:bg-white/[.05] cursor-pointer':'cursor-default'} transition"><span class="check ${done?'done':''}"></span><span class="min-w-0 flex-1"><span class="block text-sm ${done?'line-through opacity-50':''}">${esc(r.name)}</span><span class="block subtle text-[10px] mt-0.5">${iconFor(r.category)} ${esc(r.category||"Routine")}${r.nonNegotiable?' · non-negotiable':''}${r.frequency==='weekdays'?' · Mon–Fri':''}</span></span></button>${!isTheirs?`<div class="routine-actions"><button aria-label="Edit" title="Edit" onclick="openRoutineEditor('${r.id}')" class="icon-action">✎</button></div>`:''}</div>`;}
 function renderRoutineBuckets(list,isTheirs=false){
   const grouped=routinesByBucket(list);
-  const cards=routineBuckets.map((b,i)=>{const items=grouped[b.id]||[];return `<details class="bucket" ${i===0?'open':''}><summary class="flex items-center justify-between gap-3 p-4"><span class="flex items-center gap-3"><span class="w-8 h-8 rounded-xl bg-white/[.05] grid place-items-center">${b.icon||'○'}</span><span><span class="block text-sm font-semibold">${esc(b.name)}</span><span class="subtle text-[10px]">${items.length} routine${items.length===1?'':'s'}</span></span></span><span class="flex items-center gap-2">${!isTheirs?`<button type="button" onclick="event.preventDefault();event.stopPropagation();openBucketEditor('${b.id}')" class="secondary text-[10px] px-2 py-1">Rename</button><button type="button" onclick="event.preventDefault();event.stopPropagation();deleteBucket('${b.id}')" class="secondary text-[10px] px-2 py-1">Delete</button>`:''}<span class="bucket-arrow subtle">⌄</span></span></summary><div class="p-2 space-y-1">${items.length?items.map(r=>routineRowCompact(r,isTheirs)).join(''):`<div class="p-3 subtle text-xs">Nothing here yet.</div>`}</div></details>`;}).join('');
+  const cards=routineBuckets.map((b,i)=>{const items=grouped[b.id]||[];return `<details class="bucket"><summary class="flex items-center justify-between gap-3 p-4"><span class="flex items-center gap-3"><span class="w-8 h-8 rounded-xl bg-white/[.05] grid place-items-center">${b.icon||'○'}</span><span><span class="block text-sm font-semibold">${esc(b.name)}</span><span class="subtle text-[10px]">${items.length} routine${items.length===1?'':'s'}</span></span></span><span class="flex items-center gap-2">${!isTheirs?`<button type="button" onclick="event.preventDefault();event.stopPropagation();openBucketEditor('${b.id}')" class="secondary text-[10px] px-2 py-1">Rename</button><button type="button" onclick="event.preventDefault();event.stopPropagation();deleteBucket('${b.id}')" class="secondary text-[10px] px-2 py-1">Delete</button>`:''}<span class="bucket-arrow subtle">⌄</span></span></summary><div class="p-2 space-y-1">${items.length?items.map(r=>routineRowCompact(r,isTheirs)).join(''):`<div class="p-3 subtle text-xs">Nothing here yet.</div>`}</div></details>`;}).join('');
   return cards + (!isTheirs?`<button type="button" onclick="openNewBucketEditor()" class="secondary w-full mt-3">+ Create bucket</button>`:'');
 }
 window.openBucketEditor=function(id){const b=routineBuckets.find(x=>x.id===id);if(!b)return;setComposer('Rename bucket','Today routines',`<div class="space-y-4"><input id="bucket-edit-name" class="input" value="${esc(b.name)}" placeholder="Bucket name"><input id="bucket-edit-icon" class="input" value="${esc(b.icon||'○')}" placeholder="Icon / emoji"><button id="bucket-edit-save" class="primary w-full">Save bucket</button></div>`);document.getElementById('bucket-edit-save').onclick=async()=>{const name=(document.getElementById('bucket-edit-name').value||'').trim();const icon=(document.getElementById('bucket-edit-icon').value||'○').trim();if(!name)return showToast('Give the bucket a name.');routineBuckets=routineBuckets.map(x=>x.id===id?{...x,name,icon}:x);localStorage.setItem('our_space_routine_buckets',JSON.stringify(routineBuckets));try{await setDoc(doc(db,'app_settings','general'),{routineBuckets,updatedAt:serverTimestamp()},{merge:true});closeSheet();render();showToast('Bucket updated.');}catch(e){console.error(e);showToast('Could not save bucket.');}};};
@@ -582,9 +587,12 @@ function voiceRecorderHtml(id="voice-record") {
         <button id="${id}" type="button" class="voice-btn" aria-label="Record voice note">
           <span class="text-xl">●</span>
         </button>
-        <div class="min-w-0">
-          <div class="text-sm">Voice note</div>
-          <div id="${id}-status" class="subtle text-xs mt-1">Tap to record. Tap again to stop.</div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-sm">Voice note</div>
+            <div id="${id}-timer" class="mono subtle text-[10px]">00:00</div>
+          </div>
+          <div id="${id}-status" class="subtle text-xs mt-1">Tap to record. Tap again to stop. You can also tap Save while recording.</div>
         </div>
       </div>
       <audio id="${id}-preview" controls class="w-full mt-3 hidden"></audio>
@@ -592,45 +600,90 @@ function voiceRecorderHtml(id="voice-record") {
 }
 
 function attachVoiceRecorder(buttonId, previewId, statusId) {
-  let recorder = null, stream = null, chunks = [], blob = null;
+  let recorder = null, stream = null, chunks = [], blob = null, startedAt = 0, timerHandle = null, stopPromise = null, stopResolve = null;
   const btn = document.getElementById(buttonId);
   const status = document.getElementById(statusId);
   const preview = document.getElementById(previewId);
-  if (!btn) return { getBlob:()=>blob };
+  const timer = document.getElementById(buttonId+"-timer");
+  if (!btn) return { getBlob:()=>blob, finalize:async()=>blob, isRecording:()=>false };
+
+  const fmtElapsed = (ms) => {
+    const total = Math.max(0, Math.floor(ms/1000));
+    return `${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`;
+  };
+  const clearTimer = () => { if(timerHandle){ clearInterval(timerHandle); timerHandle=null; } };
+  const finishTracks = () => { try{ stream?.getTracks().forEach(t=>t.stop()); }catch(_){} };
+  const finalize = async () => {
+    if (recorder && recorder.state === "recording") {
+      status.textContent = "Finishing voice note…";
+      recorder.stop();
+      if (stopPromise) await stopPromise;
+    }
+    return blob;
+  };
 
   btn.addEventListener("click", async () => {
     if (recorder && recorder.state === "recording") {
-      recorder.stop();
+      await finalize();
       return;
     }
-    if (!navigator.mediaDevices?.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       showToast("Voice recording isn't supported in this browser.");
       return;
     }
     try {
       stream = await navigator.mediaDevices.getUserMedia({audio:true});
-      recorder = new MediaRecorder(stream);
-      chunks = [];
-      recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+      const preferred = ["audio/mp4","audio/webm;codecs=opus","audio/webm"].find(t => MediaRecorder.isTypeSupported?.(t));
+      const opts = preferred ? {mimeType:preferred, audioBitsPerSecond:64000} : {audioBitsPerSecond:64000};
+      try { recorder = new MediaRecorder(stream, opts); }
+      catch(_) { recorder = new MediaRecorder(stream); }
+      chunks = []; blob = null; startedAt = Date.now();
+      stopPromise = new Promise(resolve => { stopResolve = resolve; });
+      recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      recorder.onerror = e => {
+        console.error("MediaRecorder", e);
+        clearTimer(); finishTracks(); btn.classList.remove("recording");
+        status.textContent = "Recording failed. Please try again.";
+        stopResolve?.(); stopResolve=null;
+      };
       recorder.onstart = () => {
         btn.classList.add("recording");
-        status.textContent = "Recording... tap to stop.";
+        status.textContent = "Recording… tap again to stop, or tap Save when you're done.";
+        if(timer) timer.textContent="00:00";
+        clearTimer();
+        timerHandle=setInterval(()=>{
+          const elapsed=Date.now()-startedAt;
+          if(timer) timer.textContent=fmtElapsed(elapsed);
+          if(elapsed>=10*60*1000 && recorder?.state==="recording"){
+            status.textContent="10-minute limit reached. Finishing voice note…";
+            recorder.stop();
+          }
+        },500);
       };
       recorder.onstop = () => {
-        blob = new Blob(chunks, {type: recorder.mimeType || "audio/webm"});
-        preview.src = URL.createObjectURL(blob);
-        preview.classList.remove("hidden");
+        clearTimer();
+        const mime = recorder?.mimeType || preferred || "audio/webm";
+        blob = chunks.length ? new Blob(chunks, {type:mime}) : null;
+        if(blob && blob.size){
+          preview.src = URL.createObjectURL(blob);
+          preview.classList.remove("hidden");
+          const mb=(blob.size/1024/1024).toFixed(blob.size>1024*1024?1:2);
+          status.textContent = `Voice note ready · ${fmtElapsed(Date.now()-startedAt)} · ${mb} MB.`;
+        } else {
+          status.textContent = "No audio was captured. Please try again.";
+        }
         btn.classList.remove("recording");
-        status.textContent = "Voice note ready. You can save it below.";
-        stream?.getTracks().forEach(t=>t.stop());
+        finishTracks();
+        stopResolve?.(); stopResolve=null;
       };
-      recorder.start();
+      recorder.start(1000);
     } catch (e) {
       console.error(e);
-      showToast("Microphone permission was not granted.");
+      clearTimer(); finishTracks();
+      showToast("Microphone permission was not granted or recording could not start.");
     }
   });
-  return { getBlob:()=>blob };
+  return { getBlob:()=>blob, finalize, isRecording:()=>!!(recorder&&recorder.state==="recording") };
 }
 
 async function uploadAudio(blob, prefix="voice") {
@@ -675,9 +728,9 @@ function renderToday(){
   const myTodos=sortedPersonalTodos(currentUser,false),myCompletedTodos=sortedPersonalTodos(currentUser,true),recent=recentEntries.slice(0,4);
   document.getElementById('app').innerHTML=`<section class="fade"><div class="pt-3 pb-5"><div class="tiny-label">${fmtDate()}</div><div class="flex items-end justify-between gap-4 mt-2"><h2 class="serif text-4xl sm:text-5xl">Today.</h2><div class="relative w-16 h-16 rounded-full ring grid place-items-center" style="--pct:${pct}%"><div class="w-12 h-12 rounded-full bg-wineDeep grid place-items-center"><span class="mono text-xs">${mineDone}/${mine.length}</span></div></div></div></div>
   <div class="desktop-grid"><div class="space-y-4">
-    <div class="card p-5"><div class="flex items-center justify-between mb-4"><div><div class="tiny-label">My day</div><h3 class="serif text-xl mt-1">${esc(getPronoun(currentUser))} routines</h3></div></div><div class="space-y-2">${renderRoutineBuckets(mine,false)}</div><div class="grid grid-cols-2 gap-2 mt-4"><button onclick="openRoutineEditor()" class="secondary">+ Add routine</button><button onclick="openNonNegotiablesManager()" class="secondary">Core / non-negotiables</button></div></div>
+    <details class="card p-5"><summary class="cursor-pointer list-none flex items-center justify-between"><div><div class="tiny-label">My day</div><h3 class="serif text-xl mt-1">${esc(getPronoun(currentUser))} routines</h3></div><span class="subtle">⌄</span></summary><div class="mt-4 space-y-2">${renderRoutineBuckets(mine,false)}</div><div class="grid grid-cols-2 gap-2 mt-4"><button onclick="openRoutineEditor()" class="secondary">+ Add routine</button><button onclick="openNonNegotiablesManager()" class="secondary">Core / non-negotiables</button></div></details>
     <div class="card p-5"><div class="tiny-label">Personal To-Do</div><h3 class="serif text-xl mt-1">One-off tasks</h3><form onsubmit="addTodo(event)" class="mt-3 space-y-2"><div class="flex gap-2"><input id="new-todo-input" class="input flex-1 py-2 text-sm" placeholder="Add a task..." required><button type="submit" class="primary py-2 px-4 text-sm">+</button></div><div class="grid grid-cols-2 gap-2"><div><label class="field-label" for="new-todo-date">Reminder date</label><input id="new-todo-date" type="date" class="input py-2 text-xs"></div><div><label class="field-label" for="new-todo-time">Reminder time</label><input id="new-todo-time" type="time" class="input py-2 text-xs"></div></div></form><div class="mt-4 space-y-2">${myTodos.map(t=>renderTodo(t)).join('')}${myCompletedTodos.map(t=>renderTodo(t,true)).join('')}</div></div>
-    <div class="card p-5"><div class="flex items-center justify-between mb-3"><div><div class="tiny-label">Together</div><h3 class="serif text-xl mt-1">Our shared rhythms.</h3></div><span class="text-lg">♡</span></div>${routineSection('OUR SHARED RHYTHMS',routines.filter(r=>r.owner==='Together'&&isActiveRoutine(r)),false,false)}</div>
+    <details class="card p-5"><summary class="cursor-pointer list-none flex items-center justify-between"><div><div class="tiny-label">Together</div><h3 class="serif text-xl mt-1">Our shared rhythms.</h3></div><span class="subtle">⌄</span></summary><div class="mt-4">${routineSection('OUR SHARED RHYTHMS',routines.filter(r=>r.owner==='Together'&&isActiveRoutine(r)),false,false)}</div></details>
     <div class="card p-5"><div class="flex items-center justify-between mb-3"><div><div class="tiny-label">Today together</div><h3 class="serif text-xl mt-1">Small things, together.</h3></div><button onclick="setTab('together')" class="subtle text-xs">Open →</button></div>${renderTodayTogether()}</div>
   </div><div class="space-y-4">
     <div class="card p-5"><div class="tiny-label">${getPronoun(otherPerson())} day</div><div class="flex items-center justify-between mt-2 mb-4"><h3 class="serif text-xl">${esc(otherPerson())}</h3><span class="mono text-xs">${theirDone}/${theirs.length}</span></div><div class="space-y-2">${renderRoutineBuckets(theirs,true)||`<div class="empty p-4 subtle text-sm">No routines yet.</div>`}</div></div>
@@ -1164,7 +1217,7 @@ function renderNoteComposer(payload={}) {
     const btn = document.getElementById("save-note");
     btn.disabled = true; btn.textContent = "Saving...";
     try {
-      await saveEntry({type:payload.type || "Note", text:document.getElementById("entry-text").value.trim(), audioBlob:recorder.getBlob(), scope:payload.scope || "personal"});
+      await saveEntry({type:payload.type || "Note", text:document.getElementById("entry-text").value.trim(), audioBlob:await recorder.finalize(), scope:payload.scope || "personal"});
     } catch(e) { console.error(e); showToast("Couldn't save."); btn.disabled=false; btn.textContent="Save note"; }
   };
 }
@@ -1180,7 +1233,7 @@ function renderAppreciationComposer() {
     </div>`);
   const recorder = attachVoiceRecorder("app-rec","app-rec-preview","app-rec-status");
   document.getElementById("save-app").onclick = async () => {
-    try { await saveEntry({type:"Appreciation", text:document.getElementById("entry-text").value.trim(), audioBlob:recorder.getBlob(), scope:"shared"}); }
+    try { await saveEntry({type:"Appreciation", text:document.getElementById("entry-text").value.trim(), audioBlob:await recorder.finalize(), scope:"shared"}); }
     catch(e){console.error(e);showToast("Couldn't save.");}
   };
 }
@@ -1196,7 +1249,7 @@ function renderMemoryComposer() {
     </div>`);
   const recorder = attachVoiceRecorder("mem-rec","mem-rec-preview","mem-rec-status");
   document.getElementById("save-memory").onclick = async () => {
-    try { await saveEntry({type:"Memory", text:document.getElementById("entry-text").value.trim(), audioBlob:recorder.getBlob(), imageFile:document.getElementById("memory-file").files[0] || null, scope:"shared"}); }
+    try { await saveEntry({type:"Memory", text:document.getElementById("entry-text").value.trim(), audioBlob:await recorder.finalize(), imageFile:document.getElementById("memory-file").files[0] || null, scope:"shared"}); }
     catch(e){console.error(e);showToast("Couldn't save memory.");}
   };
 }
@@ -1285,7 +1338,7 @@ function renderSharedComposer(payload={}) {
       if(isEdit) {
         await updateDoc(doc(db, "shared_items", s.id), {...payloadData, updatedAt: serverTimestamp()});
       } else {
-        const audioBlob=recorder.getBlob();
+        const audioBlob=await recorder.finalize();
         const audio=audioBlob ? await uploadAudio(audioBlob,"shared_voice") : null;
         const peerCount = isGeneral ? sharedItems.filter(x=>x.section==='general').length : sharedItems.filter(x=>x.section!=='general'&&(x.month||monthName())===(payloadData.month||monthName())).length;
         await addDoc(collection(db,"shared_items"),{...payloadData, order:peerCount*10, createdAt:serverTimestamp()});
@@ -1310,7 +1363,7 @@ function renderEntryComposer(payload={}) {
   const recorder=attachVoiceRecorder("entry-rec","entry-rec-preview","entry-rec-status");
   document.getElementById("save-entry").onclick=async()=>{
     try {
-      await saveEntry({type:item ? `${item.type || "Shared"} thought` : "Together note", text:document.getElementById("entry-text").value.trim(), audioBlob:recorder.getBlob(), scope:"shared", extra:{sharedItemId:item?.id || null}});
+      await saveEntry({type:item ? `${item.type || "Shared"} thought` : "Together note", text:document.getElementById("entry-text").value.trim(), audioBlob:await recorder.finalize(), scope:"shared", extra:{sharedItemId:item?.id || null}});
     } catch(e){console.error(e);showToast("Couldn't save entry.");}
   };
 }
