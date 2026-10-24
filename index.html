@@ -601,29 +601,198 @@ function setComposer(title, kicker, body) {
   document.getElementById("scrim").classList.add("open");
 }
 
-window.startDictation = function(inputId) {
-  if (!('webkitSpeechRecognition' in window)) {
-    showToast("Speech to text is not supported in this browser.");
+/*
+ * AI speech-to-text
+ * Project-US uses Groq-hosted OpenAI Whisper instead of browser speech recognition.
+ *
+ * After deploying the Cloudflare Worker in /cloudflare-worker, paste its public
+ * workers.dev URL below. Never put the Groq API key in this file.
+ */
+window.PROJECT_US_TRANSCRIBE_URL = window.PROJECT_US_TRANSCRIBE_URL || 'https://project-us-transcribe.drmotolani.workers.dev';
+
+let projectUSMediaRecorder = null;
+let projectUSAudioChunks = [];
+let projectUSDictationInputId = null;
+let projectUSDictationStream = null;
+let projectUSDictationButton = null;
+
+function projectUSAppendTranscript(inputEl, transcript) {
+  const clean = String(transcript || '').trim();
+  if (!clean) return;
+  const existing = String(inputEl.value || '').trim();
+  inputEl.value = existing ? `${existing}\n${clean}` : clean;
+  inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+  inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function projectUSChooseAudioMimeType() {
+  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  const types = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4',
+    'audio/ogg;codecs=opus'
+  ];
+  return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+}
+
+function projectUSFileExtension(mimeType) {
+  if (/mp4/i.test(mimeType)) return 'm4a';
+  if (/ogg/i.test(mimeType)) return 'ogg';
+  return 'webm';
+}
+
+function projectUSStopDictation() {
+  if (projectUSMediaRecorder && projectUSMediaRecorder.state !== 'inactive') {
+    projectUSMediaRecorder.stop();
+  }
+}
+
+function projectUSResetDictationUI() {
+  if (projectUSDictationButton) {
+    projectUSDictationButton.textContent = '🎙️ AI Dictate';
+    projectUSDictationButton.disabled = false;
+  }
+  projectUSDictationButton = null;
+  projectUSDictationInputId = null;
+  if (projectUSDictationStream) {
+    projectUSDictationStream.getTracks().forEach(track => track.stop());
+    projectUSDictationStream = null;
+  }
+}
+
+async function projectUSTranscribeAudio(blob, inputId) {
+  const endpoint = String(window.PROJECT_US_TRANSCRIBE_URL || '').trim();
+  if (!endpoint || endpoint.includes('PASTE_YOUR_CLOUDFLARE')) {
+    throw new Error('AI dictation is not connected yet. Deploy the Cloudflare Worker and add its URL to Project-US.');
+  }
+
+  const formData = new FormData();
+  formData.append('file', blob, `project-us-dictation.${projectUSFileExtension(blob.type)}`);
+  formData.append('language', 'en');
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    body: formData
+  });
+
+  let data = {};
+  try { data = await response.json(); } catch (_) {}
+
+  if (!response.ok) {
+    throw new Error(data.error || `Transcription failed (${response.status}).`);
+  }
+
+  const transcript = String(data.text || '').trim();
+  if (!transcript) throw new Error('Whisper returned an empty transcript.');
+
+  const inputEl = document.getElementById(inputId);
+  if (!inputEl) throw new Error('The text field is no longer available.');
+  projectUSAppendTranscript(inputEl, transcript);
+  return transcript;
+}
+
+window.startDictation = async function(inputId) {
+  if (projectUSMediaRecorder && projectUSMediaRecorder.state !== 'inactive') {
+    projectUSStopDictation();
     return;
   }
-  const recognition = new webkitSpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = true;
-  recognition.onstart = function() { showToast("Listening... Speak now."); };
-  recognition.onresult = function(event) {
-    let transcript = '';
-    for (let i = 0; i < event.results.length; ++i) {
-      transcript += event.results[i][0].transcript;
+
+  const inputEl = document.getElementById(inputId);
+  if (!inputEl) {
+    showToast('Could not find the text field.');
+    return;
+  }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+    showToast('Audio recording is not supported in this browser.');
+    return;
+  }
+
+  if (!String(window.PROJECT_US_TRANSCRIBE_URL || '').trim() ||
+      String(window.PROJECT_US_TRANSCRIBE_URL).includes('PASTE_YOUR_CLOUDFLARE')) {
+    showToast('AI dictation needs one setup step: connect the Cloudflare Worker.');
+    return;
+  }
+
+  projectUSDictationInputId = inputId;
+  projectUSDictationButton = document.querySelector(`[data-project-us-dictate="${inputId}"]`);
+  if (projectUSDictationButton) {
+    projectUSDictationButton.textContent = '⏹ Stop & transcribe';
+    projectUSDictationButton.disabled = false;
+  }
+
+  try {
+    projectUSDictationStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    });
+
+    const mimeType = projectUSChooseAudioMimeType();
+    projectUSAudioChunks = [];
+    projectUSMediaRecorder = mimeType
+      ? new MediaRecorder(projectUSDictationStream, { mimeType })
+      : new MediaRecorder(projectUSDictationStream);
+
+    const recorder = projectUSMediaRecorder;
+    recorder.ondataavailable = event => {
+      if (event.data && event.data.size > 0) projectUSAudioChunks.push(event.data);
+    };
+
+    recorder.onstop = async () => {
+      const activeInputId = projectUSDictationInputId;
+      const recordedType = recorder.mimeType || mimeType || 'audio/webm';
+      const blob = new Blob(projectUSAudioChunks, { type: recordedType });
+      projectUSAudioChunks = [];
+      projectUSMediaRecorder = null;
+
+      if (!blob.size) {
+        projectUSResetDictationUI();
+        showToast('No audio was captured.');
+        return;
+      }
+
+      try {
+        if (blob.size > 25 * 1024 * 1024) {
+          throw new Error('That recording is too large for Groq. Please dictate a shorter entry.');
+        }
+        if (projectUSDictationButton) projectUSDictationButton.textContent = '⏳ Transcribing…';
+        showToast('Transcribing with Whisper…');
+        await projectUSTranscribeAudio(blob, activeInputId);
+        showToast('AI transcription added.');
+      } catch (error) {
+        console.error('Project-US AI dictation error:', error);
+        showToast(error?.message || 'Could not transcribe the recording.');
+      } finally {
+        projectUSResetDictationUI();
+      }
+    };
+
+    recorder.onerror = event => {
+      console.error('Project-US MediaRecorder error:', event.error);
+      try { if (recorder.state !== 'inactive') recorder.stop(); } catch (_) {}
+      projectUSResetDictationUI();
+      showToast('Could not record audio.');
+    };
+
+    recorder.start(250);
+    showToast('Recording… tap Stop & transcribe when you finish.');
+  } catch (error) {
+    console.error('Project-US microphone error:', error);
+    projectUSResetDictationUI();
+    if (error?.name === 'NotAllowedError') {
+      showToast('Microphone permission was denied. Allow microphone access and try again.');
+    } else {
+      showToast('Could not access the microphone.');
     }
-    const inputEl = document.getElementById(inputId);
-    inputEl.value = transcript;
-  };
-  recognition.onerror = function() { showToast("Microphone error."); };
-  recognition.start();
+  }
 };
 
 function speechToTextBtn(inputId) {
-  return `<button type="button" onclick="startDictation('${inputId}')" class="secondary text-xs flex items-center gap-2 py-1 px-2 mt-2 w-fit"><span class="text-base">🎙️</span> Dictate</button>`;
+  return `<button type="button" data-project-us-dictate="${inputId}" onclick="startDictation('${inputId}')" class="secondary text-xs flex items-center gap-2 py-1 px-2 mt-2 w-fit"><span class="text-base">🎙️</span> AI Dictate</button>`;
 }
 
 function voiceRecorderHtml(id="voice-record") {
@@ -1691,7 +1860,7 @@ window.setTogetherSubTab=function(tab){togetherSubTab=tab;renderTogether();};
 window.openMeditationComposer=function(editId=''){
   const existing=editId?recentEntries.find(e=>e.id===editId):null;
   const dateValue=existing?.meditationDate||todayKey();
-  setComposer(existing?'Edit meditation':'A thought for us / meditation','Our shared reflections',`${existing?.audioUrl?`<audio controls class="entry-audio mb-4" src="${esc(existing.audioUrl)}"></audio>`:''}<label class="field-label" for="meditation-date">Date</label><input id="meditation-date" type="date" class="input" value="${esc(dateValue)}" required><label class="field-label mt-4" for="meditation-title">Title</label><input id="meditation-title" class="input" value="${esc(existing?.title||`${currentUser}’s meditation`)}" placeholder="Motolani’s meditation" required><label class="field-label mt-4" for="meditation-text">Reflection or dictated words</label><textarea id="meditation-text" class="input" placeholder="Write what came to mind…">${esc(existing?.text||'')}</textarea><div class="flex gap-2 flex-wrap mt-2"><button type="button" class="secondary" onclick="startDictation('meditation-text')">Dictate</button></div><div class="mt-4">${voiceRecorderHtml('meditation-rec')}</div><button id="save-meditation" class="primary w-full mt-5">Save meditation</button><p class="save-hint">Add words, record a voice note, or do both. This will also appear in Memories.</p>`);
+  setComposer(existing?'Edit meditation':'A thought for us / meditation','Our shared reflections',`${existing?.audioUrl?`<audio controls class="entry-audio mb-4" src="${esc(existing.audioUrl)}"></audio>`:''}<label class="field-label" for="meditation-date">Date</label><input id="meditation-date" type="date" class="input" value="${esc(dateValue)}" required><label class="field-label mt-4" for="meditation-title">Title</label><input id="meditation-title" class="input" value="${esc(existing?.title||`${currentUser}’s meditation`)}" placeholder="Motolani’s meditation" required><label class="field-label mt-4" for="meditation-text">Reflection or dictated words</label><textarea id="meditation-text" class="input" placeholder="Write what came to mind…">${esc(existing?.text||'')}</textarea><div class="flex gap-2 flex-wrap mt-2">${speechToTextBtn("meditation-text")}</div><div class="mt-4">${voiceRecorderHtml('meditation-rec')}</div><button id="save-meditation" class="primary w-full mt-5">Save meditation</button><p class="save-hint">Add words, record a voice note, or do both. This will also appear in Memories.</p>`);
   const recorder=attachVoiceRecorder('meditation-rec','meditation-rec-preview','meditation-rec-status');
   document.getElementById('save-meditation').onclick=function(){busySave(this,async()=>{const date=document.getElementById('meditation-date').value,title=document.getElementById('meditation-title').value.trim(),text=document.getElementById('meditation-text').value.trim(),blob=await recorder.finalize();if(!date||!title)throw Error('Add a date and title.');if(!text&&!blob&&!existing?.audioUrl)throw Error('Write something or add a voice note.');if(existing){const patch={title,meditationDate:date,text,updatedAt:serverTimestamp(),sender:existing.sender||currentUser,scope:'shared'};if(blob){const a=await uploadAudio(blob,'voice_notes');patch.audioUrl=a.url;patch.audioPath=a.path;}await updateDoc(doc(db,'entries',existing.id),patch);}else{await saveEntry({type:'Meditation',title,text,audioBlob:blob,scope:'shared',extra:{title,meditationDate:date,occurredAt:date+'T12:00:00'}});}closeSheet();showToast('Meditation saved to Memories.');renderTogether();});};
 };
