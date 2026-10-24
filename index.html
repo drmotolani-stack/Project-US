@@ -601,6 +601,108 @@ function setComposer(title, kicker, body) {
   document.getElementById("scrim").classList.add("open");
 }
 
+
+// Voice-first planning: transcribe, structure, review, then save only after confirmation.
+let projectUSProposedPlan = [];
+window.openVoicePlanner = function() {
+  setComposer("Plan my day", "Speak naturally · review before saving", `
+    <div class="space-y-3">
+      <p class="subtle text-sm">Say everything you want to do today in one go. AI will split it into entries for you to review.</p>
+      <textarea id="voice-plan-input" class="input w-full" rows="5" placeholder="Today, I want to study CFA Level 2 for two hours, call Tunde, and work on Project-US for one hour."></textarea>
+      <div class="grid grid-cols-2 gap-2">
+        <button type="button" class="secondary" data-project-us-dictate="voice-plan-input" onclick="startDictation('voice-plan-input')">🎙️ Dictate</button>
+        <button type="button" class="primary" onclick="generateVoicePlan()">Prepare entries →</button>
+      </div>
+      <p class="subtle text-xs">Nothing is saved until you review the proposed entries and press Save.</p>
+    </div>`);
+};
+
+window.generateVoicePlan = async function() {
+  const input = document.getElementById('voice-plan-input');
+  const plan = String(input?.value || '').trim();
+  if (!plan) { showToast('Say or type your plans first.'); return; }
+  const button = document.querySelector('#composer-body button[onclick="generateVoicePlan()"]');
+  if (button) { button.disabled = true; button.textContent = 'Preparing…'; }
+  try {
+    const endpoint = String(window.PROJECT_US_TRANSCRIBE_URL || '').replace(/\/$/, '') + '/plan';
+    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: plan }) });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `AI planning failed (${response.status}).`);
+    if (!Array.isArray(data.tasks) || !data.tasks.length) throw new Error('AI could not identify any tasks. Try describing them more clearly.');
+    projectUSProposedPlan = data.tasks.map((t, i) => ({
+      title: String(t.title || '').trim(),
+      type: ['routine','small-todo'].includes(t.type) ? t.type : 'small-todo',
+      durationMinutes: Number.isFinite(Number(t.duration_minutes)) && Number(t.duration_minutes) > 0 ? Number(t.duration_minutes) : null,
+      frequency: ['daily','weekdays','weekly','project'].includes(t.frequency) ? t.frequency : 'daily',
+      category: String(t.category || 'Other').trim() || 'Other',
+      missing: String(t.missing_information || '').trim(),
+      selected: true
+    })).filter(t => t.title).slice(0, 20);
+    if (!projectUSProposedPlan.length) throw new Error('AI returned no usable task titles. Please try again.');
+    renderVoicePlanReview();
+  } catch (err) {
+    console.error('Voice planning error:', err);
+    showToast(err.message || 'Could not prepare your plan.');
+    if (button) { button.disabled = false; button.textContent = 'Prepare entries →'; }
+  }
+};
+
+function renderVoicePlanReview() {
+  const cards = projectUSProposedPlan.map((t, i) => `
+    <div class="rounded-2xl border border-white/10 p-3 space-y-2">
+      <label class="flex items-center gap-2"><input type="checkbox" ${t.selected ? 'checked' : ''} onchange="projectUSProposedPlan[${i}].selected=this.checked"><span class="text-sm font-semibold">Include this entry</span></label>
+      <input class="input w-full" aria-label="Task title" value="${esc(t.title)}" oninput="projectUSProposedPlan[${i}].title=this.value">
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="tiny-label">Entry type</label><select class="input mt-1" onchange="projectUSProposedPlan[${i}].type=this.value"><option value="small-todo" ${t.type==='small-todo'?'selected':''}>Small to-do</option><option value="routine" ${t.type==='routine'?'selected':''}>Routine</option></select></div>
+        <div><label class="tiny-label">Duration (minutes)</label><input class="input mt-1" type="number" min="1" step="1" placeholder="Not specified" value="${t.durationMinutes || ''}" oninput="projectUSProposedPlan[${i}].durationMinutes=this.value?Number(this.value):null"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="tiny-label">Frequency</label><select class="input mt-1" onchange="projectUSProposedPlan[${i}].frequency=this.value"><option value="daily" ${t.frequency==='daily'?'selected':''}>Daily</option><option value="weekdays" ${t.frequency==='weekdays'?'selected':''}>Weekdays</option><option value="weekly" ${t.frequency==='weekly'?'selected':''}>Weekly</option><option value="project" ${t.frequency==='project'?'selected':''}>Project</option></select></div>
+        <div><label class="tiny-label">Category</label><input class="input mt-1" value="${esc(t.category)}" oninput="projectUSProposedPlan[${i}].category=this.value"></div>
+      </div>
+      ${t.missing ? `<p class="subtle text-xs">Check: ${esc(t.missing)}</p>` : ''}
+    </div>`).join('');
+  setComposer('Review your plan', 'Nothing saved yet', `<div class="space-y-3"><p class="subtle text-sm">Edit anything that looks wrong. A one-off plan should stay a Small to-do; choose Routine only for something you want to repeat.</p>${cards}<button class="primary w-full" onclick="saveVoicePlan()">Save selected entries</button><button class="secondary w-full" onclick="openVoicePlanner()">← Back to plan</button></div>`);
+}
+
+window.saveVoicePlan = async function() {
+  const selected = projectUSProposedPlan.filter(t => t.selected && t.title.trim());
+  if (!selected.length) { showToast('Select at least one entry to save.'); return; }
+  const button = document.querySelector('#composer-body button[onclick="saveVoicePlan()"]');
+  if (button) { button.disabled = true; button.textContent = 'Saving…'; }
+  try {
+    const currentTodos = sortedPersonalTodos(currentUser, false);
+    let order = currentTodos.length * 10;
+    for (const t of selected) {
+      if (t.type === 'routine') {
+        const bucket = bucketsFor(currentUser)[0];
+        await addDoc(collection(db, 'routines'), {
+          name: t.title.trim(), frequency: t.frequency || 'daily', category: t.category || 'Other',
+          bucketId: bucket?.id || null, bucket: bucket?.name || 'Bucket 1', nonNegotiable: false,
+          startDate: null, endDate: null, owner: currentUser, archived: false,
+          ...(t.durationMinutes ? { durationMinutes: Number(t.durationMinutes) } : {}),
+          createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+      } else {
+        await addDoc(collection(db, 'todos'), {
+          text: t.title.trim(), owner: currentUser, completed: false, order: order, reminderDate: null,
+          reminderTime: null, reminderEnabled: false,
+          ...(t.durationMinutes ? { durationMinutes: Number(t.durationMinutes) } : {}),
+          createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+        });
+        order += 10;
+      }
+    }
+    projectUSProposedPlan = [];
+    closeSheet();
+    showToast(`Saved ${selected.length} entr${selected.length===1?'y':'ies'}.`);
+  } catch (err) {
+    console.error('Could not save voice plan:', err);
+    showToast('Some entries may have saved. Please check My Day before trying again.');
+    if (button) { button.disabled = false; button.textContent = 'Save selected entries'; }
+  }
+};
+
 /*
  * AI speech-to-text
  * Project-US uses Groq-hosted OpenAI Whisper instead of browser speech recognition.
@@ -944,7 +1046,7 @@ function renderToday(){
   document.getElementById('app').innerHTML=`<section class="fade"><div class="pt-3 pb-5"><div class="tiny-label">${fmtDate()}</div><div class="flex items-end justify-between gap-4 mt-2"><h2 class="serif text-4xl sm:text-5xl">Today.</h2><div class="relative w-16 h-16 rounded-full ring grid place-items-center" style="--pct:${pct}%"><div class="w-12 h-12 rounded-full bg-wineDeep grid place-items-center"><span class="mono text-xs">${mineDone}/${mine.length}</span></div></div></div></div>
   <div class="desktop-grid"><div class="space-y-4">
     <details class="card p-5" ${isPanelOpen(currentUser,'my-routines')?'open':''} ontoggle="rememberPanel('${currentUser}','my-routines',this.open)"><summary class="cursor-pointer list-none flex items-center justify-between"><div><div class="tiny-label">My day</div><h3 class="serif text-xl mt-1">${esc(getPronoun(currentUser))} routines</h3></div><span class="subtle">⌄</span></summary><div class="mt-4 space-y-2">${renderRoutineBuckets(mine,false,currentUser)}</div><div class="grid grid-cols-2 gap-2 mt-4"><button onclick="openRoutineEditor()" class="secondary">+ Add routine</button><button onclick="openNonNegotiablesManager()" class="secondary">Core / non-negotiables</button></div></details>
-    <div class="card p-5"><div class="tiny-label">Personal To-Do</div><h3 class="serif text-xl mt-1">One-off tasks</h3><form onsubmit="addTodo(event)" class="mt-3 space-y-2"><div class="flex gap-2"><input id="new-todo-input" class="input flex-1 py-2 text-sm" placeholder="Add a task..." required><button type="submit" class="primary py-2 px-4 text-sm">+</button></div><div class="grid grid-cols-2 gap-2"><div><label class="field-label" for="new-todo-date">Reminder date</label><input id="new-todo-date" type="date" class="input py-2 text-xs"></div><div><label class="field-label" for="new-todo-time">Reminder time</label><input id="new-todo-time" type="time" class="input py-2 text-xs"></div></div></form><div class="mt-4 space-y-2">${myTodos.map(t=>renderTodo(t)).join('')}${myCompletedTodos.map(t=>renderTodo(t,true)).join('')}</div></div>
+    <div class="card p-5"><div class="flex items-start justify-between gap-3"><div><div class="tiny-label">Personal To-Do</div><h3 class="serif text-xl mt-1">One-off tasks</h3></div><button type="button" onclick="openVoicePlanner()" class="secondary text-sm">🎙️ Plan by voice</button></div><form onsubmit="addTodo(event)" class="mt-3 space-y-2"><div class="flex gap-2"><input id="new-todo-input" class="input flex-1 py-2 text-sm" placeholder="Add a task..." required><button type="submit" class="primary py-2 px-4 text-sm">+</button></div><div class="grid grid-cols-2 gap-2"><div><label class="field-label" for="new-todo-date">Reminder date</label><input id="new-todo-date" type="date" class="input py-2 text-xs"></div><div><label class="field-label" for="new-todo-time">Reminder time</label><input id="new-todo-time" type="time" class="input py-2 text-xs"></div></div></form><div class="mt-4 space-y-2">${myTodos.map(t=>renderTodo(t)).join('')}${myCompletedTodos.map(t=>renderTodo(t,true)).join('')}</div></div>
     <details class="card p-5" ${isPanelOpen(currentUser,'shared-rhythms')?'open':''} ontoggle="rememberPanel('${currentUser}','shared-rhythms',this.open)"><summary class="cursor-pointer list-none flex items-center justify-between"><div><div class="tiny-label">Together</div><h3 class="serif text-xl mt-1">Our shared rhythms.</h3></div><span class="subtle">⌄</span></summary><div class="mt-4">${routineSection('OUR SHARED RHYTHMS',routines.filter(r=>r.owner==='Together'&&isActiveRoutine(r)),false,false)}</div></details>
     <div class="card p-5"><div class="flex items-center justify-between mb-3"><div><div class="tiny-label">Today together</div><h3 class="serif text-xl mt-1">Small things, together.</h3></div><button onclick="setTab('together')" class="subtle text-xs">Open →</button></div>${renderTodayTogether()}</div>
   </div><div class="space-y-4">
