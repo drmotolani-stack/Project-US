@@ -138,7 +138,12 @@ export default {
       return json({ error: 'GROQ_API_KEY is not configured on the Worker.' }, 500, origin, allowedOrigin);
     }
 
-    if ((request.headers.get('Content-Type') || '').includes('application/json')) {\n      return handleAssistant(request, env, origin, allowedOrigin);\n    }\n\n    try {\n      const incoming = await request.formData();
+    if ((request.headers.get('Content-Type') || '').includes('application/json')) {
+      return handleAssistant(request, env, origin, allowedOrigin);
+    }
+
+    try {
+      const incoming = await request.formData();
       const file = incoming.get('file');
 
       if (!(file instanceof File)) {
