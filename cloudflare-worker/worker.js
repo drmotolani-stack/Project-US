@@ -1,5 +1,92 @@
 const GROQ_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const MODEL = 'whisper-large-v3';
+const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const AI_MODEL = 'openai/gpt-oss-120b';
+
+async function handleAssistant(request, env, origin, allowedOrigin) {
+  let body;
+  try { body = await request.json(); }
+  catch (_) { return json({ error: 'Send a valid JSON request.' }, 400, origin, allowedOrigin); }
+
+  const action = String(body.action || '').trim();
+  const message = String(body.message || '').trim();
+  if (!['universal-capture', 'recall'].includes(action)) {
+    return json({ error: 'Unsupported assistant action.' }, 400, origin, allowedOrigin);
+  }
+  if (!message) return json({ error: 'Please provide a message.' }, 400, origin, allowedOrigin);
+  if (message.length > 12000) return json({ error: 'Message is too long (12,000 characters maximum).' }, 413, origin, allowedOrigin);
+
+  const context = body.context && typeof body.context === 'object' ? body.context : {};
+  const system = `You are Project-US, a careful assistant for a couple's shared life-management app.
+Use only the supplied app context; do not invent saved facts or claim something was saved.
+Existing Firestore collections are life_items, shared_items, todos, routines, and entries.
+Keep all existing categories; never create new categories. Preserve the user's original wording, especially spiritual, relationship, prophecy, confession, prayer, and testimony notes.
+Never perform database changes. Return suggestions only; a human must approve all changes.
+For action universal-capture, identify intent and suggest zero or more records. If unclear, ask one concise clarification question and do not guess.
+For action recall, answer only from the supplied context and cite the relevant records by collection and id. If evidence is absent, say you couldn't find it.
+Return valid JSON only, with this schema:
+{"action":"capture|recall|clarify","answer":"short user-facing response","clarification":null,"proposals":[{"collection":"life_items|shared_items|todos|routines|entries","type":"existing type or null","title":"...","content":"original wording or faithful excerpt","fields":{},"reason":"why this destination fits"}],"sources":[{"collection":"...","id":"...","title":"...","excerpt":"..."}]}
+Use empty arrays when there are no proposals or sources. Do not include markdown fences.`;
+  const payload = {
+    model: AI_MODEL,
+    temperature: 0.1,
+    max_completion_tokens: 1800,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: JSON.stringify({ action, message, context }) }
+    ]
+  };
+
+  try {
+    const response = await fetch(GROQ_CHAT_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const raw = await response.text();
+    if (!response.ok) {
+      let detail = raw;
+      try { detail = JSON.parse(raw)?.error?.message || raw; } catch (_) {}
+      return json({ error: `AI request failed: ${detail}` }, response.status, origin, allowedOrigin);
+    }
+    let parsed;
+    try {
+      const envelope = JSON.parse(raw);
+      parsed = JSON.parse(envelope.choices?.[0]?.message?.content || '{}');
+    } catch (_) {
+      return json({ error: 'AI returned an invalid structured response. Please try again.' }, 502, origin, allowedOrigin);
+    }
+    const validCollections = new Set(['life_items', 'shared_items', 'todos', 'routines', 'entries']);
+    const proposals = Array.isArray(parsed.proposals) ? parsed.proposals.filter(p =>
+      p && validCollections.has(p.collection) && typeof p.title === 'string'
+    ).map(p => ({
+      collection: p.collection,
+      type: typeof p.type === 'string' ? p.type : null,
+      title: p.title.slice(0, 240),
+      content: typeof p.content === 'string' ? p.content.slice(0, 12000) : '',
+      fields: p.fields && typeof p.fields === 'object' && !Array.isArray(p.fields) ? p.fields : {},
+      reason: typeof p.reason === 'string' ? p.reason.slice(0, 500) : ''
+    })) : [];
+    const sources = Array.isArray(parsed.sources) ? parsed.sources.filter(s =>
+      s && validCollections.has(s.collection) && typeof s.id === 'string'
+    ).map(s => ({
+      collection: s.collection, id: s.id,
+      title: String(s.title || '').slice(0, 240),
+      excerpt: String(s.excerpt || '').slice(0, 1200)
+    })) : [];
+    return json({
+      action: ['capture', 'recall', 'clarify'].includes(parsed.action) ? parsed.action : (action === 'recall' ? 'recall' : 'capture'),
+      answer: String(parsed.answer || '').slice(0, 5000),
+      clarification: typeof parsed.clarification === 'string' ? parsed.clarification.slice(0, 500) : null,
+      proposals, sources
+    }, 200, origin, allowedOrigin);
+  } catch (error) {
+    console.error('Project-US assistant Worker error:', error);
+    return json({ error: 'The Project-US assistant could not complete that request.' }, 500, origin, allowedOrigin);
+  }
+}
+
 
 function corsHeaders(origin, allowedOrigin) {
   const allowed = allowedOrigin && origin === allowedOrigin ? origin : null;
@@ -51,8 +138,7 @@ export default {
       return json({ error: 'GROQ_API_KEY is not configured on the Worker.' }, 500, origin, allowedOrigin);
     }
 
-    try {
-      const incoming = await request.formData();
+    if ((request.headers.get('Content-Type') || '').includes('application/json')) {\n      return handleAssistant(request, env, origin, allowedOrigin);\n    }\n\n    try {\n      const incoming = await request.formData();
       const file = incoming.get('file');
 
       if (!(file instanceof File)) {
