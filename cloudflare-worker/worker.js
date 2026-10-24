@@ -144,9 +144,9 @@ export default {
       return json({ error: 'GROQ_API_KEY is not configured on the Worker.' }, 500, origin, allowedOrigin);
     }
 
-    if (new URL(request.url).pathname.replace(/\\/$/, '') === '/plan') {
+    if (new URL(request.url).pathname.replace(/\/$/, '') === '/plan') {
       const body = await request.json();
-      return handleAssistant(new Request(request.url.replace(/\\/$/, '') + '/assist', {
+      return handleAssistant(new Request(request.url.replace(/\/$/, '') + '/assist', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Origin': origin },
         body: JSON.stringify({ action: 'plan', text: body.text, context: { existing_routines: body.existing_routines || [], existing_todos: body.existing_todos || [] } })
       }), env, origin, allowedOrigin);
