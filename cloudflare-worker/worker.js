@@ -9,24 +9,25 @@ async function handleAssistant(request, env, origin, allowedOrigin) {
   catch (_) { return json({ error: 'Send a valid JSON request.' }, 400, origin, allowedOrigin); }
 
   const action = String(body.action || '').trim();
-  const message = String(body.message || '').trim();
-  if (!['universal-capture', 'recall'].includes(action)) {
+  const message = String(body.message || body.text || '').trim();
+  if (!['universal-capture', 'recall', 'activities-organize', 'life-organize', 'pulse-reflection', 'plan'].includes(action)) {
     return json({ error: 'Unsupported assistant action.' }, 400, origin, allowedOrigin);
   }
   if (!message) return json({ error: 'Please provide a message.' }, 400, origin, allowedOrigin);
   if (message.length > 12000) return json({ error: 'Message is too long (12,000 characters maximum).' }, 413, origin, allowedOrigin);
 
-  const context = body.context && typeof body.context === 'object' ? body.context : {};
-  const system = `You are Project-US, a careful assistant for a couple's shared life-management app.
-Use only the supplied app context; do not invent saved facts or claim something was saved.
-Existing Firestore collections are life_items, shared_items, todos, routines, and entries.
-Keep all existing categories; never create new categories. Preserve the user's original wording, especially spiritual, relationship, prophecy, confession, prayer, and testimony notes.
-Never perform database changes. Return suggestions only; a human must approve all changes.
-For action universal-capture, identify intent and suggest zero or more records. If unclear, ask one concise clarification question and do not guess.
-For action recall, answer only from the supplied context and cite the relevant records by collection and id. If evidence is absent, say you couldn't find it.
-Return valid JSON only, with this schema:
-{"action":"capture|recall|clarify","answer":"short user-facing response","clarification":null,"proposals":[{"collection":"life_items|shared_items|todos|routines|entries","type":"existing type or null","title":"...","content":"original wording or faithful excerpt","fields":{},"reason":"why this destination fits"}],"sources":[{"collection":"...","id":"...","title":"...","excerpt":"..."}]}
-Use empty arrays when there are no proposals or sources. Do not include markdown fences.`;
+  const context = body.context && typeof body.context === 'object' ? body.context : Object.fromEntries(Object.entries(body).filter(([k]) => !['action','message'].includes(k)));
+  const system = action === 'universal-capture'
+    ? "You classify entries for Project-US. Return JSON only: {items:[{destination,type,title,text,subtitle,section,month,scheduleDate,scheduleTime,category,frequency,confidence,clarification}]}. Destinations: life_item, shared_activity, todo, routine, clarify. Existing Our Life types: Prophecy, Confession, Faith Project, Testimony, Church Takeaway, Intercessory Focus, Vision Board, Role Model. Use Church Takeaway for after-church learnings. Prayer Focus uses a special weekday form: clarify instead. Existing shared types: Book, Message, Conversation, Agreement, Prayer, Topic, Shared activity, Review period. Preserve original words in text, especially spiritual notes. Never invent dates, tabs, categories or commitments. Use clarify if uncertain. Return up to 10 items. Never save."
+    : action === 'activities-organize'
+    ? "Organize a couple's shared activity idea. Return JSON {suggestion:{title,type,subtitle,month,scheduleDate,section}}. Allowed types: Book, Message, Conversation, Agreement, Prayer, Topic, Shared activity, Review period. section journey or general. Do not invent dates or commitments. Never save."
+    : action === 'life-organize'
+    ? "Suggest metadata for a personal life entry. Return JSON {suggestion:{title,type,actionPoints}}. Suggest type only from allowedTypes. Never rewrite or summarize the original text, especially prayers, prophecies, confessions and testimonies. Never save."
+    : action === 'pulse-reflection'
+    ? "Write a gentle reflection using only supplied activity counts. Return JSON {reflection:string}, under 160 words. Do not shame, rank, diagnose or assume feelings. Never save."
+    : action === 'plan'
+    ? "Help plan tasks. Return JSON {tasks:[{title,type,duration_minutes,frequency,category,missing_information}]}. type routine or small-todo; frequency daily, weekdays, weekly, or project. Avoid duplicates from existing routines/todos. One-off tasks are small-todo unless recurrence is explicit. Do not save."
+    : "Answer questions only from supplied saved-record context. Return JSON {action:'recall',answer:string,sources:[{collection,id,title,excerpt}]}. Do not invent facts. If evidence is missing, say you couldn't find it.";
   const payload = {
     model: AI_MODEL,
     temperature: 0.1,
@@ -76,10 +77,15 @@ Use empty arrays when there are no proposals or sources. Do not include markdown
       excerpt: String(s.excerpt || '').slice(0, 1200)
     })) : [];
     return json({
+      ...parsed,
       action: ['capture', 'recall', 'clarify'].includes(parsed.action) ? parsed.action : (action === 'recall' ? 'recall' : 'capture'),
       answer: String(parsed.answer || '').slice(0, 5000),
       clarification: typeof parsed.clarification === 'string' ? parsed.clarification.slice(0, 500) : null,
-      proposals, sources
+      proposals, sources,
+      items: Array.isArray(parsed.items) ? parsed.items.slice(0, 10) : undefined,
+      suggestion: parsed.suggestion && typeof parsed.suggestion === 'object' ? parsed.suggestion : undefined,
+      tasks: Array.isArray(parsed.tasks) ? parsed.tasks.slice(0, 20) : undefined,
+      reflection: typeof parsed.reflection === 'string' ? parsed.reflection.slice(0, 1800) : undefined
     }, 200, origin, allowedOrigin);
   } catch (error) {
     console.error('Project-US assistant Worker error:', error);
@@ -136,6 +142,14 @@ export default {
 
     if (!env.GROQ_API_KEY) {
       return json({ error: 'GROQ_API_KEY is not configured on the Worker.' }, 500, origin, allowedOrigin);
+    }
+
+    if (new URL(request.url).pathname.replace(/\\/$/, '') === '/plan') {
+      const body = await request.json();
+      return handleAssistant(new Request(request.url.replace(/\\/$/, '') + '/assist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Origin': origin },
+        body: JSON.stringify({ action: 'plan', text: body.text, context: { existing_routines: body.existing_routines || [], existing_todos: body.existing_todos || [] } })
+      }), env, origin, allowedOrigin);
     }
 
     if ((request.headers.get('Content-Type') || '').includes('application/json')) {
