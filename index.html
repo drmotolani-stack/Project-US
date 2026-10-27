@@ -755,11 +755,17 @@ let projectUSAudioChunks = [];
 let projectUSDictationInputId = null;
 let projectUSDictationStream = null;
 let projectUSDictationButton = null;
+let projectUSSilenceContext = null;
+let projectUSSilenceFrame = null;
+let projectUSSilenceSource = null;
 
 function projectUSAppendTranscript(inputEl, transcript) {
   const clean = String(transcript || '').trim();
   if (!clean) return;
-  const existing = String(inputEl.value || '').trim();
+  // Talk to Project-US is a command composer: a fresh dictation is a fresh command,
+  // not an accidental append to the previous transcript. Other fields retain append behavior.
+  const isCommandComposer = inputEl.id === 'universal-input';
+  const existing = isCommandComposer ? '' : String(inputEl.value || '').trim();
   inputEl.value = existing ? `${existing}\n${clean}` : clean;
   inputEl.dispatchEvent(new Event('input', { bubbles: true }));
   inputEl.dispatchEvent(new Event('change', { bubbles: true }));
@@ -789,6 +795,9 @@ function projectUSStopDictation() {
 }
 
 function projectUSResetDictationUI() {
+  if (projectUSSilenceFrame !== null) { cancelAnimationFrame(projectUSSilenceFrame); projectUSSilenceFrame = null; }
+  if (projectUSSilenceSource) { try { projectUSSilenceSource.disconnect(); } catch (_) {} projectUSSilenceSource = null; }
+  if (projectUSSilenceContext) { try { projectUSSilenceContext.close(); } catch (_) {} projectUSSilenceContext = null; }
   if (projectUSDictationButton) {
     projectUSDictationButton.textContent = '🎙️ AI Dictate';
     projectUSDictationButton.disabled = false;
@@ -829,6 +838,11 @@ async function projectUSTranscribeAudio(blob, inputId) {
   const inputEl = document.getElementById(inputId);
   if (!inputEl) throw new Error('The text field is no longer available.');
   projectUSAppendTranscript(inputEl, transcript);
+  // Talk to Project-US runs the command automatically after speech has been transcribed.
+  if (inputId === 'universal-input' && typeof window.runProjectUSRoutineCommand === 'function') {
+    await new Promise(resolve => setTimeout(resolve, 120));
+    await window.runProjectUSRoutineCommand({ source: 'dictation' });
+  }
   return transcript;
 }
 
@@ -919,7 +933,39 @@ window.startDictation = async function(inputId) {
     };
 
     recorder.start(250);
-    showToast('Recording… tap Stop & transcribe when you finish.');
+
+    // Hands-free mode: stop after speech followed by ~2 seconds of silence.
+    // The manual Stop button remains available, and a 90-second cap prevents runaway recording.
+    let speechDetected = false;
+    let lastVoiceAt = Date.now();
+    const startedAt = Date.now();
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        projectUSSilenceContext = new AudioCtx();
+        const source = projectUSSilenceContext.createMediaStreamSource(projectUSDictationStream);
+        const analyser = projectUSSilenceContext.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+        projectUSSilenceSource = source;
+        const samples = new Uint8Array(analyser.fftSize);
+        const watchSilence = () => {
+          if (!projectUSMediaRecorder || projectUSMediaRecorder.state !== 'recording') return;
+          analyser.getByteTimeDomainData(samples);
+          let sum = 0;
+          for (let i = 0; i < samples.length; i++) { const v = (samples[i] - 128) / 128; sum += v * v; }
+          const rms = Math.sqrt(sum / samples.length);
+          if (rms > 0.018) { speechDetected = true; lastVoiceAt = Date.now(); }
+          if ((speechDetected && Date.now() - lastVoiceAt > 1900) || Date.now() - startedAt > 90000) {
+            projectUSStopDictation();
+            return;
+          }
+          projectUSSilenceFrame = requestAnimationFrame(watchSilence);
+        };
+        projectUSSilenceFrame = requestAnimationFrame(watchSilence);
+      }
+    } catch (silenceError) { console.warn('Hands-free silence detection unavailable; use Stop & transcribe.', silenceError); }
+    showToast('Speak naturally. I’ll stop after you finish, transcribe, then run your command.');
   } catch (error) {
     console.error('Project-US microphone error:', error);
     projectUSResetDictationUI();
@@ -2326,8 +2372,8 @@ window.openUniversalAssistant=function(){
     <div class="space-y-3">
       <p class="subtle text-sm">Tell me what you mean in your own words. I can interpret everyday descriptions, log shared routines for a past date, find entries, schedule tasks, rename them, mark them complete, report pending work and flag possible duplicates. Historical updates are previewed before saving.</p>
       <textarea id="universal-input" class="input universal-command pus-manager-command w-full" rows="5" placeholder="Try: We did all four daily activities yesterday.\nOr: We completed Pray Together and Morning Dew on Saturday.\nOr: What is pending?"></textarea>
-      <div class="grid grid-cols-2 gap-2"><button type="button" class="secondary" data-project-us-dictate="universal-input" onclick="startDictation('universal-input')">🎙️ Speak</button><button type="button" class="primary" id="universal-prepare" onclick="runProjectUSRoutineCommand()">Run command →</button></div>
-      <div class="pus-manager-help">Examples: “Yesterday was productive; we did all our usual activities”; “We prayed together and did our devotional on Saturday”; “Move CFA study to tomorrow at 7 pm”; “What still needs doing?”; “Can you spot any duplicates?”</div>
+      <div class="grid grid-cols-2 gap-2"><button type="button" class="secondary" data-project-us-dictate="universal-input" onclick="startDictation('universal-input')">🎙️ Speak hands-free</button><button type="button" class="primary" id="universal-prepare" onclick="runProjectUSRoutineCommand()">Run typed command →</button></div>
+      <div class="pus-manager-help">For voice: tap Speak hands-free, say your request, then pause. Project-US will transcribe and run it automatically. Each new dictation starts a fresh command. You can still type and use Run typed command. Examples: “Yesterday was productive; we did all our usual activities”; “We prayed together and did our devotional on Saturday”; “Move CFA study to tomorrow at 7 pm”; “What still needs doing?”; “Can you spot any duplicates?”</div>
       <div id="pus-manager-results" aria-live="polite"></div>
     </div>`);
 };
@@ -2458,7 +2504,7 @@ window.runProjectUSRoutineCommand=async function(){
  if(isSchedule){if(hit.kind!=='todo'){out.innerHTML=`<div class="pus-manager-result"><strong>This entry isn't a one-off task.</strong><small>“${esc(hit.label)}” is a ${hit.kind}. Date/time scheduling is currently supported for personal tasks. No changes made.</small></div>`;return;}const date=pusManagerDate(cmd)||hit.record.reminderDate||'',time=pusManagerTime(cmd)||hit.record.reminderTime||'';if(!date||!time){out.innerHTML=`<div class="pus-manager-result"><strong>I found “${esc(hit.label)}”, but need both date and time.</strong><small>Try: Schedule ${esc(hit.label)} for tomorrow at 4 pm.</small></div>`;return;}await updateDoc(doc(db,'todos',hit.id),{reminderDate:date,reminderTime:time,reminderEnabled:true,reminderSentKey:null,updatedAt:serverTimestamp()});out.innerHTML=`<div class="pus-manager-result"><strong>Task scheduled</strong><small>${esc(hit.label)} · ${esc(date)} at ${esc(pusManagerFormatTime(time))}</small></div>`;render();return;}
  out.innerHTML=`<div class="pus-manager-result"><strong>Found: ${esc(hit.label)}</strong><small>${hit.kind} · ${hit.done?'completed':'pending'}${hit.when?' · '+esc(hit.when):''}</small><small>Try “rename ${esc(hit.label)} to [new title]”, “schedule ${esc(hit.label)} for tomorrow at 4 pm”, or “mark ${esc(hit.label)} complete”.</small></div>`;
  }catch(e){console.error('Talk to Project-US:',e);if(out)out.innerHTML=`<div class="pus-manager-result"><strong>Couldn't complete that action.</strong><small>${esc(e.message||'Please try again.')}</small></div>`;}
- finally{if(btn){btn.disabled=false;btn.textContent='Run command →';}}
+ finally{if(btn){btn.disabled=false;btn.textContent='Run typed command →';}if(out&&out.innerHTML.trim()&&el){el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));}}
 };
 
 </script>
