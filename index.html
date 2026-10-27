@@ -2313,16 +2313,16 @@ window.saveUniversalCapture=async function(){
   if(document.getElementById('project-us-universal-button'))return;
   const b=document.createElement('button');b.id='project-us-universal-button';b.type='button';b.textContent='🎙 Talk to Project-US';b.setAttribute('aria-label','Open universal voice assistant');
   b.style.cssText='position:fixed;right:16px;bottom:calc(112px + env(safe-area-inset-bottom,0px));z-index:130;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:12px 16px;background:#7b2945;color:#fff;font-weight:650;font-size:13px;box-shadow:0 8px 28px rgba(0,0,0,.28);cursor:pointer';
-  b.addEventListener('click',window.openUniversalAssistant);document.body.appendChild(b);
+  b.addEventListener('click',()=>window.openUniversalAssistant());document.body.appendChild(b);
 })();
 
 
-/* Project-US Routine Manager v1: natural-language search, schedule, edit, complete and pending report. */
+/* Project-US conversational assistant: natural-language search, schedule, edit, complete and pending report. */
 (function installRoutineManager(){
   const style=document.createElement('style');style.textContent=`.pus-manager-help{font-size:12px;line-height:1.65;color:var(--muted)}.pus-manager-result{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--panel2);margin-top:9px}.pus-manager-result small{display:block;color:var(--muted);margin-top:4px}.pus-manager-command{min-height:118px!important}`;document.head.appendChild(style);
 })();
 window.openUniversalAssistant=function(){
-  setComposer('Project-US Routine Manager','Speak or type · search, edit, schedule, report',`
+  setComposer('Talk to Project-US','Speak or type naturally · routines, tasks, plans and reflections',`
     <div class="space-y-3">
       <p class="subtle text-sm">Tell me what you mean in your own words. I can interpret everyday descriptions, log shared routines for a past date, find entries, schedule tasks, rename them, mark them complete, report pending work and flag possible duplicates. Historical updates are previewed before saving.</p>
       <textarea id="universal-input" class="input universal-command pus-manager-command w-full" rows="5" placeholder="Try: We did all four daily activities yesterday.\nOr: We completed Pray Together and Morning Dew on Saturday.\nOr: What is pending?"></textarea>
@@ -2457,7 +2457,7 @@ window.runProjectUSRoutineCommand=async function(){
  if(isComplete){if(hit.kind==='todo')await updateDoc(doc(db,'todos',hit.id),{completed:true,updatedAt:serverTimestamp()});else if(hit.kind==='routine'){if(!completions[routineCompletionKey(hit.record)])await window.toggleRoutine(hit.id);}else await updateDoc(doc(db,'shared_items',hit.id),{status:'Completed',active:false,updatedBy:currentUser,updatedAt:serverTimestamp()});out.innerHTML=`<div class="pus-manager-result"><strong>Marked complete</strong><small>${esc(hit.label)}</small></div>`;render();return;}
  if(isSchedule){if(hit.kind!=='todo'){out.innerHTML=`<div class="pus-manager-result"><strong>This entry isn't a one-off task.</strong><small>“${esc(hit.label)}” is a ${hit.kind}. Date/time scheduling is currently supported for personal tasks. No changes made.</small></div>`;return;}const date=pusManagerDate(cmd)||hit.record.reminderDate||'',time=pusManagerTime(cmd)||hit.record.reminderTime||'';if(!date||!time){out.innerHTML=`<div class="pus-manager-result"><strong>I found “${esc(hit.label)}”, but need both date and time.</strong><small>Try: Schedule ${esc(hit.label)} for tomorrow at 4 pm.</small></div>`;return;}await updateDoc(doc(db,'todos',hit.id),{reminderDate:date,reminderTime:time,reminderEnabled:true,reminderSentKey:null,updatedAt:serverTimestamp()});out.innerHTML=`<div class="pus-manager-result"><strong>Task scheduled</strong><small>${esc(hit.label)} · ${esc(date)} at ${esc(pusManagerFormatTime(time))}</small></div>`;render();return;}
  out.innerHTML=`<div class="pus-manager-result"><strong>Found: ${esc(hit.label)}</strong><small>${hit.kind} · ${hit.done?'completed':'pending'}${hit.when?' · '+esc(hit.when):''}</small><small>Try “rename ${esc(hit.label)} to [new title]”, “schedule ${esc(hit.label)} for tomorrow at 4 pm”, or “mark ${esc(hit.label)} complete”.</small></div>`;
- }catch(e){console.error('Project-US Routine Manager:',e);if(out)out.innerHTML=`<div class="pus-manager-result"><strong>Couldn't complete that action.</strong><small>${esc(e.message||'Please try again.')}</small></div>`;}
+ }catch(e){console.error('Talk to Project-US:',e);if(out)out.innerHTML=`<div class="pus-manager-result"><strong>Couldn't complete that action.</strong><small>${esc(e.message||'Please try again.')}</small></div>`;}
  finally{if(btn){btn.disabled=false;btn.textContent='Run command →';}}
 };
 
