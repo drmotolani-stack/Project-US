@@ -2316,6 +2316,95 @@ window.saveUniversalCapture=async function(){
   b.addEventListener('click',window.openUniversalAssistant);document.body.appendChild(b);
 })();
 
+
+/* Project-US Routine Manager v1: natural-language search, schedule, edit, complete and pending report. */
+(function installRoutineManager(){
+  const style=document.createElement('style');style.textContent=`.pus-manager-help{font-size:12px;line-height:1.65;color:var(--muted)}.pus-manager-result{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--panel2);margin-top:9px}.pus-manager-result small{display:block;color:var(--muted);margin-top:4px}.pus-manager-command{min-height:118px!important}`;document.head.appendChild(style);
+})();
+window.openUniversalAssistant=function(){
+  setComposer('Project-US Routine Manager','Speak or type · search, edit, schedule, report',`
+    <div class="space-y-3">
+      <p class="subtle text-sm">Tell me what to do with your tasks, routines and shared activities. I can log shared daily routines for a past date, find entries, schedule tasks, rename them, mark them complete, report pending work and flag possible duplicates. Historical updates are previewed before saving.</p>
+      <textarea id="universal-input" class="input universal-command pus-manager-command w-full" rows="5" placeholder="Try: We did all four daily activities yesterday.\nOr: Schedule CFA study for tomorrow at 7 pm.\nOr: What is pending?"></textarea>
+      <div class="grid grid-cols-2 gap-2"><button type="button" class="secondary" data-project-us-dictate="universal-input" onclick="startDictation('universal-input')">🎙️ Speak</button><button type="button" class="primary" id="universal-prepare" onclick="runProjectUSRoutineCommand()">Run command →</button></div>
+      <div class="pus-manager-help">Examples: “We did all four daily activities yesterday”; “We completed Morning Dew on Saturday”; “Move CFA study to tomorrow at 7 pm”; “Show my pending tasks”; “Find duplicates”.</div>
+      <div id="pus-manager-results" aria-live="polite"></div>
+    </div>`);
+};
+function pusManagerTokens(s){return String(s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>1&&!['please','project','us','task','tasks','routine','routines','schedule','reschedule','move','set','for','the','my','a','an','to','at','on','of','me','today','tomorrow','this','next','by','with','and','edit','update','change','rename','mark','complete','completed','done','show','find','list','report','pending','what','is','are','have','got','i','want','need','duplicate','duplicates'].includes(w));}
+function pusManagerMatch(query,items){const q=pusManagerTokens(query);if(!q.length)return [];return items.map(item=>{const t=pusManagerTokens(item.label),set=new Set(t),hit=q.filter(w=>set.has(w)).length,contain=String(item.label).toLowerCase().includes(String(query).toLowerCase()),score=contain?1:hit/Math.max(1,new Set(q).size);return {...item,score,hit};}).filter(x=>x.score>=.34&&x.hit>=1).sort((a,b)=>b.score-a.score);}
+function pusManagerItems(){return [
+ ...todos.filter(x=>x.owner===currentUser&&!x.archived).map(x=>({kind:'todo',id:x.id,label:x.text,record:x,done:!!x.completed,when:x.reminderDate?formatSchedule(x.reminderDate,x.reminderTime):''})),
+ ...routines.filter(x=>x.owner===currentUser&&!x.archived).map(x=>({kind:'routine',id:x.id,label:x.name,record:x,done:!!completions[routineCompletionKey(x)],when:x.frequency||'daily'})),
+ ...sharedItems.filter(x=>!x.archived&&x.owner===currentUser).map(x=>({kind:'activity',id:x.id,label:x.title,record:x,done:x.status==='Completed',when:x.scheduleDate?formatSchedule(x.scheduleDate,x.scheduleTime):''}))
+];}
+function pusManagerDate(text){const now=new Date(),s=String(text||'').toLowerCase();if(/\btoday\b/.test(s))return projectUSDateKey(now);if(/\btomorrow\b/.test(s)){now.setDate(now.getDate()+1);return projectUSDateKey(now);}const m=s.match(/\b(20\d{2}-\d{2}-\d{2})\b/);if(m)return m[1];const days={sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};const d=s.match(/\b(next\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);if(d){let delta=(days[d[2]]-now.getDay()+7)%7;if(delta===0||d[1])delta+=7;now.setDate(now.getDate()+delta);return projectUSDateKey(now);}return '';}
+function pusManagerHistoricalDate(text){
+ const s=String(text||'').toLowerCase(),now=new Date();now.setHours(0,0,0,0);
+ const iso=s.match(/\b(20\d{2}-\d{2}-\d{2})\b/);if(iso)return iso[1];
+ let back=null;if(/\bday before yesterday\b/.test(s))back=2;else if(/\byesterday\b|\blast night\b/.test(s))back=1;
+ if(back!==null){now.setDate(now.getDate()-back);return dateKey(now);}
+ const days={sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
+ const m=s.match(/\b(?:last\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+ if(m){let delta=(now.getDay()-days[m[1]]+7)%7;if(delta===0||/\blast\s+/.test(m[0]))delta=delta||7;now.setDate(now.getDate()-delta);return dateKey(now);}
+ return '';
+}
+function pusManagerHistoricalRoutines(cmd){
+ const s=String(cmd||'').toLowerCase();
+ const intent=/(\bwe\b|\bi\b|\bus\b|\btogether\b|\bcompleted\b|\bcomplete\b|\bdid\b|\bfinished\b|\blog\b|\bmark\b).*(\byesterday\b|\blast night\b|\bday before yesterday\b|\bon (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b|\b20\d{2}-\d{2}-\d{2}\b|\blast (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b)/.test(s) || /\b(?:retroactively|retrospective|backdate|backfill)\b/.test(s);
+ if(!intent)return null;
+ const date=pusManagerHistoricalDate(s);if(!date)return {error:'Which date should I log? Try “yesterday”, “Saturday”, or YYYY-MM-DD.'};
+ const routinesToLog=routines.filter(r=>r.owner==='Together'&&!r.archived&&['daily','weekdays'].includes(r.frequency)&&(!r.startDate||date>=r.startDate)&&(!r.endDate||date<=r.endDate));
+ const specific= routinesToLog.filter(r=>pusManagerTokens(s).some(w=>pusManagerTokens(r.name).includes(w)));
+ const allFour=/\b(all|four|4|every|our daily|daily activities|daily routines|everything)\b/.test(s);
+ const selected=allFour||specific.length===0?routinesToLog:specific;
+ if(!selected.length)return {error:'I could not find any eligible shared daily routines for that date.'};
+ const already=selected.filter(r=>completionHistory.some(c=>c.id===routineCompletionKey(r, new Date(date+'T12:00:00'))|| (c.routineId===r.id&&c.date===date)));
+ return {date,selected,already,toSave:selected.filter(r=>!already.includes(r))};
+}
+window.confirmHistoricalRoutineLog=async function(date,ids){
+ const out=document.getElementById('pus-manager-results'),btn=document.getElementById('pus-historical-save');if(btn){btn.disabled=true;btn.textContent='Saving…';}
+ try{
+  const selected=(ids||[]).map(id=>routines.find(r=>r.id===id)).filter(Boolean);let saved=0,skipped=0;
+  for(const r of selected){const key=routineCompletionKey(r,new Date(date+'T12:00:00'));if(completionHistory.some(c=>c.id===key|| (c.routineId===r.id&&c.date===date))){skipped++;continue;}
+   await setDoc(doc(db,'routine_completions',key),{routineId:r.id,owner:r.owner,date,period:r.frequency==='weekly'?weekKey(new Date(date+'T12:00:00')):r.frequency==='project'?'project':date,frequency:r.frequency,completedBy:currentUser,completedAt:serverTimestamp(),loggedRetrospectively:true,loggedAt:serverTimestamp()});saved++;
+  }
+  if(out)out.innerHTML=`<div class="pus-manager-result"><strong>Historical log saved</strong><small>${saved} shared routine${saved===1?'':'s'} recorded for ${esc(date)}${skipped?` · ${skipped} already logged, so not duplicated`:''}. Pulse will refresh from the saved completion records.</small></div>`;
+  render();
+ }catch(e){console.error('Historical routine log failed',e);if(out)out.innerHTML=`<div class="pus-manager-result"><strong>Could not save the historical log</strong><small>${esc(e.message||'Please try again when connected.')}</small></div>`;}
+};
+
+function pusManagerTime(text){const s=String(text||'').toLowerCase();let m=s.match(/\b(1[0-2]|0?\d)(?::([0-5]\d))?\s*(a\.?m\.?|p\.?m\.?)\b/);if(m){let h=Number(m[1])%12;if(/^p/.test(m[3]))h+=12;return String(h).padStart(2,'0')+':'+(m[2]||'00');}m=s.match(/\b(?:at\s+)?([01]?\d|2[0-3]):([0-5]\d)\b/);if(m)return String(Number(m[1])).padStart(2,'0')+':'+m[2];return '';}
+function pusManagerFormatTime(t){if(!t)return '';const [h,m]=t.split(':').map(Number);return `${h%12||12}${m?':'+String(m).padStart(2,'0'):''} ${h>=12?'pm':'am'}`;}
+function pusManagerReport(kind){const all=pusManagerItems(),pending=all.filter(x=>!x.done),overdue=pending.filter(x=>x.kind==='todo'&&x.record.reminderDate&&x.record.reminderDate<projectUSDateKey()),today=pending.filter(x=>x.kind==='todo'&&x.record.reminderDate===projectUSDateKey());if(kind==='pending')return `<div class="pus-manager-result"><strong>Pending work</strong><small>${pending.length} open entries · ${overdue.length} overdue · ${today.length} scheduled today</small>${pending.slice(0,25).map(x=>`<div class="mt-2 text-sm">• ${esc(x.label)} <span class="subtle">(${x.kind}${x.when?' · '+esc(x.when):''})</span></div>`).join('')||'<p class="subtle mt-2">Nothing pending. You are all caught up.</p>'}</div>`;const done=all.filter(x=>x.done);return `<div class="pus-manager-result"><strong>Your routine report</strong><small>${all.length} active entries · ${pending.length} pending · ${done.length} completed</small><div class="mt-3 text-sm">${pending.slice(0,12).map(x=>`<div class="mt-1">○ ${esc(x.label)}${x.when?' · '+esc(x.when):''}</div>`).join('')||'No pending entries.'}</div></div>`;}
+function pusManagerDuplicates(){const items=pusManagerItems().filter(x=>!x.done),pairs=[];for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){const a=new Set(pusManagerTokens(items[i].label)),b=new Set(pusManagerTokens(items[j].label));if(!a.size||!b.size)continue;const inter=[...a].filter(w=>b.has(w)).length,sim=inter/(a.size+b.size-inter);if(sim>=.7)pairs.push({a:items[i],b:items[j],sim});}return pairs.sort((a,b)=>b.sim-a.sim).slice(0,15);}
+window.runProjectUSRoutineCommand=async function(){
+ const el=document.getElementById('universal-input'),cmd=String(el?.value||'').trim();if(!cmd)return showToast('Say or type a command first.');const btn=document.getElementById('universal-prepare'),out=document.getElementById('pus-manager-results');if(btn){btn.disabled=true;btn.textContent='Working…';}if(out)out.innerHTML='';
+ try{
+ const s=cmd.toLowerCase(),items=pusManagerItems();
+ const historical=pusManagerHistoricalRoutines(cmd);
+ if(historical){if(historical.error){out.innerHTML=`<div class="pus-manager-result"><strong>One detail needed</strong><small>${esc(historical.error)}</small></div>`;return;}const list=historical.selected.map(r=>`<div class="mt-2 text-sm">${historical.already.includes(r)?'✓':'○'} ${esc(r.name)} <small>${historical.already.includes(r)?'already logged':'will be added'}</small></div>`).join('');out.innerHTML=`<div class="pus-manager-result"><strong>Review historical completions</strong><small>Date: ${esc(historical.date)} · ${historical.toSave.length} new record${historical.toSave.length===1?'':'s'} · ${historical.already.length} already logged</small>${list}${historical.toSave.length?`<button id="pus-historical-save" class="primary w-full mt-3" onclick="confirmHistoricalRoutineLog('${historical.date}',${JSON.stringify(historical.toSave.map(r=>r.id)).replace(/"/g,'&quot;')})">Confirm and update Pulse</button>`:'<p class="subtle mt-3">Nothing new to save.</p>'}</div>`;return;}
+ if(/\b(duplicate|duplicates|similar entries|clean up duplicates)\b/.test(s)){const pairs=pusManagerDuplicates();out.innerHTML=`<div class="pus-manager-result"><strong>Possible duplicates</strong><small>Review these before merging or archiving anything.</small>${pairs.map(p=>`<div class="mt-3 text-sm">• ${esc(p.a.label)} <span class="subtle">(${p.a.kind})</span><br>↳ ${esc(p.b.label)} <span class="subtle">(${p.b.kind})</span><small>${Math.round(p.sim*100)}% wording similarity</small></div>`).join('')||'<p class="subtle mt-2">No obvious duplicates found.</p>'}</div>`;return;}
+ if(/\b(pending|what needs|what do i need|what is left|what's left|to do list|status report|report)\b/.test(s)&&!/\b(schedule|reschedule|move|rename|change|edit|complete|mark)\b/.test(s)){out.innerHTML=pusManagerReport(/\breport\b/.test(s)?'report':'pending');return;}
+ if(/\b(list|show|find|search|look for|look through|review)\b/.test(s)&&!/\b(schedule|reschedule|move|rename|change|edit|complete|mark)\b/.test(s)){const q=cmd.replace(/^.*?\b(?:list|show|find|search|look for|look through|review)\b/i,'').replace(/\b(my|all|existing|entries|tasks|routines)\b/gi,'').trim();const hits=q?pusManagerMatch(q,items):items;out.innerHTML=`<div class="pus-manager-result"><strong>${hits.length} matching entr${hits.length===1?'y':'ies'}</strong>${hits.slice(0,25).map(x=>`<div class="mt-2 text-sm">• ${esc(x.label)} <small>${x.kind}${x.done?' · completed':' · pending'}${x.when?' · '+esc(x.when):''}</small></div>`).join('')||'<p class="subtle mt-2">No matching entries found.</p>'}</div>`;return;}
+ const isSchedule=/\b(schedule|reschedule|move|set .*?(?:time|date)|put .*?(?:at|on)|remind me|at\s+\d)/.test(s),isComplete=/\b(mark .*?(?:complete|completed|done)|complete|completed|mark as done)\b/.test(s),renameMatch=cmd.match(/(?:rename|change|edit|update)\s+(.+?)\s+(?:to|as)\s+(.+)$/i),addMatch=cmd.match(/^(?:please\s+)?(?:add|create|save)\s+(?:a\s+)?(?:new\s+)?(?:task|to-?do)\s*[:,-]?\s*(.+)$/i);
+ if(addMatch){const title=addMatch[1].replace(/\b(?:today|tomorrow|at\s+\d.*|on\s+20\d{2}-\d{2}-\d{2}).*$/i,'').trim();if(!title)throw Error('Tell me the task name.');const date=pusManagerDate(cmd),time=pusManagerTime(cmd);await addDoc(collection(db,'todos'),{text:title,owner:currentUser,completed:false,order:sortedPersonalTodos(currentUser,false).length*10,reminderDate:date||null,reminderTime:time||null,reminderEnabled:!!(date&&time),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});out.innerHTML=`<div class="pus-manager-result"><strong>Task saved</strong><small>${esc(title)}${date?' · '+esc(date):''}${time?' at '+esc(pusManagerFormatTime(time)):''}</small></div>`;render();return;}
+ let matches=[];let targetQuery=renameMatch?renameMatch[1]:cmd;
+ if(isSchedule)targetQuery=cmd.replace(/\b(?:schedule|reschedule|move|set|put|remind me to|remind me|please|for|today|tomorrow|next|monday|tuesday|wednesday|thursday|friday|saturday|sunday|at|on|by|date|time|to)\b/gi,' ').replace(/\b(?:1[0-2]|0?\d)(?::[0-5]\d)?\s*(?:a\.?m\.?|p\.?m\.?)\b/gi,' ').replace(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/g,' ').replace(/\b20\d{2}-\d{2}-\d{2}\b/g,' ').replace(/\s+/g,' ').trim();
+ if(isComplete)targetQuery=cmd.replace(/\b(?:mark|as|complete|completed|done|please|the|task|routine)\b/gi,' ').trim();
+ matches=pusManagerMatch(targetQuery,items);
+ if(renameMatch)matches=pusManagerMatch(renameMatch[1],items);
+ if(!matches.length){out.innerHTML=`<div class="pus-manager-result"><strong>I couldn't confidently identify the entry.</strong><small>Try using a few distinctive words from the existing task title. Nothing was changed.</small></div>`;return;}
+ if(matches.length>1&&matches[0].score===matches[1].score){out.innerHTML=`<div class="pus-manager-result"><strong>Which entry did you mean?</strong>${matches.slice(0,5).map(x=>`<div class="mt-2 text-sm">• ${esc(x.label)} <small>${x.kind}${x.when?' · '+esc(x.when):''}</small></div>`).join('')}<small>Please repeat the command with a more specific title. Nothing was changed.</small></div>`;return;}
+ const hit=matches[0];
+ if(renameMatch){const newName=renameMatch[2].trim().replace(/[.!?]+$/,'');if(!newName)throw Error('Tell me the new title.');if(hit.kind==='todo')await updateDoc(doc(db,'todos',hit.id),{text:newName,updatedAt:serverTimestamp()});else if(hit.kind==='routine')await updateDoc(doc(db,'routines',hit.id),{name:newName,updatedAt:serverTimestamp()});else await updateDoc(doc(db,'shared_items',hit.id),{title:newName,updatedBy:currentUser,updatedAt:serverTimestamp()});out.innerHTML=`<div class="pus-manager-result"><strong>Entry updated</strong><small>${esc(hit.label)} → ${esc(newName)}</small></div>`;render();return;}
+ if(isComplete){if(hit.kind==='todo')await updateDoc(doc(db,'todos',hit.id),{completed:true,updatedAt:serverTimestamp()});else if(hit.kind==='routine'){if(!completions[routineCompletionKey(hit.record)])await window.toggleRoutine(hit.id);}else await updateDoc(doc(db,'shared_items',hit.id),{status:'Completed',active:false,updatedBy:currentUser,updatedAt:serverTimestamp()});out.innerHTML=`<div class="pus-manager-result"><strong>Marked complete</strong><small>${esc(hit.label)}</small></div>`;render();return;}
+ if(isSchedule){if(hit.kind!=='todo'){out.innerHTML=`<div class="pus-manager-result"><strong>This entry isn't a one-off task.</strong><small>“${esc(hit.label)}” is a ${hit.kind}. Date/time scheduling is currently supported for personal tasks. No changes made.</small></div>`;return;}const date=pusManagerDate(cmd)||hit.record.reminderDate||'',time=pusManagerTime(cmd)||hit.record.reminderTime||'';if(!date||!time){out.innerHTML=`<div class="pus-manager-result"><strong>I found “${esc(hit.label)}”, but need both date and time.</strong><small>Try: Schedule ${esc(hit.label)} for tomorrow at 4 pm.</small></div>`;return;}await updateDoc(doc(db,'todos',hit.id),{reminderDate:date,reminderTime:time,reminderEnabled:true,reminderSentKey:null,updatedAt:serverTimestamp()});out.innerHTML=`<div class="pus-manager-result"><strong>Task scheduled</strong><small>${esc(hit.label)} · ${esc(date)} at ${esc(pusManagerFormatTime(time))}</small></div>`;render();return;}
+ out.innerHTML=`<div class="pus-manager-result"><strong>Found: ${esc(hit.label)}</strong><small>${hit.kind} · ${hit.done?'completed':'pending'}${hit.when?' · '+esc(hit.when):''}</small><small>Try “rename ${esc(hit.label)} to [new title]”, “schedule ${esc(hit.label)} for tomorrow at 4 pm”, or “mark ${esc(hit.label)} complete”.</small></div>`;
+ }catch(e){console.error('Project-US Routine Manager:',e);if(out)out.innerHTML=`<div class="pus-manager-result"><strong>Couldn't complete that action.</strong><small>${esc(e.message||'Please try again.')}</small></div>`;}
+ finally{if(btn){btn.disabled=false;btn.textContent='Run command →';}}
+};
+
 </script>
 </body>
 </html>
