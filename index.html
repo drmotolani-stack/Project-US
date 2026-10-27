@@ -2324,10 +2324,10 @@ window.saveUniversalCapture=async function(){
 window.openUniversalAssistant=function(){
   setComposer('Project-US Routine Manager','Speak or type · search, edit, schedule, report',`
     <div class="space-y-3">
-      <p class="subtle text-sm">Tell me what to do with your tasks, routines and shared activities. I can log shared daily routines for a past date, find entries, schedule tasks, rename them, mark them complete, report pending work and flag possible duplicates. Historical updates are previewed before saving.</p>
-      <textarea id="universal-input" class="input universal-command pus-manager-command w-full" rows="5" placeholder="Try: We did all four daily activities yesterday.\nOr: Schedule CFA study for tomorrow at 7 pm.\nOr: What is pending?"></textarea>
+      <p class="subtle text-sm">Tell me what you mean in your own words. I can interpret everyday descriptions, log shared routines for a past date, find entries, schedule tasks, rename them, mark them complete, report pending work and flag possible duplicates. Historical updates are previewed before saving.</p>
+      <textarea id="universal-input" class="input universal-command pus-manager-command w-full" rows="5" placeholder="Try: We did all four daily activities yesterday.\nOr: We completed Pray Together and Morning Dew on Saturday.\nOr: What is pending?"></textarea>
       <div class="grid grid-cols-2 gap-2"><button type="button" class="secondary" data-project-us-dictate="universal-input" onclick="startDictation('universal-input')">🎙️ Speak</button><button type="button" class="primary" id="universal-prepare" onclick="runProjectUSRoutineCommand()">Run command →</button></div>
-      <div class="pus-manager-help">Examples: “We did all four daily activities yesterday”; “We completed Morning Dew on Saturday”; “Move CFA study to tomorrow at 7 pm”; “Show my pending tasks”; “Find duplicates”.</div>
+      <div class="pus-manager-help">Examples: “Yesterday was productive; we did all our usual activities”; “We prayed together and did our devotional on Saturday”; “Move CFA study to tomorrow at 7 pm”; “What still needs doing?”; “Can you spot any duplicates?”</div>
       <div id="pus-manager-results" aria-live="polite"></div>
     </div>`);
 };
@@ -2342,24 +2342,47 @@ function pusManagerDate(text){const now=new Date(),s=String(text||'').toLowerCas
 function pusManagerHistoricalDate(text){
  const s=String(text||'').toLowerCase(),now=new Date();now.setHours(0,0,0,0);
  const iso=s.match(/\b(20\d{2}-\d{2}-\d{2})\b/);if(iso)return iso[1];
- let back=null;if(/\bday before yesterday\b/.test(s))back=2;else if(/\byesterday\b|\blast night\b/.test(s))back=1;
+ let back=null;
+ if(/\bday before yesterday\b/.test(s))back=2;
+ else if(/\b(?:two|2) days ago\b/.test(s))back=2;
+ else if(/\b(?:three|3) days ago\b/.test(s))back=3;
+ else if(/\byesterday\b|\blast night\b|\blast evening\b/.test(s))back=1;
+ else if(/\btoday\b|\bthis morning\b|\bthis afternoon\b|\bthis evening\b/.test(s))back=0;
  if(back!==null){now.setDate(now.getDate()-back);return dateKey(now);}
  const days={sunday:0,monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6};
- const m=s.match(/\b(?:last\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
- if(m){let delta=(now.getDay()-days[m[1]]+7)%7;if(delta===0||/\blast\s+/.test(m[0]))delta=delta||7;now.setDate(now.getDate()-delta);return dateKey(now);}
+ const m=s.match(/\b(?:(last|this|on)\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+ if(m){const today=now.getDay(),target=days[m[2]];let delta=(today-target+7)%7;if(m[1]==='last'){delta=delta===0?7:delta;}else if(m[1]==='this'){delta=(target-today+7)%7;}else if(delta===0){delta=7;}now.setDate(now.getDate()-delta);return dateKey(now);}
  return '';
 }
 function pusManagerHistoricalRoutines(cmd){
  const s=String(cmd||'').toLowerCase();
- const intent=/(\bwe\b|\bi\b|\bus\b|\btogether\b|\bcompleted\b|\bcomplete\b|\bdid\b|\bfinished\b|\blog\b|\bmark\b).*(\byesterday\b|\blast night\b|\bday before yesterday\b|\bon (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b|\b20\d{2}-\d{2}-\d{2}\b|\blast (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b)/.test(s) || /\b(?:retroactively|retrospective|backdate|backfill)\b/.test(s);
- if(!intent)return null;
- const date=pusManagerHistoricalDate(s);if(!date)return {error:'Which date should I log? Try “yesterday”, “Saturday”, or YYYY-MM-DD.'};
- const routinesToLog=routines.filter(r=>r.owner==='Together'&&!r.archived&&['daily','weekdays'].includes(r.frequency)&&(!r.startDate||date>=r.startDate)&&(!r.endDate||date<=r.endDate));
- const specific= routinesToLog.filter(r=>pusManagerTokens(s).some(w=>pusManagerTokens(r.name).includes(w)));
- const allFour=/\b(all|four|4|every|our daily|daily activities|daily routines|everything)\b/.test(s);
- const selected=allFour||specific.length===0?routinesToLog:specific;
- if(!selected.length)return {error:'I could not find any eligible shared daily routines for that date.'};
- const already=selected.filter(r=>completionHistory.some(c=>c.id===routineCompletionKey(r, new Date(date+'T12:00:00'))|| (c.routineId===r.id&&c.date===date)));
+ const date=pusManagerHistoricalDate(s);
+ const mentionsRoutine=/\b(pray(?:ed|er|ing)?|prayer|leverage|devotional|morning\s*dew|word\s*up|daily\s*(?:four|four activities|routines|activities)|shared\s*routines?)\b/i.test(s);
+ const completionLanguage=/\b(did|done|completed?|finished|got through|managed to|made it through|ticked off|checked off|we were able to|we got to|we had|we did|we completed|we finished|everything|all of|all four|four of|usual activities|daily activities|activities for|log|logged|record|recorded|update pulse|forgot to update|backdate|backfill|retroactively|retrospective|mark as)\b/i.test(s);
+ // Treat natural descriptions as historical-log intent when they contain a date and
+ // either completion language or recognizable routine references. Do not require a
+ // fixed word order (e.g. “Yesterday was productive; we did our routines”).
+ const retroIntent=/\b(retroactively|retrospective|backdate|backfill|forgot to (?:update|log|record))\b/i.test(s);
+ if(!(retroIntent||(date&&(completionLanguage||mentionsRoutine))))return null;
+ if(!date)return {error:'Which day do you mean? You can say “yesterday”, “last Saturday”, or give a date.'};
+ const activeTogether=routines.filter(r=>r.owner==='Together'&&!r.archived&&(!r.startDate||date>=r.startDate)&&(!r.endDate||date<=r.endDate));
+ const rhythmMatchers=[/pray/i,/leverage|devotional/i,/morning\s*dew/i,/word\s*up/i];
+ const dailyFour=rhythmMatchers.map(rx=>activeTogether.find(r=>rx.test(r.name))).filter(Boolean);
+ const aliases=[
+   {rx:/\bpray(?:ed|er|ing)?\b|\bprayed together\b/i,match:/pray/i},
+   {rx:/\bleverage\b|\bdevotional\b|\bdevotion\b/i,match:/leverage|devotional/i},
+   {rx:/\bmorning\s*dew\b|\bjoined morning\b/i,match:/morning\s*dew/i},
+   {rx:/\bword\s*up\b|\bwordup\b/i,match:/word\s*up/i}
+ ];
+ const specific=[];
+ aliases.forEach(a=>{if(a.rx.test(s)){const r=activeTogether.find(x=>a.match.test(x.name));if(r&&!specific.includes(r))specific.push(r);}});
+ activeTogether.forEach(r=>{if(pusManagerTokens(s).some(w=>pusManagerTokens(r.name).includes(w))&&!specific.includes(r))specific.push(r);});
+ const allFour=/\b(all four|four (?:daily )?(?:activities|routines)|daily four|all (?:the )?(?:four )?(?:daily )?(?:activities|routines)|everything|our usual(?: activities| routines)?|the usual four|all of them|whole daily routine|entire daily routine)\b/i.test(s)
+   || (aliases.every(a=>a.rx.test(s)));
+ let selected=allFour?dailyFour:(specific.length?specific:mentionsRoutine?dailyFour:[]);
+ if(allFour&&dailyFour.length<4)return {error:`I found ${dailyFour.length} of the four shared daily routines in the loaded data. I need Pray Together, Leverage Devotional, Morning Dew, and Word Up to be available under Together before I can log all four.`};
+ if(!selected.length)return {error:'I understand you want to log something retrospectively, but I could not tell which shared routine(s) you meant. Tell me the activity in your own words and I will match it to the saved routines.'};
+ const already=selected.filter(r=>completionHistory.some(c=>c.id===routineCompletionKey(r,new Date(date+'T12:00:00'))||(c.routineId===r.id&&c.date===date)));
  return {date,selected,already,toSave:selected.filter(r=>!already.includes(r))};
 }
 window.confirmHistoricalRoutineLog=async function(date,ids){
@@ -2379,10 +2402,43 @@ function pusManagerFormatTime(t){if(!t)return '';const [h,m]=t.split(':').map(Nu
 function pusManagerReport(kind){const all=pusManagerItems(),pending=all.filter(x=>!x.done),overdue=pending.filter(x=>x.kind==='todo'&&x.record.reminderDate&&x.record.reminderDate<projectUSDateKey()),today=pending.filter(x=>x.kind==='todo'&&x.record.reminderDate===projectUSDateKey());if(kind==='pending')return `<div class="pus-manager-result"><strong>Pending work</strong><small>${pending.length} open entries · ${overdue.length} overdue · ${today.length} scheduled today</small>${pending.slice(0,25).map(x=>`<div class="mt-2 text-sm">• ${esc(x.label)} <span class="subtle">(${x.kind}${x.when?' · '+esc(x.when):''})</span></div>`).join('')||'<p class="subtle mt-2">Nothing pending. You are all caught up.</p>'}</div>`;const done=all.filter(x=>x.done);return `<div class="pus-manager-result"><strong>Your routine report</strong><small>${all.length} active entries · ${pending.length} pending · ${done.length} completed</small><div class="mt-3 text-sm">${pending.slice(0,12).map(x=>`<div class="mt-1">○ ${esc(x.label)}${x.when?' · '+esc(x.when):''}</div>`).join('')||'No pending entries.'}</div></div>`;}
 function pusManagerDuplicates(){const items=pusManagerItems().filter(x=>!x.done),pairs=[];for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){const a=new Set(pusManagerTokens(items[i].label)),b=new Set(pusManagerTokens(items[j].label));if(!a.size||!b.size)continue;const inter=[...a].filter(w=>b.has(w)).length,sim=inter/(a.size+b.size-inter);if(sim>=.7)pairs.push({a:items[i],b:items[j],sim});}return pairs.sort((a,b)=>b.sim-a.sim).slice(0,15);}
 window.runProjectUSRoutineCommand=async function(){
- const el=document.getElementById('universal-input'),cmd=String(el?.value||'').trim();if(!cmd)return showToast('Say or type a command first.');const btn=document.getElementById('universal-prepare'),out=document.getElementById('pus-manager-results');if(btn){btn.disabled=true;btn.textContent='Working…';}if(out)out.innerHTML='';
+ const el=document.getElementById('universal-input');let cmd=String(el?.value||'').trim();if(!cmd)return showToast('Say or type a command first.');const btn=document.getElementById('universal-prepare'),out=document.getElementById('pus-manager-results');if(btn){btn.disabled=true;btn.textContent='Understanding…';}if(out)out.innerHTML='';
  try{
+ let interpreted=null;
+ try{
+   if(typeof window.projectUSAI==='function'){
+     interpreted=await window.projectUSAI('routine-manager',{
+       text:cmd,
+       currentDate:projectUSDateKey(),
+       timezone:'Africa/Lagos',
+       available_routines:routines.filter(r=>!r.archived).map(r=>({name:r.name,owner:r.owner,frequency:r.frequency||'daily',startDate:r.startDate||null,endDate:r.endDate||null}))
+     });
+     if(interpreted?.canonical_command&&Number(interpreted.confidence||0)>=0.35)cmd=String(interpreted.canonical_command).slice(0,5000);
+   }
+ }catch(aiError){console.warn('Project-US natural-language interpretation unavailable; using local fallback.',aiError);}
  const s=cmd.toLowerCase(),items=pusManagerItems();
- const historical=pusManagerHistoricalRoutines(cmd);
+ let historical=null;
+ if(interpreted?.intent==='historical_completion'&&Number(interpreted.confidence||0)>=0.55){
+   const date=interpreted.date||pusManagerHistoricalDate(cmd);
+   if(!date)historical={error:interpreted.clarification||'Which day do you mean? You can describe the day naturally or give a date.'};
+   else{
+     const activeTogether=routines.filter(r=>r.owner==='Together'&&!r.archived&&(!r.startDate||date>=r.startDate)&&(!r.endDate||date<=r.endDate));
+     const rhythmMatchers=[/pray/i,/leverage|devotional/i,/morning\s*dew/i,/word\s*up/i];
+     const dailyFour=rhythmMatchers.map(rx=>activeTogether.find(r=>rx.test(r.name))).filter(Boolean);
+     let selected=[];
+     if(interpreted.scope==='shared_daily_routines') selected=dailyFour;
+     else selected=(interpreted.routine_names||[]).map(name=>activeTogether.find(r=>r.name.toLowerCase()===String(name).toLowerCase())||routines.find(r=>!r.archived&&r.name.toLowerCase()===String(name).toLowerCase())).filter(Boolean);
+     if(interpreted.scope==='shared_daily_routines'&&dailyFour.length<4)historical={error:`I found ${dailyFour.length} of the four shared daily routines in the loaded data. I need Pray Together, Leverage Devotional, Morning Dew, and Word Up to be available under Together before I can log all four.`};
+     else if(!selected.length)historical={error:interpreted.clarification||'I understood that you want to log a past completion, but I could not confidently match the activity to a saved routine.'};
+     else{
+       const already=selected.filter(r=>completionHistory.some(c=>c.id===routineCompletionKey(r,new Date(date+'T12:00:00'))||(c.routineId===r.id&&c.date===date)));
+       historical={date,selected,already,toSave:selected.filter(r=>!already.includes(r))};
+     }
+   }
+ }else{
+   historical=pusManagerHistoricalRoutines(cmd);
+ }
+ if(historical){if(historical.error){out.innerHTML=`<div class="pus-manager-result"><strong>One detail needed</strong><small>${esc(historical.error)}</small></div>`;return;}const list=historical.selected.map(r=>`<div class="mt-2 text-sm">${historical.already.includes(r)?'✓':'○'} ${esc(r.name)} <small>${historical.already.includes(r)?'already logged':'will be added'}</small></div>`).join('');out.innerHTML=`<div class="pus-manager-result"><strong>Review historical completions</strong><small>Date: ${esc(historical.date)} · ${historical.toSave.length} new record${historical.toSave.length===1?'':'s'} · ${historical.already.length} already logged</small>${list}${historical.toSave.length?`<button id="pus-historical-save" class="primary w-full mt-3" onclick="confirmHistoricalRoutineLog('${historical.date}',${JSON.stringify(historical.toSave.map(r=>r.id)).replace(/"/g,'&quot;')})">Confirm and update Pulse</button>`:'<p class="subtle mt-3">Nothing new to save.</p>'}</div>`;return;}
  if(historical){if(historical.error){out.innerHTML=`<div class="pus-manager-result"><strong>One detail needed</strong><small>${esc(historical.error)}</small></div>`;return;}const list=historical.selected.map(r=>`<div class="mt-2 text-sm">${historical.already.includes(r)?'✓':'○'} ${esc(r.name)} <small>${historical.already.includes(r)?'already logged':'will be added'}</small></div>`).join('');out.innerHTML=`<div class="pus-manager-result"><strong>Review historical completions</strong><small>Date: ${esc(historical.date)} · ${historical.toSave.length} new record${historical.toSave.length===1?'':'s'} · ${historical.already.length} already logged</small>${list}${historical.toSave.length?`<button id="pus-historical-save" class="primary w-full mt-3" onclick="confirmHistoricalRoutineLog('${historical.date}',${JSON.stringify(historical.toSave.map(r=>r.id)).replace(/"/g,'&quot;')})">Confirm and update Pulse</button>`:'<p class="subtle mt-3">Nothing new to save.</p>'}</div>`;return;}
  if(/\b(duplicate|duplicates|similar entries|clean up duplicates)\b/.test(s)){const pairs=pusManagerDuplicates();out.innerHTML=`<div class="pus-manager-result"><strong>Possible duplicates</strong><small>Review these before merging or archiving anything.</small>${pairs.map(p=>`<div class="mt-3 text-sm">• ${esc(p.a.label)} <span class="subtle">(${p.a.kind})</span><br>↳ ${esc(p.b.label)} <span class="subtle">(${p.b.kind})</span><small>${Math.round(p.sim*100)}% wording similarity</small></div>`).join('')||'<p class="subtle mt-2">No obvious duplicates found.</p>'}</div>`;return;}
  if(/\b(pending|what needs|what do i need|what is left|what's left|to do list|status report|report)\b/.test(s)&&!/\b(schedule|reschedule|move|rename|change|edit|complete|mark)\b/.test(s)){out.innerHTML=pusManagerReport(/\breport\b/.test(s)?'report':'pending');return;}
