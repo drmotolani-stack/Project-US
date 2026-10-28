@@ -388,6 +388,21 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
+// Every call to the AI Worker carries the signed-in person's Firebase token, so the Worker can verify who is asking.
+const _nativeFetch = window.fetch.bind(window);
+window.fetch = async function(input, init = {}) {
+  try {
+    const url = typeof input === 'string' ? input : String((input && input.url) || '');
+    const base = String(window.PROJECT_US_TRANSCRIBE_URL || '').replace(/\/$/, '');
+    if (base && url.startsWith(base) && auth.currentUser) {
+      const token = await auth.currentUser.getIdToken();
+      const headers = new Headers(init.headers || (input && input.headers) || {});
+      headers.set('Authorization', 'Bearer ' + token);
+      init = { ...init, headers };
+    }
+  } catch (e) { console.warn('Could not attach login token', e); }
+  return _nativeFetch(input, init);
+};
 // Only these two accounts can use the app. Email -> who they are inside the app.
 const ALLOWED_PEOPLE = {
   "drmotolani@gmail.com": "Motolani",
