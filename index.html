@@ -289,6 +289,17 @@ body{isolation:isolate;background:var(--bg)!important}body::before{opacity:1;z-i
 </head>
 
 <body>
+  <div id="login-gate" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#14161a;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+    <form id="login-form" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;color:#f3f1ec;">
+      <h1 style="font-size:28px;margin:0 0 4px;font-weight:600;">our space.</h1>
+      <p style="margin:0 0 8px;opacity:.7;font-size:14px;">Sign in to continue.</p>
+      <input id="login-email" type="email" autocomplete="username" placeholder="Email" required style="padding:14px;border-radius:12px;border:1px solid #3a3f47;background:#1d2025;color:inherit;font-size:16px;">
+      <input id="login-password" type="password" autocomplete="current-password" placeholder="Password" required style="padding:14px;border-radius:12px;border:1px solid #3a3f47;background:#1d2025;color:inherit;font-size:16px;">
+      <button id="login-submit" type="submit" style="padding:14px;border-radius:12px;border:0;background:#839572;color:#10130e;font-size:16px;font-weight:600;cursor:pointer;">Sign in</button>
+      <button id="login-reset" type="button" style="background:none;border:0;color:#aab6a0;font-size:14px;cursor:pointer;padding:4px;">Forgot password?</button>
+      <div id="login-msg" role="status" style="min-height:20px;font-size:14px;color:#e8b4a8;"></div>
+    </form>
+  </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="scrim" class="scrim" onclick="closeSheet()"></div>
 
@@ -362,6 +373,7 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL, deleteObject
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { getMessaging, getToken, onMessage, deleteToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDRB-cRm-iX6nXP_5-hF5ACelpqtvx-Bgo",
@@ -375,6 +387,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
+// Only these two accounts can use the app. Email -> who they are inside the app.
+const ALLOWED_PEOPLE = {
+  "drmotolani@gmail.com": "Motolani",
+  "omonzejelejennifer@gmail.com": "Zusi"
+};
 let messaging = null;
 let notificationToken = localStorage.getItem("our_space_fcm_token") || "";
 const FCM_VAPID_KEY = "BCkoVH613NArH5LWJSjQz4DX9DF1ihAkvjYYhu7EnN9sZi9PTKXPWtmByxdUNYPOoW3BEbaDKgP3Z0_CypVbBxc";
@@ -2272,8 +2290,58 @@ renderAnalytics=function(){projectUSRenderAnalyticsBase();const app=document.que
 
 initTheme();
 render();
-listenAll();
-initNotifications();
+(function startAuthGate(){
+  const gate=document.getElementById('login-gate'),msg=document.getElementById('login-msg');
+  const form=document.getElementById('login-form'),emailEl=document.getElementById('login-email'),passEl=document.getElementById('login-password');
+  const submit=document.getElementById('login-submit');
+  let booted=false;
+  const say=t=>{msg.textContent=t||'';};
+  const friendly=e=>{
+    const c=String(e&&e.code||'');
+    if(/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c))return 'That email or password is not right.';
+    if(/too-many-requests/.test(c))return 'Too many attempts. Wait a few minutes and try again.';
+    if(/network/.test(c))return 'No connection. Check your internet and try again.';
+    return 'Could not sign in. '+(c||'Please try again.');
+  };
+  form.addEventListener('submit',async ev=>{
+    ev.preventDefault();say('');submit.disabled=true;submit.textContent='Signing in…';
+    try{await signInWithEmailAndPassword(auth,emailEl.value.trim(),passEl.value);}
+    catch(e){say(friendly(e));}
+    finally{submit.disabled=false;submit.textContent='Sign in';}
+  });
+  document.getElementById('login-reset').addEventListener('click',async()=>{
+    const em=emailEl.value.trim();if(!em){say('Type your email above first.');return;}
+    try{await sendPasswordResetEmail(auth,em);say('If that account exists, a reset link is on its way.');}
+    catch(e){say(friendly(e));}
+  });
+  function addSignOut(){
+    if(document.getElementById('signout-btn'))return;
+    const idSel=document.getElementById('identity');
+    const b=document.createElement('button');b.id='signout-btn';b.type='button';b.textContent='Sign out';
+    b.style.cssText='margin-left:8px;padding:6px 10px;border-radius:10px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font-size:12px;cursor:pointer;';
+    b.onclick=async()=>{try{await signOut(auth);}finally{location.reload();}};
+    if(idSel&&idSel.parentElement)idSel.insertAdjacentElement('afterend',b);
+  }
+  onAuthStateChanged(auth,user=>{
+    const email=String(user&&user.email||'').toLowerCase();
+    if(user&&ALLOWED_PEOPLE[email]){
+      // Identity now comes from the verified login, not the dropdown.
+      currentUser=ALLOWED_PEOPLE[email];
+      try{personalView=currentUser;}catch(_){}
+      localStorage.setItem('our_space_identity',currentUser);
+      const idSel=document.getElementById('identity');
+      if(idSel){idSel.value=currentUser;idSel.disabled=true;idSel.title='Set by your login';}
+      addSignOut();
+      gate.style.display='none';
+      if(!booted){booted=true;listenAll();initNotifications();}
+      render(true);
+    }else{
+      if(user){say('This account is not allowed to use this app.');signOut(auth);}
+      if(booted){location.reload();return;}
+      gate.style.display='flex';
+    }
+  });
+})();
 // Existing data is read as-is. No seed or migration runs in this edition.
 
 // Universal capture assistant merged into the latest Project-US HTML.
@@ -2449,6 +2517,7 @@ function pusManagerReport(kind){const all=pusManagerItems(),pending=all.filter(x
 function pusManagerDuplicates(){const items=pusManagerItems().filter(x=>!x.done),pairs=[];for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){const a=new Set(pusManagerTokens(items[i].label)),b=new Set(pusManagerTokens(items[j].label));if(!a.size||!b.size)continue;const inter=[...a].filter(w=>b.has(w)).length,sim=inter/(a.size+b.size-inter);if(sim>=.7)pairs.push({a:items[i],b:items[j],sim});}return pairs.sort((a,b)=>b.sim-a.sim).slice(0,15);}
 window.projectUSConversationHistory = window.projectUSConversationHistory || [];
 window.projectUSLastResultIds = window.projectUSLastResultIds || [];
+window.projectUSLastResultItems = window.projectUSLastResultItems || [];
 function projectUSCatalog(){
  const rows=[
   ...todos.filter(x=>x.owner===currentUser&&!x.archived).map(x=>({kind:'todo',id:x.id,label:x.text,record:x,status:x.completed?'completed':'pending',done:!!x.completed,date:x.reminderDate||'',owner:x.owner,when:x.reminderDate?formatSchedule(x.reminderDate,x.reminderTime):''})),
@@ -2458,8 +2527,33 @@ function projectUSCatalog(){
  ];
  return rows;
 }
+function projectUSResolveActionTargets(action, textValue, catalog){
+ const byId=catalog.filter(x=>(action.target_ids||[]).includes(x.id));
+ if(byId.length)return byId;
+ const source=String(textValue||'');
+ const quoted=[...source.matchAll(/["'“”‘’]([^"'“”‘’]{2,120})["'“”‘’]/g)].map(m=>m[1].trim()).filter(Boolean);
+ const phrases=[...quoted];
+ if(action.query&&String(action.query).trim())phrases.push(String(action.query).trim());
+ const matches=[];
+ for(const phrase of phrases){
+  const norm=phrase.toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  const exact=catalog.filter(x=>String(x.label||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()===norm);
+  const partial=exact.length?exact:catalog.filter(x=>norm.length>=4&&(String(x.label||'').toLowerCase().includes(norm)||norm.includes(String(x.label||'').toLowerCase())));
+  for(const x of partial)if(!matches.some(y=>y.id===x.id))matches.push(x);
+ }
+ if(matches.length)return matches;
+ // Conservative lexical fallback: require at least two meaningful task-name tokens and >= 70% coverage of a saved title.
+ const words=pusManagerTokens(source);
+ if(words.length<2)return [];
+ return catalog.filter(x=>{
+  if(action.kind&&action.kind!=='any'&&x.kind!==action.kind)return false;
+  const title=pusManagerTokens(x.label); if(title.length<2)return false;
+  const overlap=title.filter(t=>words.includes(t)).length;
+  return overlap>=2&&overlap/title.length>=0.7;
+ }).slice(0,8);
+}
 function projectUSRenderItems(items,heading='Results'){
- const safe=items.slice(0,30);window.projectUSLastResultIds=safe.map(x=>x.id);
+ const safe=items.slice(0,30);window.projectUSLastResultIds=safe.map(x=>x.id);window.projectUSLastResultItems=safe.map(x=>({id:x.id,kind:x.kind,label:x.label,status:x.status|| (x.done?'completed':'pending'),date:x.date||'',owner:x.owner||''}));
  return `<div class="pus-manager-result"><strong>${esc(heading)} · ${safe.length}</strong>${safe.map(x=>`<div class="mt-2 text-sm">• ${esc(x.label)} <small>${esc(x.kind)}${x.status?` · ${esc(x.status)}`:''}${x.when?` · ${esc(x.when)}`:''}</small></div>`).join('')||'<p class="subtle mt-2">No matching entries found.</p>'}</div>`;
 }
 window.runProjectUSRoutineCommand=async function(){
@@ -2467,7 +2561,7 @@ window.runProjectUSRoutineCommand=async function(){
  const btn=document.getElementById('universal-prepare'),out=document.getElementById('pus-manager-results');if(btn){btn.disabled=true;btn.textContent='Thinking…';}if(out)out.innerHTML='<div class="pus-manager-result"><strong>Project-US is thinking…</strong><small>Understanding your request and checking your saved items.</small></div>';
  try{
   const catalog=projectUSCatalog();
-  const payload={text:textValue,currentDate:projectUSDateKey(),timezone:'Africa/Lagos',conversation_history:window.projectUSConversationHistory.slice(-10),last_result_ids:window.projectUSLastResultIds,catalog:catalog.map(x=>({id:x.id,kind:x.kind,label:x.label,status:x.status,date:x.date,owner:x.owner})),available_routines:routines.filter(r=>!r.archived).map(r=>({id:r.id,name:r.name,owner:r.owner,frequency:r.frequency||'daily',startDate:r.startDate||null,endDate:r.endDate||null}))};
+  const payload={text:textValue,currentDate:projectUSDateKey(),timezone:'Africa/Lagos',conversation_history:window.projectUSConversationHistory.slice(-10),last_result_ids:window.projectUSLastResultIds,last_result_items:window.projectUSLastResultItems,catalog:catalog.map(x=>({id:x.id,kind:x.kind,label:x.label,status:x.status,date:x.date,owner:x.owner,when:x.when,done:x.done})),available_routines:routines.filter(r=>!r.archived).map(r=>({id:r.id,name:r.name,owner:r.owner,frequency:r.frequency||'daily',startDate:r.startDate||null,endDate:r.endDate||null}))};
   const plan=await window.projectUSAI('life-os',payload);
   const actions=Array.isArray(plan.actions)?plan.actions:[];let resultHtml='';const summaries=[];let mutated=false;
   if(!actions.length){resultHtml=`<div class="pus-manager-result"><strong>${esc(plan.reply||'I could not determine a safe action.')}</strong></div>`;}
@@ -2492,7 +2586,7 @@ window.runProjectUSRoutineCommand=async function(){
     if(!action.title){resultHtml+=`<div class="pus-manager-result"><strong>What should the task be called?</strong></div>`;continue;}
     const date=action.due_date||'',time=action.due_time||'';await addDoc(collection(db,'todos'),{text:action.title,owner:currentUser,completed:false,order:sortedPersonalTodos(currentUser,false).length*10,reminderDate:date||null,reminderTime:time||null,reminderEnabled:!!(date&&time),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});mutated=true;summaries.push(`created task “${action.title}”`);resultHtml+=`<div class="pus-manager-result"><strong>Task created</strong><small>${esc(action.title)}${date?' · '+esc(date):''}${time?' at '+esc(pusManagerFormatTime(time)):''}</small></div>`;continue;
    }
-   const targets=catalog.filter(x=>action.target_ids.includes(x.id));
+   const targets=projectUSResolveActionTargets(action,textValue,catalog);
    if(['mark_complete','mark_incomplete','reschedule','rename','archive'].includes(action.type)&&!targets.length){resultHtml+=`<div class="pus-manager-result"><strong>I couldn't safely identify the item.</strong><small>${esc(action.clarification||'Please mention the task names again. Nothing was changed.')}</small></div>`;continue;}
    if(action.type==='mark_complete'||action.type==='mark_incomplete'){
     for(const hit of targets){if(hit.kind==='todo'){await updateDoc(doc(db,'todos',hit.id),{completed:action.type==='mark_complete',updatedAt:serverTimestamp()});}else if(hit.kind==='activity'){await updateDoc(doc(db,'shared_items',hit.id),{status:action.type==='mark_complete'?'Completed':'Planned',active:action.type!=='mark_complete',updatedBy:currentUser,updatedAt:serverTimestamp()});}else if(hit.kind==='routine'){if(action.type==='mark_complete'&&!hit.done)await window.toggleRoutine(hit.id);else if(action.type==='mark_incomplete'&&hit.done){const key=routineCompletionKey(hit.record);await deleteDoc(doc(db,'routine_completions',key));}}else{continue;}summaries.push(`${action.type==='mark_complete'?'completed':'reopened'} “${hit.label}”`);mutated=true;}
@@ -2522,7 +2616,7 @@ window.runProjectUSRoutineCommand=async function(){
   }
   if(mutated)render();
   if(out)out.innerHTML=(plan.reply?`<div class="pus-manager-result"><strong>${esc(plan.reply)}</strong></div>`:'')+resultHtml;
-  window.projectUSConversationHistory.push({role:'user',content:textValue});window.projectUSConversationHistory.push({role:'assistant',content:String(plan.reply||'Completed request.'),result_ids:window.projectUSLastResultIds.slice(0,30)});window.projectUSConversationHistory=window.projectUSConversationHistory.slice(-12);
+  window.projectUSConversationHistory.push({role:'user',content:textValue});window.projectUSConversationHistory.push({role:'assistant',content:String(plan.reply||'Processed request.'),result_ids:window.projectUSLastResultIds.slice(0,30),result_items:window.projectUSLastResultItems.slice(0,30),executed_actions:actions.map(a=>({type:a.type,target_ids:a.target_ids,query:a.query,title:a.title}))});window.projectUSConversationHistory=window.projectUSConversationHistory.slice(-12);
  }catch(e){console.error('Project-US life OS:',e);if(out)out.innerHTML=`<div class="pus-manager-result"><strong>I couldn't complete that request.</strong><small>${esc(e.message||'Please try again.')}</small></div>`;}
  finally{if(btn){btn.disabled=false;btn.textContent='Run typed command →';}if(el){el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));}}
 };
