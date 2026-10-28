@@ -2452,15 +2452,14 @@ window.saveUniversalCapture=async function(){
 
 /* Project-US conversational assistant: natural-language search, schedule, edit, complete and pending report. */
 (function installRoutineManager(){
-  const style=document.createElement('style');style.textContent=`.pus-manager-help{font-size:12px;line-height:1.65;color:var(--muted)}.pus-manager-result{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--panel2);margin-top:9px}.pus-manager-result small{display:block;color:var(--muted);margin-top:4px}.pus-manager-command{min-height:118px!important}`;document.head.appendChild(style);
+  const style=document.createElement('style');style.textContent=`.pus-manager-help{font-size:12px;line-height:1.65;color:var(--muted)}.pus-manager-result{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--panel2);margin-top:9px}.pus-manager-result small{display:block;color:var(--muted);margin-top:4px}.pus-manager-command{min-height:76px!important;resize:vertical}.pus-assistant-shell{display:flex;flex-direction:column;gap:10px}.pus-assistant-actions button{min-height:42px}.pus-assistant-help{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:9px}.pus-assistant-help summary{cursor:pointer;font-weight:600;color:var(--text)}.pus-assistant-help p{margin-top:8px;line-height:1.5}.pus-assistant-examples{opacity:.85}`;document.head.appendChild(style);
 })();
 window.openUniversalAssistant=function(){
   setComposer('Talk to Project-US','Speak or type naturally · routines, tasks, plans and reflections',`
-    <div class="space-y-3">
-      <p class="subtle text-sm">Tell me what you want in ordinary language. I can search your saved tasks, act on several named items, understand follow-ups, create or reschedule tasks, update routines, and report what is pending. Clear reversible actions can run automatically; ambiguous or destructive actions are checked first.</p>
-      <textarea id="universal-input" class="input universal-command pus-manager-command w-full" rows="5" placeholder="Try: We did all four daily activities yesterday.\nOr: We completed Pray Together and Morning Dew on Saturday.\nOr: What is pending?"></textarea>
-      <div class="grid grid-cols-2 gap-2"><button type="button" class="secondary" data-project-us-dictate="universal-input" onclick="startDictation('universal-input')">🎙️ Speak hands-free</button><button type="button" class="primary" id="universal-prepare" onclick="runProjectUSRoutineCommand()">Run typed command →</button></div>
-      <div class="pus-manager-help">For voice: tap Speak hands-free, say your request, then pause. Project-US will transcribe and run it automatically. Each new dictation starts a fresh command. You can still type and use Run typed command. Examples: “Yesterday was productive; we did all our usual activities”; “We prayed together and did our devotional on Saturday”; “Move CFA study to tomorrow at 7 pm”; “What still needs doing?”; “Can you spot any duplicates?”</div>
+    <div class="pus-assistant-shell">
+      <textarea id="universal-input" class="input universal-command pus-manager-command w-full" rows="3" placeholder="Say or type a request…"></textarea>
+      <div class="grid grid-cols-2 gap-2 pus-assistant-actions"><button type="button" class="secondary" data-project-us-dictate="universal-input" onclick="startDictation('universal-input')">🎙 Speak hands-free</button><button type="button" class="primary" id="universal-prepare" onclick="runProjectUSRoutineCommand()">Run command</button></div>
+      <details class="pus-assistant-help"><summary>What can I do?</summary><p>Find or update tasks, follow up on search results, log routines, manage shared plans, and prepare Our Life entries. After speaking, pause and Project-US will transcribe and run the request. New entries such as prophecies require your approval before saving.</p><p class="pus-assistant-examples">Try: “What is still pending?” · “Move CFA study to tomorrow at 7 pm” · “Mark those two as done” · “Save this as a prophecy.”</p></details>
       <div id="pus-manager-results" aria-live="polite"></div>
     </div>`);
 };
@@ -2575,6 +2574,27 @@ function projectUSRenderItems(items,heading='Results'){
  const safe=items.slice(0,30);window.projectUSLastResultIds=safe.map(x=>x.id);window.projectUSLastResultItems=safe.map(x=>({id:x.id,kind:x.kind,label:x.label,status:x.status|| (x.done?'completed':'pending'),date:x.date||'',owner:x.owner||''}));
  return `<div class="pus-manager-result"><strong>${esc(heading)} · ${safe.length}</strong>${safe.map(x=>`<div class="mt-2 text-sm">• ${esc(x.label)} <small>${esc(x.kind)}${x.status?` · ${esc(x.status)}`:''}${x.when?` · ${esc(x.when)}`:''}</small></div>`).join('')||'<p class="subtle mt-2">No matching entries found.</p>'}</div>`;
 }
+window.projectUSPendingLifeItem=null;
+window.cancelProjectUSLifeItem=function(){
+ window.projectUSPendingLifeItem=null;
+ const out=document.getElementById('pus-manager-results');
+ if(out)out.innerHTML='<div class="pus-manager-result"><strong>Cancelled</strong><small>Nothing was saved.</small></div>';
+};
+window.confirmProjectUSLifeItem=async function(){
+ const pending=window.projectUSPendingLifeItem;
+ const out=document.getElementById('pus-manager-results');
+ const title=String(document.getElementById('pus-life-title')?.value||'').trim();
+ const text=String(document.getElementById('pus-life-text')?.value||'').trim();
+ if(!pending||!title||!text){showToast('Add a title and original words before saving.');return;}
+ const buttons=out?.querySelectorAll('button');if(buttons)buttons.forEach(b=>b.disabled=true);
+ try{
+  const ref=await addDoc(collection(db,'life_items'),{type:pending.type,title,text,icon:pending.type==='Prophecy'?'✧':pending.type==='Faith Project'?'🏗️':pending.type==='Testimony'?'🙌':'',owner:currentUser,createdBy:currentUser,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),imageUrl:null,imagePath:null});
+  window.projectUSPendingLifeItem=null;
+  render();
+  if(out)out.innerHTML=`<div class="pus-manager-result"><strong>Saved and acknowledged</strong><small>Our Life → ${esc(pending.type)} · ${esc(title)} · record ${esc(ref.id)}</small></div>`;
+ }catch(e){console.error('Project-US Our Life save failed',e);if(out)out.innerHTML=`<div class="pus-manager-result"><strong>Not saved</strong><small>${esc(e.message||'The database did not confirm this save. Please retry only after checking the Our Life tab.')}</small></div>`;}
+};
+
 window.runProjectUSRoutineCommand=async function(){
  const el=document.getElementById('universal-input');const textValue=String(el?.value||'').trim();if(!textValue)return showToast('Say or type a request first.');
  const btn=document.getElementById('universal-prepare'),out=document.getElementById('pus-manager-results');if(btn){btn.disabled=true;btn.textContent='Thinking…';}if(out)out.innerHTML='<div class="pus-manager-result"><strong>Project-US is thinking…</strong><small>Understanding your request and checking your saved items.</small></div>';
@@ -2582,7 +2602,18 @@ window.runProjectUSRoutineCommand=async function(){
   const catalog=projectUSCatalog();
   const payload={text:textValue,currentDate:projectUSDateKey(),timezone:'Africa/Lagos',conversation_history:window.projectUSConversationHistory.slice(-4).map(m=>({role:String(m.role||'').slice(0,20),content:String(m.content||'').slice(0,180)})),last_result_ids:window.projectUSLastResultIds.slice(0,8),last_result_items:window.projectUSLastResultItems.slice(0,8).map(x=>({id:x.id,kind:x.kind,label:String(x.label||'').slice(0,120),status:x.status,date:x.date,owner:x.owner})),catalog:catalog.slice(0,50).map(x=>({id:x.id,kind:x.kind,label:String(x.label||'').slice(0,140),status:x.status,date:x.date,owner:x.owner,when:String(x.when||'').slice(0,60),done:x.done})),available_routines:routines.filter(r=>!r.archived).slice(0,25).map(r=>({id:r.id,name:String(r.name||'').slice(0,120),owner:r.owner,frequency:r.frequency||'daily',startDate:r.startDate||null,endDate:r.endDate||null}))};
   const plan=await window.projectUSAI('life-os',payload);
-  const actions=Array.isArray(plan.actions)?plan.actions:[];let resultHtml='';const summaries=[];let mutated=false;
+  const actions=Array.isArray(plan.actions)?plan.actions:[];
+  // Safety guard: explicit Our Life categories must never be silently saved as shared activities.
+  const lifeCategoryRules=[
+   [/\bprophec(?:y|ies)\b/i,'Prophecy'],[/\bconfessions?\b/i,'Confession'],[/\bfaith project\b/i,'Faith Project'],[/\btestimon(?:y|ies)\b/i,'Testimony'],[/\bchurch takeaway\b/i,'Church Takeaway'],[/\bintercessory focus\b/i,'Intercessory Focus'],[/\bvision board\b/i,'Vision Board'],[/\brole model\b/i,'Role Model']
+  ];
+  for(const a of actions){
+   if(a.type==='create_activity'){
+    const explicit=lifeCategoryRules.find(([rx])=>rx.test(textValue));
+    if(explicit){a.type='create_life_item';a.life_type=explicit[1];a.details=textValue;}
+   }
+  }
+  let resultHtml='';const summaries=[];let mutated=false;
   if(!actions.length){resultHtml=`<div class="pus-manager-result"><strong>${esc(plan.reply||'I could not determine a safe action.')}</strong></div>`;}
   for(const action of actions){
    if(action.type==='clarify'||(action.confidence<0.42&&action.type!=='answer')){resultHtml+=`<div class="pus-manager-result"><strong>One detail needed</strong><small>${esc(action.clarification||plan.clarification||'Which item did you mean?')}</small></div>`;continue;}
@@ -2601,6 +2632,16 @@ window.runProjectUSRoutineCommand=async function(){
     if(!date||!chosen.length){resultHtml+=`<div class="pus-manager-result"><strong>One detail needed</strong><small>${esc(action.clarification||'Tell me which date and which routines you want to log.')}</small></div>`;continue;}
     const already=chosen.filter(r=>completionHistory.some(c=>c.id===routineCompletionKey(r,new Date(date+'T12:00:00'))||(c.routineId===r.id&&c.date===date)));const toSave=chosen.filter(r=>!already.includes(r));resultHtml+=`<div class="pus-manager-result"><strong>Review routine history</strong><small>${esc(date)} · ${toSave.length} new record(s) · ${already.length} already logged</small>${chosen.map(r=>`<div class="mt-2 text-sm">${already.includes(r)?'✓':'○'} ${esc(r.name)} <small>${already.includes(r)?'already logged':'will be added'}</small></div>`).join('')}${toSave.length?`<button class="primary w-full mt-3" onclick="confirmHistoricalRoutineLog('${date}',${JSON.stringify(toSave.map(r=>r.id)).replace(/"/g,'&quot;')})">Confirm and update Pulse</button>`:'<small>Nothing new to save.</small>'}</div>`;summaries.push(`prepared ${toSave.length} historical routine update(s)`);continue;
    }
+   if(action.type==='create_life_item'){
+    const allowedLifeTypes=['Prophecy','Confession','Faith Project','Testimony','Church Takeaway','Intercessory Focus','Vision Board','Role Model'];
+    const lifeType=allowedLifeTypes.includes(action.life_type)?action.life_type:'';
+    const lifeTitle=String(action.title||'').trim();
+    const originalText=String(action.details||textValue||'').trim();
+    if(!lifeType||!lifeTitle||!originalText){resultHtml+=`<div class="pus-manager-result"><strong>Needs review</strong><small>I couldn't safely prepare this Our Life entry. Nothing has been saved.</small></div>`;continue;}
+    window.projectUSPendingLifeItem={type:lifeType,title:lifeTitle,text:originalText};
+    resultHtml+=`<div class="pus-manager-result"><strong>Ready for your approval</strong><small>Our Life → ${esc(lifeType)}</small><label class="field-label mt-3">Title<input id="pus-life-title" class="input mt-1" value="${esc(lifeTitle)}"></label><label class="field-label mt-3">Original words<textarea id="pus-life-text" class="input mt-1" rows="4">${esc(originalText)}</textarea></label><div class="grid grid-cols-2 gap-2 mt-3"><button class="primary" onclick="confirmProjectUSLifeItem()">Approve & save</button><button class="secondary" onclick="cancelProjectUSLifeItem()">Cancel</button></div></div>`;
+    continue;
+   }
    if(action.type==='create_task'){
     if(!action.title){resultHtml+=`<div class="pus-manager-result"><strong>What should the task be called?</strong></div>`;continue;}
     const date=action.due_date||'',time=action.due_time||'';await addDoc(collection(db,'todos'),{text:action.title,owner:currentUser,completed:false,order:sortedPersonalTodos(currentUser,false).length*10,reminderDate:date||null,reminderTime:time||null,reminderEnabled:!!(date&&time),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});mutated=true;summaries.push(`created task “${action.title}”`);resultHtml+=`<div class="pus-manager-result"><strong>Task created</strong><small>${esc(action.title)}${date?' · '+esc(date):''}${time?' at '+esc(pusManagerFormatTime(time)):''}</small></div>`;continue;
@@ -2608,8 +2649,20 @@ window.runProjectUSRoutineCommand=async function(){
    const targets=projectUSResolveActionTargets(action,textValue,catalog);
    if(['mark_complete','mark_incomplete','reschedule','rename','archive'].includes(action.type)&&!targets.length){resultHtml+=`<div class="pus-manager-result"><strong>I couldn't safely identify the item.</strong><small>${esc(action.clarification||'Please mention the task names again. Nothing was changed.')}</small></div>`;continue;}
    if(action.type==='mark_complete'||action.type==='mark_incomplete'){
-    for(const hit of targets){if(hit.kind==='todo'){await updateDoc(doc(db,'todos',hit.id),{completed:action.type==='mark_complete',updatedAt:serverTimestamp()});}else if(hit.kind==='activity'){await updateDoc(doc(db,'shared_items',hit.id),{status:action.type==='mark_complete'?'Completed':'Planned',active:action.type!=='mark_complete',updatedBy:currentUser,updatedAt:serverTimestamp()});}else if(hit.kind==='routine'){if(action.type==='mark_complete'&&!hit.done)await window.toggleRoutine(hit.id);else if(action.type==='mark_incomplete'&&hit.done){const key=routineCompletionKey(hit.record);await deleteDoc(doc(db,'routine_completions',key));}}else{continue;}summaries.push(`${action.type==='mark_complete'?'completed':'reopened'} “${hit.label}”`);mutated=true;}
-    resultHtml+=`<div class="pus-manager-result"><strong>${action.type==='mark_complete'?'Marked complete':'Marked incomplete'}</strong>${targets.map(x=>`<small>✓ ${esc(x.label)}</small>`).join('')}</div>`;continue;
+    const changed=[];const skipped=[];
+    for(const hit of targets){
+     if(hit.kind==='todo'){
+      await updateDoc(doc(db,'todos',hit.id),{completed:action.type==='mark_complete',updatedAt:serverTimestamp()});changed.push(hit);
+     }else if(hit.kind==='activity'){
+      await updateDoc(doc(db,'shared_items',hit.id),{status:action.type==='mark_complete'?'Completed':'Planned',active:action.type!=='mark_complete',updatedBy:currentUser,updatedAt:serverTimestamp()});changed.push(hit);
+     }else if(hit.kind==='routine'){
+      if(action.type==='mark_complete'&&!hit.done)await window.toggleRoutine(hit.id);
+      else if(action.type==='mark_incomplete'&&hit.done){const key=routineCompletionKey(hit.record);await deleteDoc(doc(db,'routine_completions',key));}
+      changed.push(hit);
+     }else{skipped.push(hit);continue;}
+     summaries.push(`${action.type==='mark_complete'?'completed':'reopened'} “${hit.label}”`);mutated=true;
+    }
+    resultHtml+=`<div class="pus-manager-result"><strong>${changed.length? (action.type==='mark_complete'?'Updated completion status':'Reopened items'):'No supported items were changed'}</strong>${changed.map(x=>`<small>✓ ${esc(x.label)}</small>`).join('')}${skipped.map(x=>`<small>Not changed: ${esc(x.label)} (this item type is not supported for completion)</small>`).join('')}</div>`;continue;
    }
    if(action.type==='rename'){
     if(!action.new_title){resultHtml+=`<div class="pus-manager-result"><strong>What should the new name be?</strong></div>`;continue;}
@@ -2634,7 +2687,7 @@ window.runProjectUSRoutineCommand=async function(){
    resultHtml+=`<div class="pus-manager-result"><strong>${esc(action.clarification||plan.reply||'I understood the request but did not make changes.')}</strong></div>`;
   }
   if(mutated)render();
-  if(out)out.innerHTML=(plan.reply?`<div class="pus-manager-result"><strong>${esc(plan.reply)}</strong></div>`:'')+resultHtml;
+  if(out)out.innerHTML=resultHtml || `<div class="pus-manager-result"><strong>${esc(plan.reply||'No action was taken.')}</strong></div>`;
   window.projectUSConversationHistory.push({role:'user',content:textValue});window.projectUSConversationHistory.push({role:'assistant',content:String(plan.reply||'Processed request.'),result_ids:window.projectUSLastResultIds.slice(0,30),result_items:window.projectUSLastResultItems.slice(0,30),executed_actions:actions.map(a=>({type:a.type,target_ids:a.target_ids,query:a.query,title:a.title}))});window.projectUSConversationHistory=window.projectUSConversationHistory.slice(-12);
  }catch(e){console.error('Project-US life OS:',e);if(out)out.innerHTML=`<div class="pus-manager-result"><strong>I couldn't complete that request.</strong><small>${esc(e.message||'Please try again.')}</small></div>`;}
  finally{if(btn){btn.disabled=false;btn.textContent='Run typed command →';}if(el){el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));}}
