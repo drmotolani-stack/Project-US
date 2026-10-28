@@ -1790,12 +1790,16 @@ function render() {
   if (activeTab==="memory") renderMemory();
 }
 
+let _renderTimer=null;
+// Database updates often arrive in bursts (local save, then server confirm, across several collections).
+// Merge them into one redraw so the screen does not flicker or lose focus.
+function scheduleRender(){clearTimeout(_renderTimer);_renderTimer=setTimeout(()=>render(),140);}
 function listenAll() {
   unsubscribers.forEach(fn=>fn());
   unsubscribers=[];
   unsubscribers.push(onSnapshot(query(collection(db,"routines"),orderBy("createdAt","asc")), snap=>{
     routines=snap.docs.map(d=>({id:d.id,...d.data()}));
-    render();
+    scheduleRender();
   }, err=>console.error("routines",err)));
 
   unsubscribers.push(onSnapshot(collection(db,"routine_completions"), snap=>{
@@ -1807,31 +1811,31 @@ function listenAll() {
       if(r && d.id===routineCompletionKey(r)) completions[d.id]=true;
       else if(!r && (x.date===todayKey() || x.period===weekKey() || x.period==="project")) completions[d.id]=true;
     });
-    render();
+    scheduleRender();
   }, err=>console.error("completions",err)));
 
   unsubscribers.push(onSnapshot(query(collection(db,"shared_items"),orderBy("createdAt","desc")), snap=>{
     sharedItems=snap.docs.map(d=>({id:d.id,...d.data()}));
-    render();
+    scheduleRender();
   }, err=>console.error("shared",err)));
 
   unsubscribers.push(onSnapshot(query(collection(db,"entries"),orderBy("createdAt","desc")), snap=>{
     recentEntries=snap.docs.map(d=>({id:d.id,...d.data()}));
     memories=recentEntries.filter(x=>x.type==="Memory");
-    render();
+    scheduleRender();
     maybeNotify(recentEntries[0]);
   }, err=>console.error("entries",err)));
 
   unsubscribers.push(onSnapshot(query(collection(db,"life_items"),orderBy("createdAt","desc")), snap=>{
     lifeItems=snap.docs.map(d=>({id:d.id,...d.data()}));
-    render();
+    scheduleRender();
   }, err=>console.error("life",err)));
   
   unsubscribers.push(onSnapshot(query(collection(db,"todos"),orderBy("createdAt","desc")), snap=>{
     todos=snap.docs.map(d=>({id:d.id,...d.data()}));
-    render();
+    scheduleRender();
   }, err=>console.error("todos",err)));
-  unsubscribers.push(onSnapshot(doc(db,"app_settings","general"), snap=>{if(!snap.exists())return;const x=snap.data();if(x.routineBucketsByOwner&&typeof x.routineBucketsByOwner==='object'){routineBucketsByOwner=x.routineBucketsByOwner;localStorage.setItem('our_space_routine_buckets_by_owner',JSON.stringify(routineBucketsByOwner));}else if(Array.isArray(x.routineBuckets)&&x.routineBuckets.length&&!localStorage.getItem('our_space_routine_buckets_by_owner')){routineBucketsByOwner={Motolani:x.routineBuckets.map(b=>({...b})),Zusi:x.routineBuckets.map(b=>({...b}))};localStorage.setItem('our_space_routine_buckets_by_owner',JSON.stringify(routineBucketsByOwner));}if(x.seasonMonth){seasonMonth=x.seasonMonth;localStorage.setItem('our_space_season_month',seasonMonth);}if(typeof x.seasonText==='string'){seasonText=x.seasonText;localStorage.setItem('our_space_season_text',seasonText);}render();},err=>console.warn('settings',err)));
+  unsubscribers.push(onSnapshot(doc(db,"app_settings","general"), snap=>{if(!snap.exists())return;const x=snap.data();if(x.routineBucketsByOwner&&typeof x.routineBucketsByOwner==='object'){routineBucketsByOwner=x.routineBucketsByOwner;localStorage.setItem('our_space_routine_buckets_by_owner',JSON.stringify(routineBucketsByOwner));}else if(Array.isArray(x.routineBuckets)&&x.routineBuckets.length&&!localStorage.getItem('our_space_routine_buckets_by_owner')){routineBucketsByOwner={Motolani:x.routineBuckets.map(b=>({...b})),Zusi:x.routineBuckets.map(b=>({...b}))};localStorage.setItem('our_space_routine_buckets_by_owner',JSON.stringify(routineBucketsByOwner));}if(x.seasonMonth){seasonMonth=x.seasonMonth;localStorage.setItem('our_space_season_month',seasonMonth);}if(typeof x.seasonText==='string'){seasonText=x.seasonText;localStorage.setItem('our_space_season_text',seasonText);}scheduleRender();},err=>console.warn('settings',err)));
 }
 
 let lastNotifiedId = sessionStorage.getItem("last_notified_entry");
